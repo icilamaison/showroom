@@ -46,10 +46,7 @@ export async function submitContract(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      ...payload,
-      specialTerms: payload.specialTerms ?? "",
-    }),
+    body: JSON.stringify(payload),
   });
 
   const body = await parseResponse<SubmitContractResult>(response);
