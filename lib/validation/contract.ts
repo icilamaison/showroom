@@ -1,0 +1,319 @@
+import { z } from "zod";
+
+const phoneRegex = /^010-\d{4}-\d{4}$/;
+const businessNumberRegex = /^\d{3}-\d{2}-\d{5}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const PRODUCT_ROW_COUNT = 10;
+
+export type ProductRow = {
+  name: string;
+  color: string;
+  size: string;
+  quantity: string;
+  remarks: string;
+};
+
+export function createEmptyProductRow(): ProductRow {
+  return {
+    name: "",
+    color: "",
+    size: "",
+    quantity: "",
+    remarks: "",
+  };
+}
+
+export function createEmptyProductRows(): ProductRow[] {
+  return Array.from({ length: PRODUCT_ROW_COUNT }, () => createEmptyProductRow());
+}
+
+export type ContractFormValues = {
+  managerName: string;
+  writtenDateYear: string;
+  writtenDateMonth: string;
+  writtenDateDay: string;
+  buyerName: string;
+  buyerPhone: string;
+  recipientSameAsBuyer: boolean | null;
+  recipientName: string;
+  recipientPhone: string;
+  recipientAddress: string;
+  products: ProductRow[];
+  paymentMethod: "card" | "bank_transfer" | "";
+  cashReceiptType: "income_deduction" | "expense_proof" | "";
+  cashReceiptPhone: string;
+  cashReceiptBusinessNumber: string;
+  taxInvoiceRequested: boolean;
+  taxInvoiceEmail: string;
+  agreementDateYear: string;
+  agreementDateMonth: string;
+  agreementDateDay: string;
+  signatureName: string;
+  termsAgreed: boolean;
+};
+
+const yearSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}$/, "연도를 4자리로 입력해주세요.");
+const monthSchema = z
+  .string()
+  .trim()
+  .regex(/^(0?[1-9]|1[0-2])$/, "월을 1~12 사이로 입력해주세요.");
+const daySchema = z
+  .string()
+  .trim()
+  .regex(/^(0?[1-9]|[12]\d|3[01])$/, "일을 1~31 사이로 입력해주세요.");
+
+const productRowSchema = z.object({
+  name: z.string().trim(),
+  color: z.string().trim(),
+  size: z.string().trim(),
+  quantity: z.string().trim(),
+  remarks: z.string().trim(),
+});
+
+function buildDateString(year: string, month: string, day: string): string {
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function isValidDateParts(year: string, month: string, day: string): boolean {
+  const date = new Date(
+    `${buildDateString(year, month, day)}T00:00:00+09:00`,
+  );
+  return !Number.isNaN(date.getTime());
+}
+
+const contractFormSchema = z
+  .object({
+    managerName: z.string().trim().max(50, "담당자명은 50자 이하로 입력해주세요."),
+    writtenDateYear: yearSchema,
+    writtenDateMonth: monthSchema,
+    writtenDateDay: daySchema,
+    buyerName: z
+      .string()
+      .trim()
+      .min(1, "구매자 성명을 입력해주세요.")
+      .min(2, "구매자 성명은 2자 이상 50자 이하로 입력해주세요.")
+      .max(50, "구매자 성명은 2자 이상 50자 이하로 입력해주세요."),
+    buyerPhone: z
+      .string()
+      .trim()
+      .min(1, "구매자 연락처를 입력해주세요.")
+      .regex(phoneRegex, "연락처는 010-0000-0000 형식으로 입력해주세요."),
+    recipientSameAsBuyer: z.boolean({
+      required_error: "수령자 정보를 선택해주세요.",
+      invalid_type_error: "수령자 정보를 선택해주세요.",
+    }),
+    recipientName: z.string().trim().max(50, "수령자 성명은 50자 이하로 입력해주세요."),
+    recipientPhone: z.string().trim(),
+    recipientAddress: z.string().trim(),
+    products: z.array(productRowSchema).length(PRODUCT_ROW_COUNT),
+    paymentMethod: z.enum(["card", "bank_transfer"], {
+      errorMap: () => ({ message: "결제수단을 선택해주세요." }),
+    }),
+    cashReceiptType: z.enum(["income_deduction", "expense_proof", ""]).optional(),
+    cashReceiptPhone: z.string().trim(),
+    cashReceiptBusinessNumber: z.string().trim(),
+    taxInvoiceRequested: z.boolean(),
+    taxInvoiceEmail: z.string().trim(),
+    agreementDateYear: yearSchema,
+    agreementDateMonth: monthSchema,
+    agreementDateDay: daySchema,
+    signatureName: z
+      .string()
+      .trim()
+      .min(1, "서명명을 입력해주세요.")
+      .min(2, "서명명은 2자 이상 50자 이하로 입력해주세요.")
+      .max(50, "서명명은 2자 이상 50자 이하로 입력해주세요."),
+    termsAgreed: z.literal(true, {
+      errorMap: () => ({ message: "동의 내용에 체크해야 합니다." }),
+    }),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      !isValidDateParts(
+        data.writtenDateYear,
+        data.writtenDateMonth,
+        data.writtenDateDay,
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["writtenDateDay"],
+        message: "유효한 작성일자를 입력해주세요.",
+      });
+    }
+
+    if (
+      !isValidDateParts(
+        data.agreementDateYear,
+        data.agreementDateMonth,
+        data.agreementDateDay,
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["agreementDateDay"],
+        message: "유효한 동의 일자를 입력해주세요.",
+      });
+    }
+
+    if (!data.recipientSameAsBuyer) {
+      if (!data.recipientName || data.recipientName.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["recipientName"],
+          message: "수령자 성명을 입력해주세요.",
+        });
+      }
+
+      if (!phoneRegex.test(data.recipientPhone)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["recipientPhone"],
+          message: "수령자 연락처는 010-0000-0000 형식으로 입력해주세요.",
+        });
+      }
+
+      if (!data.recipientAddress.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["recipientAddress"],
+          message: "배송지 주소를 입력해주세요.",
+        });
+      }
+    }
+
+    const filledProducts = data.products.filter((product) => product.name.trim());
+
+    if (filledProducts.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["products"],
+        message: "상품 정보를 1개 이상 입력해주세요.",
+      });
+    }
+
+    for (const [index, product] of data.products.entries()) {
+      if (!product.name.trim()) {
+        continue;
+      }
+
+      if (!product.quantity.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["products", index, "quantity"],
+          message: "수량을 입력해주세요.",
+        });
+      } else if (!/^\d+$/.test(product.quantity) || Number(product.quantity) < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["products", index, "quantity"],
+          message: "수량은 1 이상의 숫자로 입력해주세요.",
+        });
+      }
+    }
+
+    if (data.paymentMethod === "bank_transfer") {
+      if (!data.cashReceiptType) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cashReceiptType"],
+          message: "현금영수증 발행 유형을 선택해주세요.",
+        });
+      }
+
+      if (
+        data.cashReceiptType === "income_deduction" &&
+        !phoneRegex.test(data.cashReceiptPhone)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cashReceiptPhone"],
+          message: "현금영수증 휴대폰번호는 010-0000-0000 형식으로 입력해주세요.",
+        });
+      }
+
+      if (
+        data.cashReceiptType === "expense_proof" &&
+        !businessNumberRegex.test(data.cashReceiptBusinessNumber)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cashReceiptBusinessNumber"],
+          message: "사업자등록번호는 000-00-00000 형식으로 입력해주세요.",
+        });
+      }
+    }
+
+    if (data.taxInvoiceRequested) {
+      if (!data.taxInvoiceEmail) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["taxInvoiceEmail"],
+          message: "세금계산서 수령 이메일을 입력해주세요.",
+        });
+      } else if (!emailRegex.test(data.taxInvoiceEmail)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["taxInvoiceEmail"],
+          message: "유효한 이메일 주소를 입력해주세요.",
+        });
+      }
+    }
+  });
+
+export type ValidatedContractFormValues = z.infer<typeof contractFormSchema> & {
+  writtenDate: string;
+  agreementDate: string;
+};
+
+function formatValidationErrors(error: z.ZodError): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  for (const issue of error.issues) {
+    const field = issue.path
+      .map((segment) => (typeof segment === "number" ? String(segment) : segment))
+      .join(".");
+
+    if (!errors[field]) {
+      errors[field] = issue.message;
+    }
+  }
+
+  return errors;
+}
+
+export function validateContractForm(values: ContractFormValues):
+  | { valid: true; data: ValidatedContractFormValues }
+  | { valid: false; errors: Record<string, string> } {
+  const result = contractFormSchema.safeParse(values);
+
+  if (result.success) {
+    return {
+      valid: true,
+      data: {
+        ...result.data,
+        writtenDate: buildDateString(
+          result.data.writtenDateYear,
+          result.data.writtenDateMonth,
+          result.data.writtenDateDay,
+        ),
+        agreementDate: buildDateString(
+          result.data.agreementDateYear,
+          result.data.agreementDateMonth,
+          result.data.agreementDateDay,
+        ),
+      },
+    };
+  }
+
+  return {
+    valid: false,
+    errors: formatValidationErrors(result.error),
+  };
+}
+
+export type PurchaseContractPayload = ValidatedContractFormValues;
