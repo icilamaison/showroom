@@ -32,6 +32,17 @@ export const emptyContractFormValues: ContractFormValues = {
   termsAgreed: false,
 };
 
+export function createInitialContractFormValues(): ContractFormValues {
+  const today = new Date();
+
+  return {
+    ...emptyContractFormValues,
+    writtenDateYear: String(today.getFullYear()),
+    writtenDateMonth: String(today.getMonth() + 1),
+    writtenDateDay: String(today.getDate()),
+  };
+}
+
 type ContractFormProps = {
   values: ContractFormValues;
   errors?: Record<string, string>;
@@ -390,7 +401,7 @@ export default function ContractForm({
                       <>
                         계좌이체{" "}
                         <span className="contract-doc__muted">
-                          (신한은행 140-014-980017 / 예금주 : 홈온인스(주))
+                          (신한은행 140-014-980017 / 예금주 : 홈온얼스(주))
                         </span>
                       </>
                     }
@@ -566,7 +577,7 @@ export default function ContractForm({
         </p>
         <div className="contract-doc__footer-company">
           <p>
-            이씨라메종 (홈온인스 주식회사) | 사업자등록번호 772-86-01622 | 쇼룸
+            이씨라메종 (홈온얼스 주식회사) | 사업자등록번호 772-86-01622 | 쇼룸
             070-4149-9149
           </p>
           <p>

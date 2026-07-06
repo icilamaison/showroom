@@ -6,12 +6,12 @@ import { validateContractForm } from "@/lib/validation/contract";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import "../contract.css";
-import ContractForm, { emptyContractFormValues } from "./ContractForm";
+import ContractForm, { createInitialContractFormValues } from "./ContractForm";
 
 export default function ContractWritePage() {
   const router = useRouter();
   const [values, setValues] = useState<ContractFormValues>(
-    emptyContractFormValues,
+    createInitialContractFormValues,
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
