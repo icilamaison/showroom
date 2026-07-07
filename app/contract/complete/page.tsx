@@ -32,8 +32,8 @@ export default async function ContractCompletePage({
           </p>
         )}
 
-        <Link href="/contract/write" className="app-menu__item">
-          새 계약서 작성하기
+        <Link href="/" className="app-menu__item">
+          홈으로 돌아가기
         </Link>
       </div>
     </main>

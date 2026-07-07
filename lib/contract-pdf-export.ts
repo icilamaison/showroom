@@ -23,22 +23,16 @@ export async function exportContractDocumentToPdf(
 
   const pageWidth = A4_WIDTH_MM;
   const pageHeight = A4_HEIGHT_MM;
-  const imageWidth = pageWidth;
-  const imageHeight = (canvas.height * imageWidth) / canvas.width;
+  const widthFittedHeight = (canvas.height * pageWidth) / canvas.width;
+  const imageHeight = Math.min(widthFittedHeight, pageHeight);
+  const imageWidth =
+    widthFittedHeight > pageHeight
+      ? (canvas.width * pageHeight) / canvas.height
+      : pageWidth;
+  const imageX = (pageWidth - imageWidth) / 2;
   const imageData = canvas.toDataURL("image/png");
 
-  let heightLeft = imageHeight;
-  let position = 0;
-
-  pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
-  heightLeft -= pageHeight;
-
-  while (heightLeft > 0) {
-    position = heightLeft - imageHeight;
-    pdf.addPage();
-    pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
-    heightLeft -= pageHeight;
-  }
+  pdf.addImage(imageData, "PNG", imageX, 0, imageWidth, imageHeight);
 
   pdf.save(filename);
 }

@@ -24,14 +24,14 @@ export const emptyContractFormValues: ContractFormValues = {
   writtenDateDay: "",
   buyerName: "",
   buyerPhone: "",
-  recipientSameAsBuyer: null,
+  recipientSameAsBuyer: false,
   recipientName: "",
   recipientPhone: "",
   recipientPostalCode: "",
   recipientAddress: "",
   recipientAddressDetail: "",
   products: createEmptyProductRows(),
-  paymentMethod: "",
+  paymentMethod: "card",
   cashReceiptType: "",
   cashReceiptPhone: "",
   cashReceiptBusinessNumber: "",
@@ -53,6 +53,9 @@ export function createInitialContractFormValues(): ContractFormValues {
     writtenDateYear: String(today.getFullYear()),
     writtenDateMonth: String(today.getMonth() + 1),
     writtenDateDay: String(today.getDate()),
+    agreementDateYear: String(today.getFullYear()),
+    agreementDateMonth: String(today.getMonth() + 1),
+    agreementDateDay: String(today.getDate()),
   };
 }
 
@@ -728,18 +731,21 @@ export default function ContractForm({
                     [{values.taxInvoiceRequested ? "✓" : " "}]
                   </span>
                   <span>
-                    사업자등록증 별도 제출 필수. (세금계산서 수령 이메일 :{" "}
-                    <input
-                      type="email"
-                      value={values.taxInvoiceEmail}
-                      onChange={(event) =>
-                        onChange("taxInvoiceEmail", event.target.value)
-                      }
-                      className="contract-doc__inline-input contract-doc__inline-input--email"
-                      disabled={!showBankTransferFields}
-                      placeholder="email@example.com"
-                    />
-                    )
+                    사업자등록증 별도 제출 필수.
+                    <span className="contract-doc__tax-email-row">
+                      (세금계산서 수령 이메일 :{" "}
+                      <input
+                        type="email"
+                        value={values.taxInvoiceEmail}
+                        onChange={(event) =>
+                          onChange("taxInvoiceEmail", event.target.value)
+                        }
+                        className="contract-doc__inline-input contract-doc__inline-input--email"
+                        disabled={!showBankTransferFields}
+                        placeholder="email@example.com"
+                      />
+                      )
+                    </span>
                   </span>
                 </label>
                 <FieldError message={errors.taxInvoiceEmail} />

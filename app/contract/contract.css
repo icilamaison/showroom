@@ -334,7 +334,7 @@
 }
 
 .contract-doc__inline-input--email {
-  min-width: 11rem;
+  min-width: min(11rem, 100%);
 }
 
 .contract-doc__inline-input--signature {
@@ -392,6 +392,7 @@
   align-items: center;
   gap: 0.35rem;
   cursor: pointer;
+  min-width: 0;
 }
 
 .contract-doc__checkbox-input {
@@ -402,8 +403,25 @@
 }
 
 .contract-doc__checkbox-box {
+  flex: 0 0 auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: -0.05em;
+  white-space: nowrap;
+}
+
+.contract-doc__checkbox > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.contract-doc__checkbox .contract-doc__inline-input {
+  max-width: 100%;
+}
+
+.contract-doc__tax-email-row {
+  display: block;
+  margin-top: 0.12rem;
+  white-space: nowrap;
 }
 
 .contract-doc__muted {
