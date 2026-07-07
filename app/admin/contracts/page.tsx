@@ -2,6 +2,7 @@
 
 import {
   ApiClientError,
+  downloadAdminBulkOrderExcel,
   fetchAdminContracts,
   type ContractListItem,
   type ContractListResult,
@@ -19,12 +20,16 @@ type FilterState = {
   customerName: string;
   customerPhone: string;
   status: string;
+  dateFrom: string;
+  dateTo: string;
 };
 
 const initialFilters: FilterState = {
   customerName: "",
   customerPhone: "",
   status: "",
+  dateFrom: "",
+  dateTo: "",
 };
 
 function formatAmount(amount: number) {
@@ -43,6 +48,7 @@ export default function AdminContractsPage() {
   const [data, setData] = useState<ContractListResult | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     async function loadContracts() {
@@ -54,6 +60,8 @@ export default function AdminContractsPage() {
           customerName: appliedFilters.customerName,
           customerPhone: appliedFilters.customerPhone,
           status: appliedFilters.status,
+          dateFrom: appliedFilters.dateFrom,
+          dateTo: appliedFilters.dateTo,
           page,
           limit: 20,
         });
@@ -87,13 +95,39 @@ export default function AdminContractsPage() {
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
 
+  async function handleBulkDownload() {
+    setIsDownloading(true);
+    setError("");
+
+    try {
+      await downloadAdminBulkOrderExcel(appliedFilters);
+    } catch (downloadError) {
+      if (downloadError instanceof ApiClientError && downloadError.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
+
+      setError(
+        downloadError instanceof ApiClientError
+          ? downloadError.message
+          : "엑셀 다운로드에 실패했습니다.",
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  }
+
   return (
     <main className="admin-page admin-page--wide">
       <div className="admin-container">
+        <Link href="/" className="admin-back-link">
+          ← 뒤로 가기
+        </Link>
+
         <header className="admin-header">
           <h1 className="admin-header__title">계약서 목록</h1>
           <p className="admin-header__description">
-            접수된 계약서를 조회하고 상세 내용을 확인할 수 있습니다.
+            접수된 계약서를 조회하고 PlayAuto 주문 엑셀로 내려받을 수 있습니다.
           </p>
         </header>
 
@@ -159,6 +193,42 @@ export default function AdminContractsPage() {
             </select>
           </div>
 
+          <div className="admin-form__field">
+            <label htmlFor="dateFrom" className="admin-form__label">
+              시작일
+            </label>
+            <input
+              id="dateFrom"
+              type="date"
+              value={filters.dateFrom}
+              onChange={(event) =>
+                setFilters((current) => ({
+                  ...current,
+                  dateFrom: event.target.value,
+                }))
+              }
+              className="admin-form__input"
+            />
+          </div>
+
+          <div className="admin-form__field">
+            <label htmlFor="dateTo" className="admin-form__label">
+              종료일
+            </label>
+            <input
+              id="dateTo"
+              type="date"
+              value={filters.dateTo}
+              onChange={(event) =>
+                setFilters((current) => ({
+                  ...current,
+                  dateTo: event.target.value,
+                }))
+              }
+              className="admin-form__input"
+            />
+          </div>
+
           <div className="admin-filters__actions">
             <button type="submit" className="admin-button">
               검색
@@ -172,6 +242,22 @@ export default function AdminContractsPage() {
             </button>
           </div>
         </form>
+
+        <div className="admin-list-toolbar">
+          <p className="admin-list-toolbar__info">
+            {data ? `검색 결과 ${data.total.toLocaleString("ko-KR")}건` : "검색 결과"}
+          </p>
+          <button
+            type="button"
+            className="admin-button"
+            disabled={isDownloading}
+            onClick={() => {
+              void handleBulkDownload();
+            }}
+          >
+            {isDownloading ? "다운로드 중..." : "주문 엑셀 다운로드"}
+          </button>
+        </div>
 
         {error ? <p className="admin-error">{error}</p> : null}
 

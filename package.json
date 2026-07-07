@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:server\"",
-    "dev:next": "next dev",
+    "dev:clean": "rm -rf .next && npm run dev",
+    "dev:next": "next dev --turbopack",
     "dev:server": "tsx watch server/index.ts",
     "build": "next build && tsc -p tsconfig.server.json",
     "start": "concurrently \"next start\" \"node dist/server/index.js\"",
@@ -13,6 +14,9 @@
     "test:client": "vitest run lib",
     "db:migrate": "tsx server/db/migrate.ts",
     "db:seed": "tsx server/db/seed.ts",
+    "db:seed:contracts": "tsx server/db/seed-contracts.ts",
+    "db:seed:contracts:reset": "tsx server/db/seed-contracts.ts --reset",
+    "products:sync-sizes": "tsx scripts/sync-product-sizes.ts",
     "lint": "next lint"
   },
   "dependencies": {

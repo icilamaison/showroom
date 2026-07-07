@@ -1,42 +1,80 @@
 import { Router } from "express";
+import { parseContractListQuery } from "../../lib/contract-list-query";
 import { sendError, sendSuccess } from "../../lib/api-response";
 import { parseContractStatusUpdate } from "../../schemas/admin.schema";
 import {
   getContractById,
   listContracts,
+  listContractsForExport,
   updateContractStatus,
 } from "../../services/admin-contract.service";
 import {
+  buildBulkOrderExcelFilename,
   buildOrderExcelFilename,
+  generateBulkOrderExcelBuffer,
   generateOrderExcelBuffer,
   OrderExcelGenerationError,
 } from "../../services/order-excel.service";
 
 const contractsRouter = Router();
 
+function sendExcelFile(
+  res: Parameters<typeof sendSuccess>[0],
+  buffer: Buffer,
+  filename: string,
+) {
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${encodeURIComponent(filename)}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+  );
+
+  return res.send(buffer);
+}
+
 contractsRouter.get("/", async (req, res) => {
   try {
-    const page = req.query.page ? Number(req.query.page) : undefined;
-    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const parsed = parseContractListQuery(req.query);
 
-    const result = await listContracts({
-      customerName:
-        typeof req.query.customerName === "string"
-          ? req.query.customerName
-          : undefined,
-      customerPhone:
-        typeof req.query.customerPhone === "string"
-          ? req.query.customerPhone
-          : undefined,
-      status:
-        typeof req.query.status === "string" ? req.query.status : undefined,
-      page: Number.isFinite(page) ? page : undefined,
-      limit: Number.isFinite(limit) ? limit : undefined,
-    });
+    if (parsed.error) {
+      return sendError(res, parsed.error, 400);
+    }
+
+    const result = await listContracts(parsed.filters);
 
     return sendSuccess(res, result);
   } catch (error) {
     console.error("[admin/contracts] Failed to list contracts:", error);
+    return sendError(res, "서버 오류가 발생했습니다.", 500);
+  }
+});
+
+contractsRouter.get("/order-excel", async (req, res) => {
+  try {
+    const parsed = parseContractListQuery(req.query);
+
+    if (parsed.error) {
+      return sendError(res, parsed.error, 400);
+    }
+
+    const { page: _page, limit: _limit, ...exportFilters } = parsed.filters;
+    const contracts = await listContractsForExport(exportFilters);
+    const buffer = await generateBulkOrderExcelBuffer(contracts);
+    const filename = buildBulkOrderExcelFilename(
+      exportFilters.dateFrom,
+      exportFilters.dateTo,
+    );
+
+    return sendExcelFile(res, buffer, filename);
+  } catch (error) {
+    if (error instanceof OrderExcelGenerationError) {
+      return sendError(res, error.message, 400);
+    }
+
+    console.error("[admin/contracts] Failed to generate bulk order excel:", error);
     return sendError(res, "서버 오류가 발생했습니다.", 500);
   }
 });
@@ -58,16 +96,7 @@ contractsRouter.get("/:id/order-excel", async (req, res) => {
     const buffer = await generateOrderExcelBuffer(contract);
     const filename = buildOrderExcelFilename(contract.contractNumber);
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${encodeURIComponent(filename)}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
-    );
-
-    return res.send(buffer);
+    return sendExcelFile(res, buffer, filename);
   } catch (error) {
     if (error instanceof OrderExcelGenerationError) {
       return sendError(res, error.message, 400);

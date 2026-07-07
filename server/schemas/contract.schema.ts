@@ -290,6 +290,10 @@ export function mapContractInput(
 
   return {
     ...data,
+    products: data.products.map((product) => ({
+      ...product,
+      remarks: "",
+    })),
     writtenDate,
     agreementDate,
     customerName: data.buyerName,

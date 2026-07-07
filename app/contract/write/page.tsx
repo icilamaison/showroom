@@ -1,6 +1,13 @@
 "use client";
 
 import { ApiClientError, submitContract } from "@/lib/api-client";
+import { isSetProduct, type CatalogProduct } from "@/lib/product-catalog";
+import {
+  createSetComponentSelections,
+  formatSetOptionName,
+  type SetComponentSelection,
+} from "@/lib/set-product";
+import { formatPhoneInput, PHONE_FORM_FIELDS } from "@/lib/phone";
 import type { ContractFormValues, ProductRow } from "@/lib/validation/contract";
 import { validateContractForm } from "@/lib/validation/contract";
 import { useRouter } from "next/navigation";
@@ -13,6 +20,12 @@ export default function ContractWritePage() {
   const [values, setValues] = useState<ContractFormValues>(
     createInitialContractFormValues,
   );
+  const [productSelections, setProductSelections] = useState<
+    Record<number, CatalogProduct | null>
+  >({});
+  const [setComponentSelections, setSetComponentSelections] = useState<
+    Record<number, SetComponentSelection[]>
+  >({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,8 +46,13 @@ export default function ContractWritePage() {
     field: keyof ContractFormValues,
     value: string | boolean | null,
   ) {
+    const nextValue =
+      typeof value === "string" && PHONE_FORM_FIELDS.has(field)
+        ? formatPhoneInput(value)
+        : value;
+
     setValues((current) => {
-      const next = { ...current, [field]: value };
+      const next = { ...current, [field]: nextValue };
 
       if (field === "recipientSameAsBuyer" && value === true) {
         next.recipientName = "";
@@ -60,15 +78,146 @@ export default function ContractWritePage() {
     field: keyof ProductRow,
     value: string,
   ) {
+    if (field === "name") {
+      setProductSelections((current) => {
+        if (!current[index]) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[index];
+        return next;
+      });
+      setSetComponentSelections((current) => {
+        if (!current[index]) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[index];
+        return next;
+      });
+    }
+
     setValues((current) => ({
       ...current,
-      products: current.products.map((product, productIndex) =>
-        productIndex === index ? { ...product, [field]: value } : product,
-      ),
+      products: current.products.map((product, productIndex) => {
+        if (productIndex !== index) {
+          return product;
+        }
+
+        if (field === "name") {
+          return {
+            ...product,
+            name: value,
+            color: "",
+            size: "",
+            remarks: "",
+          };
+        }
+
+        return { ...product, [field]: value };
+      }),
     }));
 
     clearFieldError("products");
     clearFieldError(`products.${index}.${field}`);
+  }
+
+  function handleSetComponentChange(
+    index: number,
+    componentIndex: number,
+    field: keyof SetComponentSelection,
+    value: string,
+  ) {
+    const selectedProduct = productSelections[index];
+    if (!selectedProduct?.components) {
+      return;
+    }
+
+    const nextSelections = [
+      ...(setComponentSelections[index] ??
+        createSetComponentSelections(selectedProduct.components)),
+    ];
+    nextSelections[componentIndex] = {
+      ...nextSelections[componentIndex],
+      [field]: value,
+    };
+
+    setSetComponentSelections((current) => ({
+      ...current,
+      [index]: nextSelections,
+    }));
+
+    setValues((current) => ({
+      ...current,
+      products: current.products.map((row, productIndex) =>
+        productIndex === index
+          ? {
+              ...row,
+              color: formatSetOptionName(
+                selectedProduct.components,
+                nextSelections,
+              ),
+            }
+          : row,
+      ),
+    }));
+  }
+
+  function handleProductSelect(index: number, product: CatalogProduct) {
+    setProductSelections((current) => ({
+      ...current,
+      [index]: product,
+    }));
+
+    const isSet = isSetProduct(product);
+    const componentSelections = isSet
+      ? createSetComponentSelections(product.components ?? [])
+      : [];
+
+    if (isSet) {
+      setSetComponentSelections((current) => ({
+        ...current,
+        [index]: componentSelections,
+      }));
+    } else {
+      setSetComponentSelections((current) => {
+        if (!current[index]) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[index];
+        return next;
+      });
+    }
+
+    setValues((current) => ({
+      ...current,
+      products: current.products.map((row, productIndex) =>
+        productIndex === index
+          ? {
+              ...row,
+              name: product.productName,
+              color: isSet
+                ? formatSetOptionName(
+                    product.components ?? [],
+                    componentSelections,
+                  )
+                : "",
+              size: "",
+              quantity: row.quantity || "1",
+              unitPrice: String(product.salePrice),
+              remarks: "",
+            }
+          : row,
+      ),
+    }));
+
+    clearFieldError("products");
+    clearFieldError(`products.${index}.name`);
+    clearFieldError(`products.${index}.unitPrice`);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -116,8 +265,12 @@ export default function ContractWritePage() {
           values={values}
           errors={errors}
           isSubmitting={isSubmitting}
+          productSelections={productSelections}
+          setComponentSelections={setComponentSelections}
           onChange={handleChange}
           onProductChange={handleProductChange}
+          onProductSelect={handleProductSelect}
+          onSetComponentChange={handleSetComponentChange}
           onSubmit={handleSubmit}
         />
       </div>

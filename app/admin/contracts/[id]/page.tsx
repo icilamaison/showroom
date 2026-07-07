@@ -2,8 +2,8 @@
 
 import {
   ApiClientError,
+  downloadAdminOrderExcel,
   fetchAdminContractById,
-  getAdminOrderExcelDownloadUrl,
   updateAdminContractStatus,
   type ContractDetail,
 } from "@/lib/api-client";
@@ -191,9 +191,9 @@ export default function AdminContractDetailPage() {
   const [contract, setContract] = useState<ContractDetail | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (!isValidId) {
@@ -239,20 +239,10 @@ export default function AdminContractDetailPage() {
 
     setIsSaving(true);
     setError("");
-    setSuccessMessage("");
 
     try {
-      const updated = await updateAdminContractStatus(contractId, selectedStatus);
-      setContract((current) =>
-        current
-          ? {
-              ...current,
-              status: updated.status,
-              updatedAt: updated.updatedAt,
-            }
-          : current,
-      );
-      setSuccessMessage("상태가 저장되었습니다.");
+      await updateAdminContractStatus(contractId, selectedStatus);
+      router.push("/admin/contracts");
     } catch (saveError) {
       if (saveError instanceof ApiClientError) {
         if (saveError.status === 401) {
@@ -288,9 +278,6 @@ export default function AdminContractDetailPage() {
         </header>
 
         {error ? <p className="admin-error">{error}</p> : null}
-        {successMessage ? (
-          <p className="admin-success">{successMessage}</p>
-        ) : null}
 
         {isLoading ? (
           <p className="admin-empty">상세 정보를 불러오는 중...</p>
@@ -380,13 +367,43 @@ export default function AdminContractDetailPage() {
                   내려받을 수 있습니다.
                 </p>
                 <div className="admin-detail-actions">
-                  <a
-                    href={getAdminOrderExcelDownloadUrl(contract.id)}
+                  <button
+                    type="button"
                     className="admin-button"
-                    download
+                    disabled={isDownloading}
+                    onClick={() => {
+                      if (!contract) {
+                        return;
+                      }
+
+                      void (async () => {
+                        setIsDownloading(true);
+                        setError("");
+
+                        try {
+                          await downloadAdminOrderExcel(contract.id);
+                        } catch (downloadError) {
+                          if (
+                            downloadError instanceof ApiClientError &&
+                            downloadError.status === 401
+                          ) {
+                            router.push("/admin/login");
+                            return;
+                          }
+
+                          setError(
+                            downloadError instanceof ApiClientError
+                              ? downloadError.message
+                              : "엑셀 다운로드에 실패했습니다.",
+                          );
+                        } finally {
+                          setIsDownloading(false);
+                        }
+                      })();
+                    }}
                   >
-                    주문 엑셀 다운로드
-                  </a>
+                    {isDownloading ? "다운로드 중..." : "주문 엑셀 다운로드"}
+                  </button>
                 </div>
               </section>
             ) : null}

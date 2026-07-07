@@ -118,6 +118,8 @@ export type AdminContractListFilters = {
   customerName?: string;
   customerPhone?: string;
   status?: string;
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   limit?: number;
 };
@@ -162,6 +164,14 @@ export async function fetchAdminContracts(
 
   if (filters.status?.trim()) {
     params.set("status", filters.status.trim());
+  }
+
+  if (filters.dateFrom?.trim()) {
+    params.set("dateFrom", filters.dateFrom.trim());
+  }
+
+  if (filters.dateTo?.trim()) {
+    params.set("dateTo", filters.dateTo.trim());
   }
 
   if (filters.page) {
@@ -224,4 +234,113 @@ export async function updateAdminContractStatus(
 
 export function getAdminOrderExcelDownloadUrl(id: number): string {
   return `/api/admin/contracts/${id}/order-excel`;
+}
+
+export function getAdminBulkOrderExcelDownloadUrl(
+  filters: AdminContractListFilters = {},
+): string {
+  const params = new URLSearchParams();
+
+  if (filters.customerName?.trim()) {
+    params.set("customerName", filters.customerName.trim());
+  }
+
+  if (filters.customerPhone?.trim()) {
+    params.set("customerPhone", filters.customerPhone.trim());
+  }
+
+  if (filters.status?.trim()) {
+    params.set("status", filters.status.trim());
+  }
+
+  if (filters.dateFrom?.trim()) {
+    params.set("dateFrom", filters.dateFrom.trim());
+  }
+
+  if (filters.dateTo?.trim()) {
+    params.set("dateTo", filters.dateTo.trim());
+  }
+
+  const query = params.toString();
+  return query
+    ? `/api/admin/contracts/order-excel?${query}`
+    : "/api/admin/contracts/order-excel";
+}
+
+function parseDownloadFilename(
+  disposition: string | null,
+  fallback: string,
+): string {
+  if (!disposition) {
+    return fallback;
+  }
+
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const asciiMatch = disposition.match(/filename="([^"]+)"/i);
+  if (asciiMatch?.[1]) {
+    return asciiMatch[1];
+  }
+
+  return fallback;
+}
+
+function triggerFileDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadAdminExcelFile(
+  url: string,
+  fallbackFilename: string,
+): Promise<void> {
+  const response = await fetch(url, {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as
+      | ApiErrorResponse
+      | null;
+
+    throw new ApiClientError(
+      body?.message || "엑셀 다운로드에 실패했습니다.",
+      response.status,
+      body?.errors,
+    );
+  }
+
+  const blob = await response.blob();
+  const filename = parseDownloadFilename(
+    response.headers.get("Content-Disposition"),
+    fallbackFilename,
+  );
+
+  triggerFileDownload(blob, filename);
+}
+
+export async function downloadAdminOrderExcel(id: number): Promise<void> {
+  return downloadAdminExcelFile(
+    getAdminOrderExcelDownloadUrl(id),
+    `playauto_order_${id}.xlsx`,
+  );
+}
+
+export async function downloadAdminBulkOrderExcel(
+  filters: AdminContractListFilters = {},
+): Promise<void> {
+  const from = filters.dateFrom?.trim() || "all";
+  const to = filters.dateTo?.trim() || "all";
+
+  return downloadAdminExcelFile(
+    getAdminBulkOrderExcelDownloadUrl(filters),
+    `playauto_orders_${from}_${to}.xlsx`,
+  );
 }

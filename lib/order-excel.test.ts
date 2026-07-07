@@ -64,7 +64,7 @@ describe("buildOrderExcelRows", () => {
 
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({
-      "쇼핑몰주문번호": "auto",
+      "쇼핑몰주문번호": "showroom",
       "주문자명": "홍길동",
       "주문자ID": "CT-20260701-0001",
       "주문자휴대폰번호": "010-1234-5678",
@@ -76,12 +76,38 @@ describe("buildOrderExcelRows", () => {
       "옵션명": "블랙,L",
       "주문수량": "2",
       "금액": "50000",
-      "배송메세지": "문 앞에 놔주세요",
+      "배송메세지": "",
       "주문일": "2026-07-01",
       "국가코드": "KR",
     });
     expect(rows[1]["온라인 상품명"]).toBe("추가 상품");
     expect(rows[1]["금액"]).toBe("30000");
+    expect(rows[1]["배송메세지"]).toBe("");
+  });
+
+  it("keeps set product option names in the option column", () => {
+    const products = createEmptyProductRows();
+    products[0] = {
+      name: "쿨포터 세트",
+      color: "COLOR=화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
+      size: "",
+      quantity: "1",
+      unitPrice: "150000",
+      remarks: "P0000BST | should not appear",
+    };
+
+    const rows = buildOrderExcelRows(
+      {
+        ...basePayload,
+        products,
+      },
+      "CT-20260701-0004",
+    );
+
+    expect(rows[0]["옵션명"]).toBe(
+      "COLOR=화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
+    );
+    expect(rows[0]["배송메세지"]).toBe("");
   });
 
   it("uses buyer info when recipient is the same as buyer", () => {

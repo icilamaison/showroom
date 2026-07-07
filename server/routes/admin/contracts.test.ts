@@ -306,11 +306,41 @@ describe("Admin API", () => {
       expect(response.headers["content-disposition"]).toContain(
         "playauto_order_",
       );
-      expect(response.body.length).toBeGreaterThan(0);
+      expect(Number(response.headers["content-length"])).toBeGreaterThan(0);
     });
 
     it("returns 401 without admin authentication", async () => {
       await request(app).get("/api/admin/contracts/1/order-excel").expect(401);
+    });
+  });
+
+  describe("GET /api/admin/contracts/order-excel", () => {
+    it("returns a bulk Excel file for filtered contracts", async () => {
+      await createTestContract("2009", "엑셀일괄");
+
+      const agent = await loginAgent();
+      const response = await agent
+        .get("/api/admin/contracts/order-excel")
+        .query({ customerName: "엑셀일괄" })
+        .expect(200);
+
+      expect(response.headers["content-type"]).toContain(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+      expect(response.headers["content-disposition"]).toContain(
+        "playauto_orders_",
+      );
+      expect(Number(response.headers["content-length"])).toBeGreaterThan(0);
+    });
+
+    it("returns 400 for invalid date range", async () => {
+      const agent = await loginAgent();
+      const response = await agent
+        .get("/api/admin/contracts/order-excel")
+        .query({ dateFrom: "2026-07-10", dateTo: "2026-07-01" })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
     });
   });
 });

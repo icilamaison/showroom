@@ -68,8 +68,14 @@ export function isPurchaseContractPayload(
 }
 
 function buildOptionName(product: ProductRow): string {
-  const parts = [product.color.trim(), product.size.trim()].filter(Boolean);
-  return parts.join(",");
+  const color = product.color.trim();
+  const size = product.size.trim();
+
+  if (color.startsWith("COLOR=")) {
+    return color;
+  }
+
+  return [color, size].filter(Boolean).join(",");
 }
 
 function resolveRecipientName(payload: PurchaseContractPayload): string {
@@ -94,8 +100,12 @@ function createEmptyOrderExcelRow(): OrderExcelRow {
   ) as OrderExcelRow;
 }
 
+function safeTrim(value: string | undefined): string {
+  return value?.trim() ?? "";
+}
+
 function buildLineAmount(product: ProductRow): string {
-  return product.unitPrice.trim();
+  return safeTrim(product.unitPrice);
 }
 
 function buildSharedOrderFields(
@@ -107,13 +117,13 @@ function buildSharedOrderFields(
 > {
   const row = createEmptyOrderExcelRow();
 
-  row["쇼핑몰주문번호"] = "auto";
+  row["쇼핑몰주문번호"] = "showroom";
   row["주문자명"] = payload.buyerName;
   row["주문자ID"] = contractNumber;
   row["주문자휴대폰번호"] = payload.buyerPhone;
   row["수령자명"] = resolveRecipientName(payload);
   row["수령자휴대폰번호"] = resolveRecipientPhone(payload);
-  row["우편번호"] = payload.recipientPostalCode.trim();
+  row["우편번호"] = safeTrim(payload.recipientPostalCode);
   row["주소"] = formatFullAddress(
     payload.recipientAddress,
     payload.recipientAddressDetail,
@@ -137,9 +147,9 @@ export function buildOrderExcelRows(
       ...sharedFields,
       "온라인 상품명": product.name.trim(),
       "옵션명": buildOptionName(product),
-      "주문수량": product.quantity.trim(),
+      "주문수량": safeTrim(product.quantity),
       "금액": buildLineAmount(product),
-      "배송메세지": product.remarks.trim(),
+      "배송메세지": "",
     }));
 }
 

@@ -3,11 +3,14 @@ import { pool } from "../db/pool";
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
+const MAX_EXPORT_LIMIT = 5000;
 
 export type ContractListFilters = {
   customerName?: string;
   customerPhone?: string;
   status?: string;
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   limit?: number;
 };
@@ -113,6 +116,20 @@ function buildListQuery(filters: ContractListFilters) {
     conditions.push(`status = $${values.length}`);
   }
 
+  if (filters.dateFrom?.trim()) {
+    values.push(filters.dateFrom.trim());
+    conditions.push(
+      `(created_at AT TIME ZONE 'Asia/Seoul')::date >= $${values.length}::date`,
+    );
+  }
+
+  if (filters.dateTo?.trim()) {
+    values.push(filters.dateTo.trim());
+    conditions.push(
+      `(created_at AT TIME ZONE 'Asia/Seoul')::date <= $${values.length}::date`,
+    );
+  }
+
   const whereClause =
     conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -174,6 +191,42 @@ export async function listContracts(
     limit,
     total: Number(countResult.rows[0]?.total ?? 0),
   };
+}
+
+const CONTRACT_DETAIL_SELECT = `
+  id,
+  contract_number,
+  customer_name,
+  customer_phone,
+  customer_address,
+  product_name,
+  contract_amount,
+  contract_start_date,
+  contract_end_date,
+  special_terms,
+  terms_agreed,
+  signature_name,
+  status,
+  payload,
+  created_at,
+  updated_at
+`;
+
+export async function listContractsForExport(
+  filters: Omit<ContractListFilters, "page" | "limit"> = {},
+): Promise<ContractDetail[]> {
+  const { whereClause, values } = buildListQuery(filters);
+
+  const result = await pool.query<ContractDetailRow>(
+    `SELECT ${CONTRACT_DETAIL_SELECT}
+     FROM contracts
+     ${whereClause}
+     ORDER BY created_at DESC
+     LIMIT ${MAX_EXPORT_LIMIT}`,
+    values,
+  );
+
+  return result.rows.map(mapContractDetail);
 }
 
 function formatDateValue(value: Date): string {

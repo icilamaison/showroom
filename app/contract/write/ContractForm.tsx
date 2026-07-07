@@ -1,12 +1,21 @@
 "use client";
 
+import { Fragment } from "react";
 import {
   createEmptyProductRows,
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
+import { isSetProduct, type CatalogProduct } from "@/lib/product-catalog";
+import type { SetComponentSelection } from "@/lib/set-product";
+import { createSetComponentSelections } from "@/lib/set-product";
 import AddressSearchFields from "./AddressSearchFields";
+import ProductNameAutocomplete from "./ProductNameAutocomplete";
+import ProductOptionSelect from "./ProductOptionSelect";
+import SetProductComponents from "./SetProductComponents";
 import "./../contract.css";
+
+const CATALOG_DROPDOWN_ROW_LIMIT = 5;
 
 export const emptyContractFormValues: ContractFormValues = {
   managerName: "",
@@ -50,6 +59,8 @@ type ContractFormProps = {
   values: ContractFormValues;
   errors?: Record<string, string>;
   isSubmitting?: boolean;
+  productSelections?: Record<number, CatalogProduct | null>;
+  setComponentSelections?: Record<number, SetComponentSelection[]>;
   onChange: (
     field: keyof ContractFormValues,
     value: string | boolean | null,
@@ -57,6 +68,13 @@ type ContractFormProps = {
   onProductChange: (
     index: number,
     field: keyof ProductRow,
+    value: string,
+  ) => void;
+  onProductSelect: (index: number, product: CatalogProduct) => void;
+  onSetComponentChange: (
+    index: number,
+    componentIndex: number,
+    field: keyof SetComponentSelection,
     value: string,
   ) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -158,8 +176,12 @@ export default function ContractForm({
   values,
   errors = {},
   isSubmitting = false,
+  productSelections = {},
+  setComponentSelections = {},
   onChange,
   onProductChange,
+  onProductSelect,
+  onSetComponentChange,
   onSubmit,
 }: ContractFormProps) {
   const isSubmitDisabled = !values.termsAgreed || isSubmitting;
@@ -336,42 +358,71 @@ export default function ContractForm({
               <th>사이즈</th>
               <th>수량</th>
               <th>금액</th>
-              <th>비고</th>
             </tr>
           </thead>
           <tbody>
-            {values.products.map((product, index) => (
-              <tr key={index}>
+            {values.products.map((product, index) => {
+              const selectedProduct = productSelections[index];
+              const hasProductName = product.name.trim().length > 0;
+              const isSet = selectedProduct ? isSetProduct(selectedProduct) : false;
+              const useCatalogDropdowns =
+                index < CATALOG_DROPDOWN_ROW_LIMIT && hasProductName && !isSet;
+              const colorOptions =
+                selectedProduct?.colors && !isSet
+                  ? Object.keys(selectedProduct.colors)
+                  : [];
+              const sizeOptions = isSet ? [] : (selectedProduct?.sizes ?? []);
+
+              return (
+              <Fragment key={index}>
+              <tr>
                 <td className="contract-doc__row-no">{index + 1}</td>
                 <td>
-                  <input
-                    type="text"
+                  <ProductNameAutocomplete
                     value={product.name}
-                    onChange={(event) =>
-                      onProductChange(index, "name", event.target.value)
-                    }
-                    className="contract-doc__cell-input"
+                    onChange={(value) => onProductChange(index, "name", value)}
+                    onSelect={(selected) => onProductSelect(index, selected)}
                   />
                 </td>
                 <td>
-                  <input
-                    type="text"
-                    value={product.color}
-                    onChange={(event) =>
-                      onProductChange(index, "color", event.target.value)
-                    }
-                    className="contract-doc__cell-input"
-                  />
+                  {isSet ? (
+                    <span className="contract-doc__set-option-name">
+                      {product.color || "구성 선택"}
+                    </span>
+                  ) : useCatalogDropdowns && colorOptions.length > 0 ? (
+                    <ProductOptionSelect
+                      value={product.color}
+                      options={colorOptions}
+                      onChange={(value) => onProductChange(index, "color", value)}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={product.color}
+                      onChange={(event) =>
+                        onProductChange(index, "color", event.target.value)
+                      }
+                      className="contract-doc__cell-input"
+                    />
+                  )}
                 </td>
                 <td>
-                  <input
-                    type="text"
-                    value={product.size}
-                    onChange={(event) =>
-                      onProductChange(index, "size", event.target.value)
-                    }
-                    className="contract-doc__cell-input"
-                  />
+                  {isSet ? null : useCatalogDropdowns && sizeOptions.length > 0 ? (
+                    <ProductOptionSelect
+                      value={product.size}
+                      options={sizeOptions}
+                      onChange={(value) => onProductChange(index, "size", value)}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={product.size}
+                      onChange={(event) =>
+                        onProductChange(index, "size", event.target.value)
+                      }
+                      className="contract-doc__cell-input"
+                    />
+                  )}
                 </td>
                 <td>
                   <input
@@ -397,18 +448,23 @@ export default function ContractForm({
                   />
                   <FieldError message={errors[`products.${index}.unitPrice`]} />
                 </td>
-                <td>
-                  <input
-                    type="text"
-                    value={product.remarks}
-                    onChange={(event) =>
-                      onProductChange(index, "remarks", event.target.value)
-                    }
-                    className="contract-doc__cell-input"
-                  />
-                </td>
               </tr>
-            ))}
+              {isSet && selectedProduct?.components ? (
+                <SetProductComponents
+                  rowIndex={index}
+                  components={selectedProduct.components}
+                  selections={
+                    setComponentSelections[index] ??
+                    createSetComponentSelections(selectedProduct.components)
+                  }
+                  onChange={(componentIndex, field, value) =>
+                    onSetComponentChange(index, componentIndex, field, value)
+                  }
+                />
+              ) : null}
+              </Fragment>
+            );
+            })}
           </tbody>
         </table>
       </section>

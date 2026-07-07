@@ -158,6 +158,7 @@
 }
 
 .contract-doc__cell-input,
+.contract-doc__cell-select,
 .contract-doc__inline-input {
   width: 100%;
   min-height: 28px;
@@ -169,14 +170,55 @@
 }
 
 .contract-doc__cell-input:focus,
+.contract-doc__cell-select:focus,
 .contract-doc__inline-input:focus {
   background: #fffef8;
 }
 
 .contract-doc__cell-input:disabled,
+.contract-doc__cell-select:disabled,
 .contract-doc__inline-input:disabled {
   color: #9ca3af;
   background: #f9fafb;
+}
+
+.contract-doc__cell-select {
+  cursor: pointer;
+}
+
+.contract-doc__set-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.contract-doc__set-option-name {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #374151;
+  word-break: break-all;
+}
+
+.contract-doc__set-component-row {
+  background: #fafaf8;
+}
+
+.contract-doc__set-component-row td {
+  border-top: none;
+  padding-top: 0.15rem;
+  padding-bottom: 0.35rem;
+}
+
+.contract-doc__set-component-name {
+  padding-left: 1rem !important;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.contract-doc__set-component-value {
+  display: block;
+  font-size: 0.85rem;
+  color: #111827;
 }
 
 .contract-doc__cell-input--full {
@@ -217,6 +259,60 @@
 
 .contract-doc__address-search-button:hover {
   background: #f9fafb;
+}
+
+.contract-doc__product-autocomplete {
+  position: relative;
+}
+
+.contract-doc__product-suggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0.2rem 0;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #9ca3af;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.contract-doc__product-suggestion {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contract-doc__product-suggestion:hover,
+.contract-doc__product-suggestion--active {
+  background: #f3f4f6;
+}
+
+.contract-doc__product-suggestion-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contract-doc__product-suggestion-meta {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  color: #6b7280;
 }
 
 .contract-doc__inline-input {
