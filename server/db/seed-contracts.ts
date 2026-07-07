@@ -13,7 +13,7 @@ import {
 import { parseContractInput } from "../schemas/contract.schema";
 import { pool } from "./pool";
 
-const COUNT = 20;
+const COUNT = 10;
 const SEED_PHONE_PREFIX = "010-9000";
 const NAMES = [
   "김민지", "이수현", "박지훈", "최유진", "정하은",
@@ -39,52 +39,19 @@ function pad(n: number, size = 2) {
   return String(n).padStart(size, "0");
 }
 
-function pickEvenly<T>(items: T[], count: number, offset = 0): T[] {
-  if (items.length === 0 || count === 0) {
-    return [];
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
   }
 
-  const picked: T[] = [];
-  const step = Math.max(1, Math.floor(items.length / count));
-
-  for (let index = 0; index < count; index += 1) {
-    picked.push(items[(offset + index * step) % items.length]);
-  }
-
-  return picked;
+  return copy;
 }
 
 function pickDiverseProducts(catalog: CatalogProduct[]): CatalogProduct[] {
-  const sets = catalog.filter((product) => product.components?.length);
-  const singles = catalog.filter((product) => !product.components?.length);
-  const byCategory = new Map<string, CatalogProduct[]>();
-
-  for (const product of singles) {
-    const list = byCategory.get(product.category) ?? [];
-    list.push(product);
-    byCategory.set(product.category, list);
-  }
-
-  const picked = [
-    ...pickEvenly(sets, 5, 1),
-    ...pickEvenly(byCategory.get("침구") ?? [], 6, 2),
-    ...pickEvenly(byCategory.get("러그") ?? [], 4, 3),
-    ...pickEvenly(byCategory.get("매트") ?? [], 3, 1),
-    ...pickEvenly(byCategory.get("ACC") ?? [], 2, 0),
-  ];
-
-  const used = new Set(picked.map((product) => product.productCode));
-  const remaining = catalog.filter((product) => !used.has(product.productCode));
-
-  for (const product of remaining) {
-    if (picked.length >= COUNT) {
-      break;
-    }
-    picked.push(product);
-    used.add(product.productCode);
-  }
-
-  return picked.slice(0, COUNT);
+  return shuffle(catalog).slice(0, COUNT);
 }
 
 function buildProductRow(product: CatalogProduct, variant: number): ProductRow {

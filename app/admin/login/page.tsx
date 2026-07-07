@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiClientError, loginAdmin } from "@/lib/api-client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import "../admin.css";
@@ -32,18 +33,22 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="admin-page">
-      <div className="admin-card">
-        <h1 className="admin-card__title">관리자 로그인</h1>
-        <p className="admin-card__description">
-          계약서 관리 페이지에 접근하려면 로그인해주세요.
-        </p>
+    <main className="app-page app-page--center">
+      <div className="app-container app-container--narrow app-panel">
+        <Link href="/" className="app-back-link">
+          ← 홈
+        </Link>
 
-        <form className="admin-form" onSubmit={handleSubmit}>
-          {error ? <p className="admin-form__error">{error}</p> : null}
+        <header className="app-header">
+          <strong className="app-brand">이씨라메종</strong>
+          <h1 className="app-title">관리자 로그인</h1>
+        </header>
 
-          <div className="admin-form__field">
-            <label htmlFor="username" className="admin-form__label">
+        <form className="app-form" onSubmit={handleSubmit}>
+          {error ? <p className="app-alert app-alert--error">{error}</p> : null}
+
+          <div className="app-field">
+            <label htmlFor="username" className="app-label">
               아이디
             </label>
             <input
@@ -53,13 +58,13 @@ export default function AdminLoginPage() {
               autoComplete="username"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              className="admin-form__input"
+              className="app-input"
               required
             />
           </div>
 
-          <div className="admin-form__field">
-            <label htmlFor="password" className="admin-form__label">
+          <div className="app-field">
+            <label htmlFor="password" className="app-label">
               비밀번호
             </label>
             <input
@@ -69,14 +74,14 @@ export default function AdminLoginPage() {
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="admin-form__input"
+              className="app-input"
               required
             />
           </div>
 
           <button
             type="submit"
-            className="admin-form__submit"
+            className="app-button app-button--block"
             disabled={isSubmitting}
           >
             {isSubmitting ? "로그인 중..." : "로그인"}

@@ -118,22 +118,23 @@ export default function AdminContractsPage() {
   }
 
   return (
-    <main className="admin-page admin-page--wide">
-      <div className="admin-container">
-        <Link href="/" className="admin-back-link">
-          ← 뒤로 가기
+    <main className="app-page">
+      <div className="app-container app-container--wide">
+        <Link href="/" className="app-back-link">
+          ← 홈
         </Link>
 
-        <header className="admin-header">
-          <h1 className="admin-header__title">계약서 목록</h1>
-          <p className="admin-header__description">
+        <header className="app-header app-header--page">
+          <strong className="app-brand">이씨라메종</strong>
+          <h1 className="app-title app-title--page">계약서 목록</h1>
+          <p className="app-description">
             접수된 계약서를 조회하고 PlayAuto 주문 엑셀로 내려받을 수 있습니다.
           </p>
         </header>
 
         <form className="admin-filters" onSubmit={handleSearch}>
-          <div className="admin-form__field">
-            <label htmlFor="customerName" className="admin-form__label">
+          <div className="app-field">
+            <label htmlFor="customerName" className="app-label">
               고객명
             </label>
             <input
@@ -146,13 +147,13 @@ export default function AdminContractsPage() {
                   customerName: event.target.value,
                 }))
               }
-              className="admin-form__input"
+              className="app-input"
               placeholder="고객명 검색"
             />
           </div>
 
-          <div className="admin-form__field">
-            <label htmlFor="customerPhone" className="admin-form__label">
+          <div className="app-field">
+            <label htmlFor="customerPhone" className="app-label">
               연락처
             </label>
             <input
@@ -165,13 +166,13 @@ export default function AdminContractsPage() {
                   customerPhone: event.target.value,
                 }))
               }
-              className="admin-form__input"
+              className="app-input"
               placeholder="연락처 검색"
             />
           </div>
 
-          <div className="admin-form__field">
-            <label htmlFor="status" className="admin-form__label">
+          <div className="app-field">
+            <label htmlFor="status" className="app-label">
               상태
             </label>
             <select
@@ -183,7 +184,7 @@ export default function AdminContractsPage() {
                   status: event.target.value,
                 }))
               }
-              className="admin-form__input"
+              className="app-input"
             >
               {CONTRACT_STATUS_OPTIONS.map((option) => (
                 <option key={option.value || "all"} value={option.value}>
@@ -193,8 +194,8 @@ export default function AdminContractsPage() {
             </select>
           </div>
 
-          <div className="admin-form__field">
-            <label htmlFor="dateFrom" className="admin-form__label">
+          <div className="app-field">
+            <label htmlFor="dateFrom" className="app-label">
               시작일
             </label>
             <input
@@ -207,12 +208,12 @@ export default function AdminContractsPage() {
                   dateFrom: event.target.value,
                 }))
               }
-              className="admin-form__input"
+              className="app-input"
             />
           </div>
 
-          <div className="admin-form__field">
-            <label htmlFor="dateTo" className="admin-form__label">
+          <div className="app-field">
+            <label htmlFor="dateTo" className="app-label">
               종료일
             </label>
             <input
@@ -225,17 +226,17 @@ export default function AdminContractsPage() {
                   dateTo: event.target.value,
                 }))
               }
-              className="admin-form__input"
+              className="app-input"
             />
           </div>
 
           <div className="admin-filters__actions">
-            <button type="submit" className="admin-button">
+            <button type="submit" className="app-button">
               검색
             </button>
             <button
               type="button"
-              className="admin-button admin-button--secondary"
+              className="app-button app-button--secondary"
               onClick={handleReset}
             >
               초기화
@@ -249,7 +250,7 @@ export default function AdminContractsPage() {
           </p>
           <button
             type="button"
-            className="admin-button"
+            className="app-button"
             disabled={isDownloading}
             onClick={() => {
               void handleBulkDownload();
@@ -259,13 +260,13 @@ export default function AdminContractsPage() {
           </button>
         </div>
 
-        {error ? <p className="admin-error">{error}</p> : null}
+        {error ? <p className="app-alert app-alert--error">{error}</p> : null}
 
         <div className="admin-table-wrap">
           {isLoading ? (
-            <p className="admin-empty">목록을 불러오는 중...</p>
+            <p className="app-empty">목록을 불러오는 중...</p>
           ) : !data || data.items.length === 0 ? (
-            <p className="admin-empty">조회된 계약서가 없습니다.</p>
+            <p className="app-empty">조회된 계약서가 없습니다.</p>
           ) : (
             <table className="admin-table">
               <thead>
@@ -317,7 +318,7 @@ export default function AdminContractsPage() {
             <div className="admin-filters__actions">
               <button
                 type="button"
-                className="admin-button admin-button--secondary"
+                className="app-button app-button--secondary"
                 disabled={page <= 1}
                 onClick={() => setPage((current) => current - 1)}
               >
@@ -325,7 +326,7 @@ export default function AdminContractsPage() {
               </button>
               <button
                 type="button"
-                className="admin-button admin-button--secondary"
+                className="app-button app-button--secondary"
                 disabled={page >= totalPages}
                 onClick={() => setPage((current) => current + 1)}
               >

@@ -255,10 +255,10 @@ export default function ContractWritePage() {
   }
 
   return (
-    <main className="contract-page">
-      <div className="contract-page__container">
+    <main className="app-page">
+      <div className="app-container app-container--doc app-panel">
         {formError ? (
-          <p className="contract-page__form-error">{formError}</p>
+          <p className="app-alert app-alert--error">{formError}</p>
         ) : null}
 
         <ContractForm

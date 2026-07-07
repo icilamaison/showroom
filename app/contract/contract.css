@@ -1,39 +1,9 @@
-.contract-page {
-  min-height: 100vh;
-  padding: 2rem 1rem;
-  background: #f3f4f6;
-}
-
-.contract-page__container {
-  max-width: 860px;
-  margin: 0 auto;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  padding: 2rem 2.25rem;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-}
-
-.contract-page__form-error {
-  margin: 0 0 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
-  font-size: 0.95rem;
-}
-
 .contract-doc {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  color: #111827;
-  font-family:
-    "Pretendard",
-    "Noto Sans KR",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  color: var(--color-text);
+  font-family: var(--font-sans);
   font-size: 0.92rem;
   line-height: 1.45;
 }
@@ -487,8 +457,8 @@
   width: 100%;
   min-height: 48px;
   padding: 0.875rem 1rem;
-  border: 1px solid #1d4ed8;
-  background: #2563eb;
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
@@ -496,20 +466,51 @@
 }
 
 .contract-doc__submit:disabled {
-  background: #93c5fd;
-  border-color: #93c5fd;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
+.contract-doc--document {
+  gap: 1.25rem;
+}
+
+.contract-doc__readonly-value {
+  display: inline-block;
+  min-height: 28px;
+  line-height: 28px;
+  color: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.contract-doc__readonly-value--center {
+  display: block;
+  text-align: center;
+}
+
+.contract-doc--document .contract-doc__inline-input,
+.contract-doc--document .contract-doc__date-input {
+  border-bottom: 1px solid #111827;
+}
+
+.contract-doc__checkbox--readonly,
+.contract-doc__terms--readonly {
+  cursor: default;
+}
+
+.contract-doc__pdf-capture {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 860px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  padding: 2rem 2.25rem;
+  box-shadow: none;
+  z-index: -1;
+}
+
 @media (max-width: 720px) {
-  .contract-page {
-    padding: 0.75rem 0.5rem;
-  }
-
-  .contract-page__container {
-    padding: 1rem 0.75rem;
-  }
-
   .contract-doc__title {
     font-size: 1.35rem;
   }

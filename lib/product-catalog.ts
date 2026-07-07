@@ -54,6 +54,18 @@ export function isSetProduct(product: CatalogProduct): boolean {
   return Boolean(product.components?.length);
 }
 
+export function findCatalogProductByName(name: string): CatalogProduct | null {
+  const normalized = name.trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  return (
+    catalog.find((product) => product.productName.trim() === normalized) ?? null
+  );
+}
+
 export function formatCatalogPrice(price: number): string {
   return `${price.toLocaleString("ko-KR")}원`;
 }

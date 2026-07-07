@@ -31,3 +31,37 @@ export function formatSetOptionName(
 
   return `COLOR=${options.join(" + ")}`;
 }
+
+export function parseSetColorOptions(color: string): string[] {
+  if (!color.trim().startsWith("COLOR=")) {
+    return [];
+  }
+
+  return color
+    .trim()
+    .slice(6)
+    .split(" + ")
+    .map((option) => option.trim())
+    .filter(Boolean);
+}
+
+export function buildSetSelectionsFromColor(
+  components: SetComponent[],
+  color: string,
+): SetComponentSelection[] {
+  const options = parseSetColorOptions(color);
+
+  return components.map((component, index) => {
+    const option = options[index] ?? "";
+
+    if (component.colors?.length) {
+      return { color: option, size: "" };
+    }
+
+    if (component.sizes?.length) {
+      return { color: "", size: option };
+    }
+
+    return { color: option, size: "" };
+  });
+}

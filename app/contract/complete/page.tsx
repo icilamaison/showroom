@@ -12,86 +12,30 @@ export default async function ContractCompletePage({
   const { contractNumber } = await searchParams;
 
   return (
-    <main style={styles.main}>
-      <div style={styles.container}>
-        <h1 style={styles.title}>제출이 완료되었습니다</h1>
-        <p style={styles.description}>
-          계약서가 정상적으로 접수되었습니다.
-        </p>
+    <main className="app-page app-page--center">
+      <div className="app-container app-container--narrow app-panel">
+        <header className="app-header">
+          <strong className="app-brand">이씨라메종</strong>
+          <h1 className="app-title">제출 완료</h1>
+          <p className="app-description">계약서가 정상적으로 접수되었습니다.</p>
+        </header>
 
         {contractNumber ? (
-          <div style={styles.contractBox}>
-            <p style={styles.contractLabel}>발급된 계약번호</p>
-            <p style={styles.contractNumber}>{contractNumber}</p>
-            <p style={styles.notice}>계약번호를 보관해주세요.</p>
+          <div className="app-complete-box">
+            <p className="app-complete-box__label">발급된 계약번호</p>
+            <p className="app-complete-box__value">{contractNumber}</p>
+            <p className="app-complete-box__note">계약번호를 보관해주세요.</p>
           </div>
         ) : (
-          <p style={styles.warning}>
+          <p className="app-alert app-alert--error">
             계약번호를 확인할 수 없습니다. 고객센터로 문의해주세요.
           </p>
         )}
 
-        <Link href="/contract/write" style={styles.link}>
+        <Link href="/contract/write" className="app-menu__item">
           새 계약서 작성하기
         </Link>
       </div>
     </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  main: {
-    minHeight: "100vh",
-    padding: "2rem 1rem",
-  },
-  container: {
-    maxWidth: "560px",
-    margin: "0 auto",
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "12px",
-    padding: "2rem 1.5rem",
-    textAlign: "center",
-  },
-  title: {
-    margin: "0 0 0.75rem",
-    fontSize: "1.75rem",
-  },
-  description: {
-    margin: "0 0 1.5rem",
-    color: "#4b5563",
-  },
-  contractBox: {
-    padding: "1.25rem",
-    borderRadius: "10px",
-    background: "#f0f9ff",
-    border: "1px solid #bae6fd",
-    marginBottom: "1.5rem",
-  },
-  contractLabel: {
-    margin: "0 0 0.5rem",
-    fontSize: "0.95rem",
-    color: "#0369a1",
-    fontWeight: 600,
-  },
-  contractNumber: {
-    margin: "0 0 0.75rem",
-    fontSize: "1.5rem",
-    fontWeight: 700,
-    letterSpacing: "0.02em",
-  },
-  notice: {
-    margin: 0,
-    color: "#0f172a",
-    fontSize: "0.95rem",
-  },
-  warning: {
-    margin: "0 0 1.5rem",
-    color: "#b45309",
-  },
-  link: {
-    display: "inline-block",
-    textDecoration: "none",
-    fontWeight: 600,
-  },
-};

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./ui.css";
 
 export const metadata: Metadata = {
   title: "계약서 작성 시스템",

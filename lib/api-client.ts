@@ -297,7 +297,7 @@ function triggerFileDownload(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-async function downloadAdminExcelFile(
+async function downloadAdminFile(
   url: string,
   fallbackFilename: string,
 ): Promise<void> {
@@ -311,7 +311,7 @@ async function downloadAdminExcelFile(
       | null;
 
     throw new ApiClientError(
-      body?.message || "엑셀 다운로드에 실패했습니다.",
+      body?.message || "파일 다운로드에 실패했습니다.",
       response.status,
       body?.errors,
     );
@@ -324,6 +324,13 @@ async function downloadAdminExcelFile(
   );
 
   triggerFileDownload(blob, filename);
+}
+
+async function downloadAdminExcelFile(
+  url: string,
+  fallbackFilename: string,
+): Promise<void> {
+  return downloadAdminFile(url, fallbackFilename);
 }
 
 export async function downloadAdminOrderExcel(id: number): Promise<void> {
