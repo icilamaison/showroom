@@ -3,6 +3,7 @@
 import {
   ApiClientError,
   fetchAdminContractById,
+  getAdminOrderExcelDownloadUrl,
   updateAdminContractStatus,
   type ContractDetail,
 } from "@/lib/api-client";
@@ -354,6 +355,25 @@ export default function AdminContractDetailPage() {
                 </section>
               ) : null}
             </div>
+
+            {purchasePayload ? (
+              <section className="admin-detail-card">
+                <h2 className="admin-detail-card__title">PlayAuto 주문 엑셀</h2>
+                <p className="admin-header__description">
+                  고객이 입력한 정보를 PlayAuto 신규주문 업로드 양식으로
+                  내려받을 수 있습니다.
+                </p>
+                <div className="admin-detail-actions">
+                  <a
+                    href={getAdminOrderExcelDownloadUrl(contract.id)}
+                    className="admin-button"
+                    download
+                  >
+                    주문 엑셀 다운로드
+                  </a>
+                </div>
+              </section>
+            ) : null}
 
             <section className="admin-detail-card">
               <h2 className="admin-detail-card__title">상태 변경</h2>

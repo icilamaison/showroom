@@ -221,3 +221,7 @@ export async function updateAdminContractStatus(
     },
   );
 }
+
+export function getAdminOrderExcelDownloadUrl(id: number): string {
+  return `/api/admin/contracts/${id}/order-excel`;
+}

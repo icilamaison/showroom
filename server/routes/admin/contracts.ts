@@ -6,6 +6,11 @@ import {
   listContracts,
   updateContractStatus,
 } from "../../services/admin-contract.service";
+import {
+  buildOrderExcelFilename,
+  generateOrderExcelBuffer,
+  OrderExcelGenerationError,
+} from "../../services/order-excel.service";
 
 const contractsRouter = Router();
 
@@ -32,6 +37,43 @@ contractsRouter.get("/", async (req, res) => {
     return sendSuccess(res, result);
   } catch (error) {
     console.error("[admin/contracts] Failed to list contracts:", error);
+    return sendError(res, "서버 오류가 발생했습니다.", 500);
+  }
+});
+
+contractsRouter.get("/:id/order-excel", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
+  }
+
+  try {
+    const contract = await getContractById(id);
+
+    if (!contract) {
+      return sendError(res, "계약서를 찾을 수 없습니다.", 404);
+    }
+
+    const buffer = await generateOrderExcelBuffer(contract);
+    const filename = buildOrderExcelFilename(contract.contractNumber);
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(filename)}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    );
+
+    return res.send(buffer);
+  } catch (error) {
+    if (error instanceof OrderExcelGenerationError) {
+      return sendError(res, error.message, 400);
+    }
+
+    console.error("[admin/contracts] Failed to generate order excel:", error);
     return sendError(res, "서버 오류가 발생했습니다.", 500);
   }
 });

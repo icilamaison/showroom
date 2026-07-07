@@ -281,4 +281,33 @@ describe("Admin API", () => {
       expect(response.body.success).toBe(false);
     });
   });
+
+  describe("GET /api/admin/contracts/:id/order-excel", () => {
+    it("returns an Excel file for purchase contract payloads", async () => {
+      const created = await createTestContract("2008", "엑셀다운");
+
+      const idResult = await pool.query<{ id: number }>(
+        "SELECT id FROM contracts WHERE contract_number = $1",
+        [created.contractNumber],
+      );
+      const contractId = idResult.rows[0].id;
+
+      const agent = await loginAgent();
+      const response = await agent
+        .get(`/api/admin/contracts/${contractId}/order-excel`)
+        .expect(200);
+
+      expect(response.headers["content-type"]).toContain(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+      expect(response.headers["content-disposition"]).toContain(
+        "playauto_order_",
+      );
+      expect(response.body.length).toBeGreaterThan(0);
+    });
+
+    it("returns 401 without admin authentication", async () => {
+      await request(app).get("/api/admin/contracts/1/order-excel").expect(401);
+    });
+  });
 });
