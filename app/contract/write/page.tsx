@@ -10,6 +10,7 @@ import {
 import { formatPhoneInput, PHONE_FORM_FIELDS } from "@/lib/phone";
 import type { ContractFormValues, ProductRow } from "@/lib/validation/contract";
 import { validateContractForm } from "@/lib/validation/contract";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import "../contract.css";
@@ -135,9 +136,10 @@ export default function ContractWritePage() {
       return;
     }
 
+    const components = selectedProduct.components;
     const nextSelections = [
       ...(setComponentSelections[index] ??
-        createSetComponentSelections(selectedProduct.components)),
+        createSetComponentSelections(components)),
     ];
     nextSelections[componentIndex] = {
       ...nextSelections[componentIndex],
@@ -155,10 +157,7 @@ export default function ContractWritePage() {
         productIndex === index
           ? {
               ...row,
-              color: formatSetOptionName(
-                selectedProduct.components,
-                nextSelections,
-              ),
+              color: formatSetOptionName(components, nextSelections),
             }
           : row,
       ),
@@ -256,23 +255,29 @@ export default function ContractWritePage() {
 
   return (
     <main className="app-page">
-      <div className="app-container app-container--doc app-panel">
-        {formError ? (
-          <p className="app-alert app-alert--error">{formError}</p>
-        ) : null}
+      <div className="app-container app-container--doc">
+        <Link href="/" className="app-back-link">
+          ← 뒤로 가기
+        </Link>
 
-        <ContractForm
-          values={values}
-          errors={errors}
-          isSubmitting={isSubmitting}
-          productSelections={productSelections}
-          setComponentSelections={setComponentSelections}
-          onChange={handleChange}
-          onProductChange={handleProductChange}
-          onProductSelect={handleProductSelect}
-          onSetComponentChange={handleSetComponentChange}
-          onSubmit={handleSubmit}
-        />
+        <div className="app-panel">
+          {formError ? (
+            <p className="app-alert app-alert--error">{formError}</p>
+          ) : null}
+
+          <ContractForm
+            values={values}
+            errors={errors}
+            isSubmitting={isSubmitting}
+            productSelections={productSelections}
+            setComponentSelections={setComponentSelections}
+            onChange={handleChange}
+            onProductChange={handleProductChange}
+            onProductSelect={handleProductSelect}
+            onSetComponentChange={handleSetComponentChange}
+            onSubmit={handleSubmit}
+          />
+        </div>
       </div>
     </main>
   );

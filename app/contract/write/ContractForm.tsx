@@ -1,5 +1,6 @@
 "use client";
 
+import NextImage from "next/image";
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
   createEmptyProductRows,
@@ -589,19 +590,25 @@ export default function ContractForm({
                   <FieldError message={errors[`products.${index}.unitPrice`]} />
                 </td>
               </tr>
-              {isSet && selectedProduct?.components ? (
-                <SetProductComponents
-                  rowIndex={index}
-                  components={selectedProduct.components}
-                  selections={
-                    setComponentSelections[index] ??
-                    createSetComponentSelections(selectedProduct.components)
-                  }
-                  onChange={(componentIndex, field, value) =>
-                    onSetComponentChange(index, componentIndex, field, value)
-                  }
-                />
-              ) : null}
+              {isSet && selectedProduct?.components
+                ? (() => {
+                    const components = selectedProduct.components;
+
+                    return (
+                      <SetProductComponents
+                        rowIndex={index}
+                        components={components}
+                        selections={
+                          setComponentSelections[index] ??
+                          createSetComponentSelections(components)
+                        }
+                        onChange={(componentIndex, field, value) =>
+                          onSetComponentChange(index, componentIndex, field, value)
+                        }
+                      />
+                    );
+                  })()
+                : null}
               </Fragment>
             );
             })}
@@ -788,10 +795,13 @@ export default function ContractForm({
               >
                 <span className="contract-doc__signature-stamp-wrap">
                   {values.signatureDataUrl ? (
-                    <img
+                    <NextImage
                       src={values.signatureDataUrl}
                       alt="입력된 서명"
                       className="contract-doc__signature-stamp-image"
+                      width={82}
+                      height={30}
+                      unoptimized
                     />
                   ) : null}
                   <span className="contract-doc__signature-stamp-text">(인)</span>

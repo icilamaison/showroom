@@ -137,6 +137,7 @@ function buildContractFormValues(
     agreementDateMonth: "7",
     agreementDateDay: String(no),
     signatureName: buyerName,
+    signatureDataUrl: "data:image/png;base64,seed-signature",
     termsAgreed: true as const,
     writtenDate,
     agreementDate: writtenDate,
