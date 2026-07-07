@@ -3,6 +3,8 @@ import { z } from "zod";
 const phoneRegex = /^010-\d{4}-\d{4}$/;
 const businessNumberRegex = /^\d{3}-\d{2}-\d{5}$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const postalCodeRegex = /^\d{5}$/;
+const amountRegex = /^\d+$/;
 
 export const PRODUCT_ROW_COUNT = 10;
 
@@ -11,6 +13,7 @@ export type ProductRow = {
   color: string;
   size: string;
   quantity: string;
+  unitPrice: string;
   remarks: string;
 };
 
@@ -20,6 +23,7 @@ export function createEmptyProductRow(): ProductRow {
     color: "",
     size: "",
     quantity: "",
+    unitPrice: "",
     remarks: "",
   };
 }
@@ -38,7 +42,9 @@ export type ContractFormValues = {
   recipientSameAsBuyer: boolean | null;
   recipientName: string;
   recipientPhone: string;
+  recipientPostalCode: string;
   recipientAddress: string;
+  recipientAddressDetail: string;
   products: ProductRow[];
   paymentMethod: "card" | "bank_transfer" | "";
   cashReceiptType: "income_deduction" | "expense_proof" | "";
@@ -71,6 +77,7 @@ const productRowSchema = z.object({
   color: z.string().trim(),
   size: z.string().trim(),
   quantity: z.string().trim(),
+  unitPrice: z.string().trim(),
   remarks: z.string().trim(),
 });
 
@@ -108,7 +115,9 @@ const contractFormSchema = z
     }),
     recipientName: z.string().trim().max(50, "수령자 성명은 50자 이하로 입력해주세요."),
     recipientPhone: z.string().trim(),
+    recipientPostalCode: z.string().trim(),
     recipientAddress: z.string().trim(),
+    recipientAddressDetail: z.string().trim(),
     products: z.array(productRowSchema).length(PRODUCT_ROW_COUNT),
     paymentMethod: z.enum(["card", "bank_transfer"], {
       errorMap: () => ({ message: "결제수단을 선택해주세요." }),
@@ -177,13 +186,30 @@ const contractFormSchema = z
         });
       }
 
-      if (!data.recipientAddress.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["recipientAddress"],
-          message: "배송지 주소를 입력해주세요.",
-        });
-      }
+    }
+
+    if (!postalCodeRegex.test(data.recipientPostalCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["recipientPostalCode"],
+        message: "우편번호는 주소 검색으로 입력해주세요.",
+      });
+    }
+
+    if (!data.recipientAddress.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["recipientAddress"],
+        message: "주소 검색을 이용해주세요.",
+      });
+    }
+
+    if (!data.recipientAddressDetail.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["recipientAddressDetail"],
+        message: "상세주소를 입력해주세요.",
+      });
     }
 
     const filledProducts = data.products.filter((product) => product.name.trim());
@@ -212,6 +238,20 @@ const contractFormSchema = z
           code: z.ZodIssueCode.custom,
           path: ["products", index, "quantity"],
           message: "수량은 1 이상의 숫자로 입력해주세요.",
+        });
+      }
+
+      if (!product.unitPrice.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["products", index, "unitPrice"],
+          message: "금액을 입력해주세요.",
+        });
+      } else if (!amountRegex.test(product.unitPrice) || Number(product.unitPrice) < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["products", index, "unitPrice"],
+          message: "금액은 1 이상의 숫자로 입력해주세요.",
         });
       }
     }

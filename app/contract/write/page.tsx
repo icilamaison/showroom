@@ -39,7 +39,6 @@ export default function ContractWritePage() {
       if (field === "recipientSameAsBuyer" && value === true) {
         next.recipientName = "";
         next.recipientPhone = "";
-        next.recipientAddress = "";
       }
 
       if (field === "paymentMethod" && value === "card") {

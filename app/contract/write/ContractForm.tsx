@@ -5,6 +5,7 @@ import {
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
+import AddressSearchFields from "./AddressSearchFields";
 import "./../contract.css";
 
 export const emptyContractFormValues: ContractFormValues = {
@@ -17,7 +18,9 @@ export const emptyContractFormValues: ContractFormValues = {
   recipientSameAsBuyer: null,
   recipientName: "",
   recipientPhone: "",
+  recipientPostalCode: "",
   recipientAddress: "",
+  recipientAddressDetail: "",
   products: createEmptyProductRows(),
   paymentMethod: "",
   cashReceiptType: "",
@@ -161,7 +164,14 @@ export default function ContractForm({
 }: ContractFormProps) {
   const isSubmitDisabled = !values.termsAgreed || isSubmitting;
   const showBankTransferFields = values.paymentMethod === "bank_transfer";
-  const recipientDisabled = values.recipientSameAsBuyer === true;
+  const recipientNameDisabled = values.recipientSameAsBuyer === true;
+  const recipientPhoneDisabled = values.recipientSameAsBuyer === true;
+  const displayedRecipientName = recipientNameDisabled
+    ? values.buyerName
+    : values.recipientName;
+  const displayedRecipientPhone = recipientPhoneDisabled
+    ? values.buyerPhone
+    : values.recipientPhone;
 
   return (
     <form onSubmit={onSubmit} className="contract-doc" noValidate>
@@ -260,12 +270,13 @@ export default function ContractForm({
               <td>
                 <input
                   type="text"
-                  value={values.recipientName}
+                  value={displayedRecipientName}
                   onChange={(event) =>
                     onChange("recipientName", event.target.value)
                   }
                   className="contract-doc__cell-input"
-                  disabled={recipientDisabled}
+                  disabled={recipientNameDisabled}
+                  readOnly={recipientNameDisabled}
                 />
                 <FieldError message={errors.recipientName} />
               </td>
@@ -274,32 +285,41 @@ export default function ContractForm({
                 <input
                   type="tel"
                   inputMode="tel"
-                  value={values.recipientPhone}
+                  value={displayedRecipientPhone}
                   onChange={(event) =>
                     onChange("recipientPhone", event.target.value)
                   }
                   className="contract-doc__cell-input"
-                  disabled={recipientDisabled}
+                  disabled={recipientPhoneDisabled}
+                  readOnly={recipientPhoneDisabled}
                   placeholder="010-0000-0000"
                 />
                 <FieldError message={errors.recipientPhone} />
               </td>
             </tr>
-            <tr>
-              <th scope="row">배송지 주소</th>
-              <td colSpan={3}>
-                <input
-                  type="text"
-                  value={values.recipientAddress}
-                  onChange={(event) =>
-                    onChange("recipientAddress", event.target.value)
-                  }
-                  className="contract-doc__cell-input contract-doc__cell-input--full"
-                  disabled={recipientDisabled}
-                />
-                <FieldError message={errors.recipientAddress} />
-              </td>
-            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="contract-doc__section">
+        <h2 className="contract-doc__section-title">배송지 정보</h2>
+        <table className="contract-doc__table">
+          <tbody>
+            <AddressSearchFields
+              postalCode={values.recipientPostalCode}
+              address={values.recipientAddress}
+              addressDetail={values.recipientAddressDetail}
+              postalCodeError={errors.recipientPostalCode}
+              addressError={errors.recipientAddress}
+              addressDetailError={errors.recipientAddressDetail}
+              onPostalCodeChange={(value) =>
+                onChange("recipientPostalCode", value)
+              }
+              onAddressChange={(value) => onChange("recipientAddress", value)}
+              onAddressDetailChange={(value) =>
+                onChange("recipientAddressDetail", value)
+              }
+            />
           </tbody>
         </table>
       </section>
@@ -315,6 +335,7 @@ export default function ContractForm({
               <th>컬러</th>
               <th>사이즈</th>
               <th>수량</th>
+              <th>금액</th>
               <th>비고</th>
             </tr>
           </thead>
@@ -363,6 +384,18 @@ export default function ContractForm({
                     className="contract-doc__cell-input contract-doc__cell-input--qty"
                   />
                   <FieldError message={errors[`products.${index}.quantity`]} />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={product.unitPrice}
+                    onChange={(event) =>
+                      onProductChange(index, "unitPrice", event.target.value)
+                    }
+                    className="contract-doc__cell-input contract-doc__cell-input--qty"
+                  />
+                  <FieldError message={errors[`products.${index}.unitPrice`]} />
                 </td>
                 <td>
                   <input

@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import path from "node:path";
 import {
   buildOrderExcelRows,
+  findMissingOrderExcelRequiredFields,
   isPurchaseContractPayload,
   ORDER_EXCEL_HEADERS,
 } from "../../lib/order-excel";
@@ -35,6 +36,14 @@ export async function generateOrderExcelBuffer(
   if (rows.length === 0) {
     throw new OrderExcelGenerationError(
       "엑셀로 변환할 상품 정보가 없습니다.",
+    );
+  }
+
+  const missingFields = findMissingOrderExcelRequiredFields(rows);
+
+  if (missingFields.length > 0) {
+    throw new OrderExcelGenerationError(
+      `PlayAuto 필수 항목이 비어 있습니다: ${missingFields.join(", ")}`,
     );
   }
 

@@ -23,13 +23,16 @@ const contractPayload = {
   recipientSameAsBuyer: true,
   recipientName: "",
   recipientPhone: "",
-  recipientAddress: "",
+  recipientPostalCode: "06234",
+  recipientAddress: "서울시 강남구 테헤란로 1",
+  recipientAddressDetail: "101동 1001호",
   products: createEmptyProductRows().map((product, index) =>
     index === 0
       ? {
           ...product,
           name: "테스트 상품",
           quantity: "1",
+          unitPrice: "10000",
         }
       : product,
   ),
@@ -205,9 +208,9 @@ describe("Admin API", () => {
         contractNumber: created.contractNumber,
         customerName: "상세조회",
         customerPhone: "010-8888-2005",
-        customerAddress: "구매자와 동일",
+        customerAddress: "서울시 강남구 테헤란로 1 101동 1001호",
         productName: "테스트 상품",
-        contractAmount: 0,
+        contractAmount: 10000,
         contractStartDate: "2026-07-01",
         contractEndDate: "2026-07-01",
         termsAgreed: true,

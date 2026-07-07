@@ -12,7 +12,9 @@ const validInput = {
   recipientSameAsBuyer: true,
   recipientName: "",
   recipientPhone: "",
-  recipientAddress: "",
+  recipientPostalCode: "06234",
+  recipientAddress: "서울시 강남구 테헤란로 1",
+  recipientAddressDetail: "101동 1001호",
   products: createEmptyProductRows().map((product, index) =>
     index === 0
       ? {
@@ -21,6 +23,7 @@ const validInput = {
           color: "아이보리",
           size: "Q",
           quantity: "1",
+          unitPrice: "150000",
           remarks: "",
         }
       : product,
@@ -85,11 +88,13 @@ describe("parseContractInput", () => {
       ...validInput,
       recipientSameAsBuyer: false,
       recipientAddress: "",
+      recipientAddressDetail: "",
     });
 
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.errors.recipientAddress).toBeDefined();
+      expect(result.errors.recipientAddressDetail).toBeDefined();
     }
   });
 

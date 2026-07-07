@@ -1,4 +1,5 @@
 import type { ProductRow, PurchaseContractPayload } from "./validation/contract";
+import { formatFullAddress } from "./address";
 
 export const ORDER_EXCEL_HEADERS = [
   "쇼핑몰주문번호",
@@ -40,6 +41,19 @@ export const ORDER_EXCEL_HEADERS = [
   "결제통화",
 ] as const;
 
+export const ORDER_EXCEL_REQUIRED_FIELDS = [
+  "쇼핑몰주문번호",
+  "주문자명",
+  "주문자휴대폰번호",
+  "수령자명",
+  "수령자휴대폰번호",
+  "우편번호",
+  "주소",
+  "온라인 상품명",
+  "주문수량",
+  "금액",
+] as const satisfies ReadonlyArray<(typeof ORDER_EXCEL_HEADERS)[number]>;
+
 export type OrderExcelRow = Record<(typeof ORDER_EXCEL_HEADERS)[number], string>;
 
 export function isPurchaseContractPayload(
@@ -74,24 +88,23 @@ function resolveRecipientPhone(payload: PurchaseContractPayload): string {
   return payload.recipientPhone.trim();
 }
 
-function resolveRecipientAddress(payload: PurchaseContractPayload): string {
-  if (payload.recipientSameAsBuyer) {
-    return "";
-  }
-
-  return payload.recipientAddress.trim();
-}
-
 function createEmptyOrderExcelRow(): OrderExcelRow {
   return Object.fromEntries(
     ORDER_EXCEL_HEADERS.map((header) => [header, ""]),
   ) as OrderExcelRow;
 }
 
+function buildLineAmount(product: ProductRow): string {
+  return product.unitPrice.trim();
+}
+
 function buildSharedOrderFields(
   payload: PurchaseContractPayload,
   contractNumber: string,
-): Omit<OrderExcelRow, "온라인 상품명" | "옵션명" | "주문수량" | "배송메세지"> {
+): Omit<
+  OrderExcelRow,
+  "온라인 상품명" | "옵션명" | "주문수량" | "금액" | "배송메세지"
+> {
   const row = createEmptyOrderExcelRow();
 
   row["쇼핑몰주문번호"] = "auto";
@@ -100,7 +113,11 @@ function buildSharedOrderFields(
   row["주문자휴대폰번호"] = payload.buyerPhone;
   row["수령자명"] = resolveRecipientName(payload);
   row["수령자휴대폰번호"] = resolveRecipientPhone(payload);
-  row["주소"] = resolveRecipientAddress(payload);
+  row["우편번호"] = payload.recipientPostalCode.trim();
+  row["주소"] = formatFullAddress(
+    payload.recipientAddress,
+    payload.recipientAddressDetail,
+  );
   row["주문일"] = payload.writtenDate;
   row["결제완료일"] = payload.agreementDate;
   row["국가코드"] = "KR";
@@ -121,6 +138,23 @@ export function buildOrderExcelRows(
       "온라인 상품명": product.name.trim(),
       "옵션명": buildOptionName(product),
       "주문수량": product.quantity.trim(),
+      "금액": buildLineAmount(product),
       "배송메세지": product.remarks.trim(),
     }));
+}
+
+export function findMissingOrderExcelRequiredFields(
+  rows: OrderExcelRow[],
+): string[] {
+  const missing = new Set<string>();
+
+  for (const row of rows) {
+    for (const field of ORDER_EXCEL_REQUIRED_FIELDS) {
+      if (!row[field]?.trim()) {
+        missing.add(field);
+      }
+    }
+  }
+
+  return [...missing];
 }

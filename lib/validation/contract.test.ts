@@ -15,7 +15,9 @@ const validFormValues: ContractFormValues = {
   recipientSameAsBuyer: true,
   recipientName: "",
   recipientPhone: "",
-  recipientAddress: "",
+  recipientPostalCode: "06234",
+  recipientAddress: "서울시 강남구 테헤란로 1",
+  recipientAddressDetail: "101동 1001호",
   products: createEmptyProductRows().map((product, index) =>
     index === 0
       ? {
@@ -24,6 +26,7 @@ const validFormValues: ContractFormValues = {
           color: "아이보리",
           size: "Q",
           quantity: "1",
+          unitPrice: "150000",
           remarks: "",
         }
       : product,
@@ -87,13 +90,16 @@ describe("validateContractForm", () => {
       recipientSameAsBuyer: false,
       recipientName: "",
       recipientPhone: "",
+      recipientPostalCode: "",
       recipientAddress: "",
+      recipientAddressDetail: "",
     });
 
     expect(result.valid).toBe(false);
     if (!result.valid) {
       expect(result.errors.recipientName).toBeDefined();
       expect(result.errors.recipientAddress).toBeDefined();
+      expect(result.errors.recipientAddressDetail).toBeDefined();
     }
   });
 

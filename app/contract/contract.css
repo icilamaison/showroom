@@ -187,6 +187,38 @@
   text-align: center;
 }
 
+.contract-doc__cell-input--postal {
+  width: 7rem;
+  flex: 0 0 auto;
+  text-align: center;
+  background: #f9fafb;
+}
+
+.contract-doc__cell-input--readonly {
+  background: #f9fafb;
+}
+
+.contract-doc__address-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contract-doc__address-search-button {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 0 0.75rem;
+  border: 1px solid #9ca3af;
+  background: #fff;
+  color: #111827;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.contract-doc__address-search-button:hover {
+  background: #f9fafb;
+}
+
 .contract-doc__inline-input {
   display: inline-block;
   width: auto;

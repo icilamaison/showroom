@@ -11,6 +11,7 @@ import {
   CONTRACT_STATUSES,
   getContractStatusLabel,
 } from "@/lib/constants/contract-status";
+import { formatFullAddress } from "@/lib/address";
 import type { PurchaseContractPayload } from "@/lib/validation/contract";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -102,12 +103,27 @@ function PurchaseContractDetails({ payload }: { payload: PurchaseContractPayload
               label="수령자 연락처"
               value={payload.recipientPhone || "-"}
             />
-            <DetailItem
-              label="배송지 주소"
-              value={payload.recipientAddress || "-"}
-            />
           </>
         ) : null}
+        <DetailItem
+          label="우편번호"
+          value={payload.recipientPostalCode || "-"}
+        />
+        <DetailItem
+          label="기본주소"
+          value={payload.recipientAddress || "-"}
+        />
+        <DetailItem
+          label="상세주소"
+          value={payload.recipientAddressDetail || "-"}
+        />
+        <DetailItem
+          label="배송지 전체"
+          value={formatFullAddress(
+            payload.recipientAddress || "",
+            payload.recipientAddressDetail || "",
+          ) || "-"}
+        />
       </section>
 
       <section className="admin-detail-card">
@@ -119,7 +135,7 @@ function PurchaseContractDetails({ payload }: { payload: PurchaseContractPayload
             <DetailItem
               key={`${product.name}-${index}`}
               label={`상품 ${index + 1}`}
-              value={`${product.name} / ${product.color || "-"} / ${product.size || "-"} / 수량 ${product.quantity}${product.remarks ? ` / ${product.remarks}` : ""}`}
+              value={`${product.name} / ${product.color || "-"} / ${product.size || "-"} / 수량 ${product.quantity} / 금액 ${product.unitPrice ? `${Number(product.unitPrice).toLocaleString("ko-KR")}원` : "-"}${product.remarks ? ` / ${product.remarks}` : ""}`}
             />
           ))
         )}
