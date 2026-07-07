@@ -38,6 +38,7 @@ const validInput = {
   agreementDateMonth: "6",
   agreementDateDay: "24",
   signatureName: "홍길동",
+  signatureDataUrl: "data:image/png;base64,test",
   termsAgreed: true,
 };
 
@@ -52,6 +53,7 @@ describe("parseContractInput", () => {
       expect(result.data.productName).toBe("프리미엄 침구 세트");
       expect(result.data.termsAgreed).toBe(true);
       expect(result.data.writtenDate).toBe("2026-06-24");
+      expect(result.data.signatureDataUrl).toBe("data:image/png;base64,test");
     }
   });
 
@@ -83,6 +85,18 @@ describe("parseContractInput", () => {
     }
   });
 
+  it("rejects missing drawn signature", () => {
+    const result = parseContractInput({
+      ...validInput,
+      signatureDataUrl: "",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.signatureDataUrl).toBe("서명을 입력해주세요.");
+    }
+  });
+
   it("rejects when recipient details are missing", () => {
     const result = parseContractInput({
       ...validInput,
@@ -94,7 +108,18 @@ describe("parseContractInput", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.errors.recipientAddress).toBeDefined();
-      expect(result.errors.recipientAddressDetail).toBeDefined();
+    }
+  });
+
+  it("accepts empty recipient address detail", () => {
+    const result = parseContractInput({
+      ...validInput,
+      recipientAddressDetail: "",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.recipientAddressDetail).toBe("");
     }
   });
 

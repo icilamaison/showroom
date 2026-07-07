@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   createEmptyProductRows,
   type ContractFormValues,
@@ -41,6 +41,7 @@ export const emptyContractFormValues: ContractFormValues = {
   agreementDateMonth: "",
   agreementDateDay: "",
   signatureName: "",
+  signatureDataUrl: "",
   termsAgreed: false,
 };
 
@@ -172,6 +173,121 @@ function DocCheckbox({
   );
 }
 
+function SignaturePad({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (value: string) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return;
+    }
+
+    const ratio = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    canvas.width = Math.floor(width * ratio);
+    canvas.height = Math.floor(height * ratio);
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.lineWidth = 3;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = "#030712";
+    context.clearRect(0, 0, width, height);
+
+    if (!value) {
+      return;
+    }
+
+    const image = new Image();
+    image.onload = () => {
+      context.drawImage(image, 0, 0, width, height);
+    };
+    image.src = value;
+  }, [value]);
+
+  function getPoint(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return null;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  }
+
+  function startDrawing(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    const point = getPoint(event);
+    if (!canvas || !context || !point) {
+      return;
+    }
+
+    drawingRef.current = true;
+    canvas.setPointerCapture(event.pointerId);
+    context.beginPath();
+    context.moveTo(point.x, point.y);
+  }
+
+  function draw(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!drawingRef.current) {
+      return;
+    }
+
+    const context = canvasRef.current?.getContext("2d");
+    const point = getPoint(event);
+    if (!context || !point) {
+      return;
+    }
+
+    context.lineTo(point.x, point.y);
+    context.stroke();
+  }
+
+  function endDrawing() {
+    if (!drawingRef.current) {
+      return;
+    }
+
+    drawingRef.current = false;
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+    onChange(canvas.toDataURL("image/png"));
+  }
+
+  return (
+    <div className="contract-doc__signature-pad-wrap">
+      <canvas
+        ref={canvasRef}
+        className="contract-doc__signature-pad"
+        onPointerDown={startDrawing}
+        onPointerMove={draw}
+        onPointerUp={endDrawing}
+        onPointerLeave={endDrawing}
+        style={{ touchAction: "none" }}
+        aria-label="구매자 전자서명"
+      />
+    </div>
+  );
+}
+
 export default function ContractForm({
   values,
   errors = {},
@@ -194,6 +310,23 @@ export default function ContractForm({
   const displayedRecipientPhone = recipientPhoneDisabled
     ? values.buyerPhone
     : values.recipientPhone;
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [draftSignature, setDraftSignature] = useState(values.signatureDataUrl || "");
+
+  function openSignatureModal() {
+    setDraftSignature(values.signatureDataUrl || "");
+    setIsSignatureModalOpen(true);
+  }
+
+  function closeSignatureModal() {
+    setIsSignatureModalOpen(false);
+  }
+
+  function saveSignature() {
+    onChange("signatureDataUrl", draftSignature);
+    onChange("signatureName", values.buyerName.trim());
+    closeSignatureModal();
+  }
 
   return (
     <form onSubmit={onSubmit} className="contract-doc" noValidate>
@@ -242,7 +375,11 @@ export default function ContractForm({
                 <input
                   type="text"
                   value={values.buyerName}
-                  onChange={(event) => onChange("buyerName", event.target.value)}
+                  onChange={(event) => {
+                    const nextBuyerName = event.target.value;
+                    onChange("buyerName", nextBuyerName);
+                    onChange("signatureName", nextBuyerName);
+                  }}
                   className="contract-doc__cell-input"
                 />
                 <FieldError message={errors.buyerName} />
@@ -634,18 +771,29 @@ export default function ContractForm({
             />
             <label className="contract-doc__signature">
               <span>구매자 :</span>
-              <input
-                type="text"
-                value={values.signatureName}
-                onChange={(event) =>
-                  onChange("signatureName", event.target.value)
-                }
-                className="contract-doc__inline-input contract-doc__inline-input--signature"
-              />
-              <span>(인)</span>
+              <span className="contract-doc__signature-buyer-name">
+                {values.buyerName || values.signatureName}
+              </span>
+              <button
+                type="button"
+                onClick={openSignatureModal}
+                className="contract-doc__signature-trigger"
+                aria-label="서명 패드 열기"
+              >
+                <span className="contract-doc__signature-stamp-wrap">
+                  {values.signatureDataUrl ? (
+                    <img
+                      src={values.signatureDataUrl}
+                      alt="입력된 서명"
+                      className="contract-doc__signature-stamp-image"
+                    />
+                  ) : null}
+                  <span className="contract-doc__signature-stamp-text">(인)</span>
+                </span>
+              </button>
             </label>
           </div>
-          <FieldError message={errors.signatureName} />
+          <FieldError message={errors.signatureName || errors.signatureDataUrl} />
         </div>
 
         <label className="contract-doc__terms">
@@ -682,6 +830,37 @@ export default function ContractForm({
       >
         {isSubmitting ? "제출 중..." : "계약서 제출"}
       </button>
+      {isSignatureModalOpen ? (
+        <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="contract-doc__signature-modal">
+            <p className="contract-doc__signature-modal-title">서명을 입력해주세요.</p>
+            <SignaturePad value={draftSignature} onChange={setDraftSignature} />
+            <div className="contract-doc__signature-modal-actions">
+              <button
+                type="button"
+                onClick={() => setDraftSignature("")}
+                className="contract-doc__signature-clear"
+              >
+                지우기
+              </button>
+              <button
+                type="button"
+                onClick={closeSignatureModal}
+                className="contract-doc__signature-cancel"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={saveSignature}
+                className="contract-doc__signature-save"
+              >
+                적용
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }

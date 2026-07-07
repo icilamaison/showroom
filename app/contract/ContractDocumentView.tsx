@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
+import Image from "next/image";
 import {
   findCatalogProductByName,
   isSetProduct,
@@ -249,30 +250,24 @@ export default function ContractDocumentView({
         <table className="contract-doc__table">
           <tbody>
             <tr>
-              <th scope="row">우편번호</th>
+              <th scope="row">배송지 주소</th>
               <td colSpan={3}>
-                <ReadonlyValue
-                  value={values.recipientPostalCode}
-                  className="contract-doc__cell-input contract-doc__cell-input--postal"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">기본주소</th>
-              <td colSpan={3}>
-                <ReadonlyValue
-                  value={values.recipientAddress}
-                  className="contract-doc__cell-input contract-doc__cell-input--full"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">상세주소</th>
-              <td colSpan={3}>
-                <ReadonlyValue
-                  value={values.recipientAddressDetail}
-                  className="contract-doc__cell-input contract-doc__cell-input--full"
-                />
+                <div className="contract-doc__address-readonly">
+                  <ReadonlyValue
+                    value={values.recipientPostalCode}
+                    className="contract-doc__cell-input contract-doc__cell-input--postal"
+                  />
+                  <ReadonlyValue
+                    value={values.recipientAddress}
+                    className="contract-doc__cell-input contract-doc__cell-input--full"
+                  />
+                </div>
+                {values.recipientAddressDetail ? (
+                  <ReadonlyValue
+                    value={values.recipientAddressDetail}
+                    className="contract-doc__cell-input contract-doc__cell-input--full"
+                  />
+                ) : null}
               </td>
             </tr>
           </tbody>
@@ -450,11 +445,22 @@ export default function ContractDocumentView({
             />
             <span className="contract-doc__signature">
               <span>구매자 :</span>
-              <ReadonlyValue
-                value={values.signatureName}
-                className="contract-doc__inline-input contract-doc__inline-input--signature"
-              />
-              <span>(인)</span>
+              <span className="contract-doc__signature-buyer-name">
+                {values.buyerName || values.signatureName}
+              </span>
+              <span className="contract-doc__signature-stamp-wrap">
+                {values.signatureDataUrl ? (
+                  <Image
+                    src={values.signatureDataUrl}
+                    alt="구매자 서명"
+                    className="contract-doc__signature-stamp-image"
+                    width={70}
+                    height={28}
+                    unoptimized
+                  />
+                ) : null}
+                <span className="contract-doc__signature-stamp-text">(인)</span>
+              </span>
             </span>
           </div>
         </div>

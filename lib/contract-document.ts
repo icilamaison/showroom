@@ -28,6 +28,7 @@ export function purchasePayloadToFormValues(
     agreementDateMonth: payload.agreementDateMonth,
     agreementDateDay: payload.agreementDateDay,
     signatureName: payload.signatureName,
+    signatureDataUrl: payload.signatureDataUrl,
     termsAgreed: payload.termsAgreed,
   };
 }

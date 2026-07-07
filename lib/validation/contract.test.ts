@@ -41,6 +41,7 @@ const validFormValues: ContractFormValues = {
   agreementDateMonth: "6",
   agreementDateDay: "24",
   signatureName: "홍길동",
+  signatureDataUrl: "data:image/png;base64,test",
   termsAgreed: true,
 };
 
@@ -53,6 +54,7 @@ describe("validateContractForm", () => {
       expect(result.data.buyerName).toBe("홍길동");
       expect(result.data.writtenDate).toBe("2026-06-24");
       expect(result.data.agreementDate).toBe("2026-06-24");
+      expect(result.data.signatureDataUrl).toBe("data:image/png;base64,test");
     }
   });
 
@@ -84,6 +86,18 @@ describe("validateContractForm", () => {
     }
   });
 
+  it("requires a drawn signature", () => {
+    const result = validateContractForm({
+      ...validFormValues,
+      signatureDataUrl: "",
+    });
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors.signatureDataUrl).toBe("서명을 입력해주세요.");
+    }
+  });
+
   it("requires recipient details when not same as buyer", () => {
     const result = validateContractForm({
       ...validFormValues,
@@ -99,7 +113,18 @@ describe("validateContractForm", () => {
     if (!result.valid) {
       expect(result.errors.recipientName).toBeDefined();
       expect(result.errors.recipientAddress).toBeDefined();
-      expect(result.errors.recipientAddressDetail).toBeDefined();
+    }
+  });
+
+  it("allows empty recipient address detail", () => {
+    const result = validateContractForm({
+      ...validFormValues,
+      recipientAddressDetail: "",
+    });
+
+    expect(result.valid).toBe(true);
+    if (result.valid) {
+      expect(result.data.recipientAddressDetail).toBe("");
     }
   });
 

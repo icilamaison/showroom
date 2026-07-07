@@ -56,6 +56,7 @@ export type ContractFormValues = {
   agreementDateMonth: string;
   agreementDateDay: string;
   signatureName: string;
+  signatureDataUrl?: string;
   termsAgreed: boolean;
 };
 
@@ -136,6 +137,7 @@ const contractFormSchema = z
       .min(1, "서명명을 입력해주세요.")
       .min(2, "서명명은 2자 이상 50자 이하로 입력해주세요.")
       .max(50, "서명명은 2자 이상 50자 이하로 입력해주세요."),
+    signatureDataUrl: z.string().trim().min(1, "서명을 입력해주세요."),
     termsAgreed: z.literal(true, {
       errorMap: () => ({ message: "동의 내용에 체크해야 합니다." }),
     }),
@@ -201,14 +203,6 @@ const contractFormSchema = z
         code: z.ZodIssueCode.custom,
         path: ["recipientAddress"],
         message: "주소 검색을 이용해주세요.",
-      });
-    }
-
-    if (!data.recipientAddressDetail.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["recipientAddressDetail"],
-        message: "상세주소를 입력해주세요.",
       });
     }
 
