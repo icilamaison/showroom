@@ -467,8 +467,7 @@ export default function AdminContractDetailPage() {
                   <div className="admin-action-group">
                     <p className="admin-action-group__title">계약서 PDF</p>
                     <p className="admin-action-group__description">
-                      고객이 작성한 구매 계약서를 입력 화면과 동일한 디자인의
-                      A4 PDF로 내려받을 수 있습니다.
+                      고객이 작성한 구매 계약서를 A4 PDF로 내려받을 수 있습니다.
                     </p>
                     <div className="admin-detail-actions admin-detail-actions--start">
                       <button
