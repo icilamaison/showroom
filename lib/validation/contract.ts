@@ -58,6 +58,7 @@ export type ContractFormValues = {
   signatureName: string;
   signatureDataUrl?: string;
   termsAgreed: boolean;
+  marketingConsentAgreed: boolean;
 };
 
 const yearSchema = z
@@ -139,8 +140,11 @@ const contractFormSchema = z
       .max(50, "서명명은 2자 이상 50자 이하로 입력해주세요."),
     signatureDataUrl: z.string().trim().min(1, "서명을 입력해주세요."),
     termsAgreed: z.literal(true, {
-      errorMap: () => ({ message: "동의 내용에 체크해야 합니다." }),
+      errorMap: () => ({
+        message: "개인정보 수집·이용에 동의해야 합니다.",
+      }),
     }),
+    marketingConsentAgreed: z.boolean(),
   })
   .superRefine((data, ctx) => {
     if (
@@ -251,11 +255,19 @@ const contractFormSchema = z
     }
 
     if (data.paymentMethod === "bank_transfer") {
-      if (!data.cashReceiptType) {
+      if (data.cashReceiptType && data.taxInvoiceRequested) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["taxInvoiceRequested"],
+          message: "현금영수증과 세금계산서는 중복 선택할 수 없습니다.",
+        });
+      }
+
+      if (!data.cashReceiptType && !data.taxInvoiceRequested) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["cashReceiptType"],
-          message: "현금영수증 발행 유형을 선택해주세요.",
+          message: "현금영수증 또는 세금계산서 중 하나를 선택해주세요.",
         });
       }
 
@@ -280,9 +292,25 @@ const contractFormSchema = z
           message: "사업자등록번호는 000-00-00000 형식으로 입력해주세요.",
         });
       }
+
+      if (data.taxInvoiceRequested) {
+        if (!data.taxInvoiceEmail) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["taxInvoiceEmail"],
+            message: "세금계산서 수령 이메일을 입력해주세요.",
+          });
+        } else if (!emailRegex.test(data.taxInvoiceEmail)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["taxInvoiceEmail"],
+            message: "유효한 이메일 주소를 입력해주세요.",
+          });
+        }
+      }
     }
 
-    if (data.taxInvoiceRequested) {
+    if (data.paymentMethod !== "bank_transfer" && data.taxInvoiceRequested) {
       if (!data.taxInvoiceEmail) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

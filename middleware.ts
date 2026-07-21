@@ -10,11 +10,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith("/admin")) {
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/contract")
+  ) {
     const token = request.cookies.get(ADMIN_TOKEN_COOKIE)?.value;
 
     if (!token) {
       const loginUrl = new URL("/admin/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
   }
@@ -23,5 +28,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/", "/admin/:path*", "/contract/:path*"],
 };

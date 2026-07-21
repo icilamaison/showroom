@@ -40,6 +40,7 @@ const validInput = {
   signatureName: "홍길동",
   signatureDataUrl: "data:image/png;base64,test",
   termsAgreed: true,
+  marketingConsentAgreed: false,
 };
 
 describe("parseContractInput", () => {
@@ -131,7 +132,27 @@ describe("parseContractInput", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.errors.termsAgreed).toBe("동의 내용에 체크해야 합니다.");
+      expect(result.errors.termsAgreed).toBe(
+        "개인정보 수집·이용에 동의해야 합니다.",
+      );
+    }
+  });
+
+  it("rejects selecting cash receipt and tax invoice together", () => {
+    const result = parseContractInput({
+      ...validInput,
+      paymentMethod: "bank_transfer",
+      cashReceiptType: "income_deduction",
+      cashReceiptPhone: "010-1234-5678",
+      taxInvoiceRequested: true,
+      taxInvoiceEmail: "tax@example.com",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.taxInvoiceRequested).toBe(
+        "현금영수증과 세금계산서는 중복 선택할 수 없습니다.",
+      );
     }
   });
 });

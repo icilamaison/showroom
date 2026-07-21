@@ -113,17 +113,36 @@
 }
 
 .contract-doc__table--products th:nth-child(2) {
-  width: 34%;
+  width: 30%;
 }
 
 .contract-doc__table--products th:nth-child(3),
 .contract-doc__table--products th:nth-child(4),
 .contract-doc__table--products th:nth-child(5) {
-  width: 12%;
+  width: 10%;
 }
 
-.contract-doc__table--products th:nth-child(6) {
-  width: 24%;
+.contract-doc__table--products th:nth-child(6),
+.contract-doc__table--products th:nth-child(7) {
+  width: 17%;
+  text-align: center;
+}
+
+.contract-doc__amount {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 24px;
+}
+
+.contract-doc__total-row .contract-doc__total-label {
+  text-align: center;
+  font-weight: 700;
+}
+
+.contract-doc__total-row .contract-doc__total-value {
+  text-align: right;
+  font-weight: 700;
 }
 
 .contract-doc__table--payment th {
@@ -209,6 +228,10 @@
 
 .contract-doc__cell-input--qty {
   text-align: center;
+}
+
+.contract-doc__cell-input--numeric {
+  text-align: right;
 }
 
 .contract-doc__cell-input--postal {
@@ -447,6 +470,50 @@
   line-height: 1.5;
 }
 
+.contract-doc__consent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+  padding-top: 0.15rem;
+  border-top: 1px solid var(--contract-line);
+}
+
+.contract-doc__consent-heading {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.contract-doc__consent-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-left: 0.35rem;
+}
+
+.contract-doc__consent-detail {
+  margin: 0;
+  padding-left: 1.35rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #374151;
+}
+
+.contract-doc__consent-note {
+  display: block;
+  margin-top: 0.2rem;
+  color: #6b7280;
+}
+
+.contract-doc__consent-footnote {
+  margin: 0;
+  padding-left: 1.35rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
 .contract-doc__agreement-sign {
   display: flex;
   flex-wrap: nowrap;
@@ -476,11 +543,20 @@
   min-width: 4.5rem;
   height: 24px;
   box-sizing: border-box;
+  border: none;
   border-bottom: 1px solid var(--contract-rule);
+  background: transparent;
+  font: inherit;
+  color: inherit;
   line-height: 23px;
   text-align: center;
   padding: 0 0.15rem;
   vertical-align: bottom;
+  outline: none;
+}
+
+.contract-doc__signature-buyer-name:focus {
+  background: #fffef8;
 }
 
 .contract-doc__signature-pad-wrap {
@@ -676,6 +752,11 @@
   text-align: center;
 }
 
+.contract-doc__readonly-value--right {
+  display: block;
+  text-align: right;
+}
+
 .contract-doc--document .contract-doc__inline-input,
 .contract-doc--document .contract-doc__date-input {
   border-bottom: 1px solid #111827;
@@ -693,9 +774,19 @@
   width: 860px;
   background: #fff;
   border: 1px solid #d1d5db;
-  padding: 2rem 2.25rem;
+  padding: 1rem 2.25rem;
   box-shadow: none;
   z-index: -1;
+}
+
+/* PDF 한 장에 맞도록 캡처 문서만 촘촘하게 (화면 표시엔 영향 없음) */
+.contract-doc__pdf-capture .contract-doc--document {
+  gap: 0.42rem;
+}
+
+.contract-doc__pdf-capture .contract-doc__table th,
+.contract-doc__pdf-capture .contract-doc__table td {
+  padding: 0.2rem 0.38rem;
 }
 
 @media (max-width: 720px) {

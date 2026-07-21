@@ -12,7 +12,14 @@ import {
   type SetComponentSelection,
 } from "@/lib/set-product";
 import type { ContractFormValues, ProductRow } from "@/lib/validation/contract";
+import {
+  contractTotal,
+  formatAmount,
+  formatDigits,
+  lineAmount,
+} from "@/lib/contract-amount";
 import "./contract.css";
+import { ContractConsentSection } from "./ContractConsentSection";
 
 function ReadonlyValue({
   value,
@@ -21,14 +28,17 @@ function ReadonlyValue({
 }: {
   value: string;
   className?: string;
-  align?: "left" | "center";
+  align?: "left" | "center" | "right";
 }) {
+  const alignClass =
+    align === "center"
+      ? " contract-doc__readonly-value--center"
+      : align === "right"
+        ? " contract-doc__readonly-value--right"
+        : "";
+
   return (
-    <span
-      className={`${className} contract-doc__readonly-value${
-        align === "center" ? " contract-doc__readonly-value--center" : ""
-      }`}
-    >
+    <span className={`${className} contract-doc__readonly-value${alignClass}`}>
       {value}
     </span>
   );
@@ -119,7 +129,7 @@ function SetProductDocumentComponents({
                 </span>
               ) : null}
             </td>
-            <td colSpan={2} />
+            <td colSpan={3} />
           </tr>
         );
       })}
@@ -284,6 +294,7 @@ export default function ContractDocumentView({
               <th>컬러</th>
               <th>사이즈</th>
               <th>수량</th>
+              <th>단가</th>
               <th>금액</th>
             </tr>
           </thead>
@@ -320,9 +331,20 @@ export default function ContractDocumentView({
                     </td>
                     <td>
                       <ReadonlyValue
-                        value={product.unitPrice}
-                        align="center"
-                        className="contract-doc__cell-input contract-doc__cell-input--qty"
+                        value={formatDigits(product.unitPrice)}
+                        align="right"
+                        className="contract-doc__cell-input contract-doc__cell-input--numeric"
+                      />
+                    </td>
+                    <td>
+                      <ReadonlyValue
+                        value={
+                          lineAmount(product) > 0
+                            ? formatAmount(lineAmount(product))
+                            : ""
+                        }
+                        align="right"
+                        className="contract-doc__cell-input contract-doc__cell-input--numeric"
                       />
                     </td>
                   </tr>
@@ -336,6 +358,14 @@ export default function ContractDocumentView({
                 </Fragment>
               );
             })}
+            <tr className="contract-doc__total-row">
+              <td colSpan={6} className="contract-doc__total-label">
+                합계
+              </td>
+              <td className="contract-doc__total-value">
+                {formatAmount(contractTotal(values.products))}
+              </td>
+            </tr>
           </tbody>
         </table>
       </section>
@@ -437,6 +467,11 @@ export default function ContractDocumentView({
             내용을 모두 안내받아 이해하였으며, 이에 동의하여 아래와 같이 서명합니다.
           </p>
 
+          <ContractConsentSection
+            termsAgreed={values.termsAgreed}
+            marketingConsentAgreed={values.marketingConsentAgreed}
+          />
+
           <div className="contract-doc__agreement-sign">
             <DateDisplay
               year={values.agreementDateYear}
@@ -446,7 +481,7 @@ export default function ContractDocumentView({
             <span className="contract-doc__signature">
               <span>구매자 :</span>
               <span className="contract-doc__signature-buyer-name">
-                {values.buyerName || values.signatureName}
+                {values.signatureName || values.buyerName}
               </span>
               <span className="contract-doc__signature-stamp-wrap">
                 {values.signatureDataUrl ? (
@@ -464,13 +499,6 @@ export default function ContractDocumentView({
             </span>
           </div>
         </div>
-
-        <label className="contract-doc__terms contract-doc__terms--readonly">
-          <span className="contract-doc__checkbox-box" aria-hidden="true">
-            [{values.termsAgreed ? "✓" : " "}]
-          </span>
-          <span>위 내용을 확인하였으며 동의합니다.</span>
-        </label>
       </section>
 
       <footer className="contract-doc__footer">

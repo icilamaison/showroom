@@ -30,6 +30,7 @@ export function purchasePayloadToFormValues(
     signatureName: payload.signatureName,
     signatureDataUrl: payload.signatureDataUrl,
     termsAgreed: payload.termsAgreed,
+    marketingConsentAgreed: payload.marketingConsentAgreed ?? false,
   };
 }
 

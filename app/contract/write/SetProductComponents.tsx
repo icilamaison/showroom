@@ -61,7 +61,7 @@ export default function SetProductComponents({
                 </span>
               ) : null}
             </td>
-            <td colSpan={2} />
+            <td colSpan={3} />
           </tr>
         );
       })}

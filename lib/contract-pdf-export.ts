@@ -24,15 +24,17 @@ export async function exportContractDocumentToPdf(
   const pageWidth = A4_WIDTH_MM;
   const pageHeight = A4_HEIGHT_MM;
   const widthFittedHeight = (canvas.height * pageWidth) / canvas.width;
-  const imageHeight = Math.min(widthFittedHeight, pageHeight);
-  const imageWidth =
-    widthFittedHeight > pageHeight
-      ? (canvas.width * pageHeight) / canvas.height
-      : pageWidth;
-  const imageX = (pageWidth - imageWidth) / 2;
   const imageData = canvas.toDataURL("image/png");
 
-  pdf.addImage(imageData, "PNG", imageX, 0, imageWidth, imageHeight);
+  if (widthFittedHeight <= pageHeight) {
+    // 한 장에 들어가면 A4 폭에 꽉 채워서 배치 (좌우 여백 없음)
+    pdf.addImage(imageData, "PNG", 0, 0, pageWidth, widthFittedHeight);
+  } else {
+    // 한 장보다 길면 한 장에 맞게 통째로 축소 (내용 잘림 방지)
+    const imageWidth = (canvas.width * pageHeight) / canvas.height;
+    const imageX = (pageWidth - imageWidth) / 2;
+    pdf.addImage(imageData, "PNG", imageX, 0, imageWidth, pageHeight);
+  }
 
   pdf.save(filename);
 }

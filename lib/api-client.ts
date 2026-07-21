@@ -46,6 +46,7 @@ export async function submitContract(
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(payload),
   });
 
@@ -94,6 +95,13 @@ export async function loginAdmin(
   }
 
   return body.data;
+}
+
+export async function logoutAdmin(): Promise<void> {
+  await fetch("/api/admin/logout", {
+    method: "POST",
+    credentials: "include",
+  });
 }
 
 export type ContractListItem = {

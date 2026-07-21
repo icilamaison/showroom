@@ -43,6 +43,7 @@ const validFormValues: ContractFormValues = {
   signatureName: "홍길동",
   signatureDataUrl: "data:image/png;base64,test",
   termsAgreed: true,
+  marketingConsentAgreed: false,
 };
 
 describe("validateContractForm", () => {
@@ -142,6 +143,36 @@ describe("validateContractForm", () => {
     }
   });
 
+  it("accepts tax invoice instead of cash receipt for bank transfer", () => {
+    const result = validateContractForm({
+      ...validFormValues,
+      paymentMethod: "bank_transfer",
+      cashReceiptType: "",
+      taxInvoiceRequested: true,
+      taxInvoiceEmail: "tax@example.com",
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it("rejects selecting cash receipt and tax invoice together", () => {
+    const result = validateContractForm({
+      ...validFormValues,
+      paymentMethod: "bank_transfer",
+      cashReceiptType: "income_deduction",
+      cashReceiptPhone: "010-1234-5678",
+      taxInvoiceRequested: true,
+      taxInvoiceEmail: "tax@example.com",
+    });
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors.taxInvoiceRequested).toBe(
+        "현금영수증과 세금계산서는 중복 선택할 수 없습니다.",
+      );
+    }
+  });
+
   it("rejects when terms are not agreed", () => {
     const result = validateContractForm({
       ...validFormValues,
@@ -150,7 +181,9 @@ describe("validateContractForm", () => {
 
     expect(result.valid).toBe(false);
     if (!result.valid) {
-      expect(result.errors.termsAgreed).toBe("동의 내용에 체크해야 합니다.");
+      expect(result.errors.termsAgreed).toBe(
+        "개인정보 수집·이용에 동의해야 합니다.",
+      );
     }
   });
 });

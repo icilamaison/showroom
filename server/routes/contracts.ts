@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { sendError, sendSuccess } from "../lib/api-response";
+import { requireAdminAuth } from "../middleware/auth";
 import { parseContractInput } from "../schemas/contract.schema";
 import { createContract } from "../services/contract.service";
 
 const contractsRouter = Router();
 
-contractsRouter.post("/", async (req, res) => {
+contractsRouter.post("/", requireAdminAuth, async (req, res) => {
   const parsed = parseContractInput(req.body);
 
   if (!parsed.success) {

@@ -8,12 +8,20 @@ import {
   type ProductRow,
 } from "@/lib/validation/contract";
 import { isSetProduct, type CatalogProduct } from "@/lib/product-catalog";
+import {
+  contractTotal,
+  formatAmount,
+  formatDigits,
+  lineAmount,
+  toDigits,
+} from "@/lib/contract-amount";
 import type { SetComponentSelection } from "@/lib/set-product";
 import { createSetComponentSelections } from "@/lib/set-product";
 import AddressSearchFields from "./AddressSearchFields";
 import ProductNameAutocomplete from "./ProductNameAutocomplete";
 import ProductOptionSelect from "./ProductOptionSelect";
 import SetProductComponents from "./SetProductComponents";
+import { ContractConsentSection } from "../ContractConsentSection";
 import "./../contract.css";
 
 const CATALOG_DROPDOWN_ROW_LIMIT = 5;
@@ -44,6 +52,7 @@ export const emptyContractFormValues: ContractFormValues = {
   signatureName: "",
   signatureDataUrl: "",
   termsAgreed: false,
+  marketingConsentAgreed: false,
 };
 
 export function createInitialContractFormValues(): ContractFormValues {
@@ -328,7 +337,6 @@ export default function ContractForm({
 
   function saveSignature() {
     onChange("signatureDataUrl", draftSignature);
-    onChange("signatureName", values.buyerName.trim());
     closeSignatureModal();
   }
 
@@ -379,11 +387,7 @@ export default function ContractForm({
                 <input
                   type="text"
                   value={values.buyerName}
-                  onChange={(event) => {
-                    const nextBuyerName = event.target.value;
-                    onChange("buyerName", nextBuyerName);
-                    onChange("signatureName", nextBuyerName);
-                  }}
+                  onChange={(event) => onChange("buyerName", event.target.value)}
                   className="contract-doc__cell-input"
                 />
                 <FieldError message={errors.buyerName} />
@@ -498,6 +502,7 @@ export default function ContractForm({
               <th>컬러</th>
               <th>사이즈</th>
               <th>수량</th>
+              <th>단가</th>
               <th>금액</th>
             </tr>
           </thead>
@@ -581,13 +586,24 @@ export default function ContractForm({
                   <input
                     type="text"
                     inputMode="numeric"
-                    value={product.unitPrice}
+                    value={formatDigits(product.unitPrice)}
                     onChange={(event) =>
-                      onProductChange(index, "unitPrice", event.target.value)
+                      onProductChange(
+                        index,
+                        "unitPrice",
+                        toDigits(event.target.value),
+                      )
                     }
-                    className="contract-doc__cell-input contract-doc__cell-input--qty"
+                    className="contract-doc__cell-input contract-doc__cell-input--numeric"
                   />
                   <FieldError message={errors[`products.${index}.unitPrice`]} />
+                </td>
+                <td>
+                  <span className="contract-doc__cell-input contract-doc__cell-input--numeric contract-doc__amount">
+                    {lineAmount(product) > 0
+                      ? formatAmount(lineAmount(product))
+                      : ""}
+                  </span>
                 </td>
               </tr>
               {isSet && selectedProduct?.components
@@ -612,6 +628,14 @@ export default function ContractForm({
               </Fragment>
             );
             })}
+            <tr className="contract-doc__total-row">
+              <td colSpan={6} className="contract-doc__total-label">
+                합계
+              </td>
+              <td className="contract-doc__total-value">
+                {formatAmount(contractTotal(values.products))}
+              </td>
+            </tr>
           </tbody>
         </table>
       </section>
@@ -748,7 +772,9 @@ export default function ContractForm({
                           onChange("taxInvoiceEmail", event.target.value)
                         }
                         className="contract-doc__inline-input contract-doc__inline-input--email"
-                        disabled={!showBankTransferFields}
+                        disabled={
+                          !showBankTransferFields || !values.taxInvoiceRequested
+                        }
                         placeholder="email@example.com"
                       />
                       )
@@ -773,6 +799,13 @@ export default function ContractForm({
             내용을 모두 안내받아 이해하였으며, 이에 동의하여 아래와 같이 서명합니다.
           </p>
 
+          <ContractConsentSection
+            termsAgreed={values.termsAgreed}
+            marketingConsentAgreed={values.marketingConsentAgreed}
+            onChange={onChange}
+            errors={errors}
+          />
+
           <div className="contract-doc__agreement-sign">
             <DateFields
               prefix="agreementDate"
@@ -784,9 +817,15 @@ export default function ContractForm({
             />
             <label className="contract-doc__signature">
               <span>구매자 :</span>
-              <span className="contract-doc__signature-buyer-name">
-                {values.buyerName || values.signatureName}
-              </span>
+              <input
+                type="text"
+                value={values.signatureName}
+                onChange={(event) =>
+                  onChange("signatureName", event.target.value)
+                }
+                className="contract-doc__signature-buyer-name"
+                aria-label="서명 구매자명"
+              />
               <button
                 type="button"
                 onClick={openSignatureModal}
@@ -811,16 +850,6 @@ export default function ContractForm({
           </div>
           <FieldError message={errors.signatureName || errors.signatureDataUrl} />
         </div>
-
-        <label className="contract-doc__terms">
-          <input
-            type="checkbox"
-            checked={values.termsAgreed}
-            onChange={(event) => onChange("termsAgreed", event.target.checked)}
-          />
-          <span>위 내용을 확인하였으며 동의합니다.</span>
-        </label>
-        <FieldError message={errors.termsAgreed} />
       </section>
 
       <footer className="contract-doc__footer">

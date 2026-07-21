@@ -1,7 +1,6 @@
 "use client";
 
 import { ApiClientError, loginAdmin } from "@/lib/api-client";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import "../admin.css";
@@ -20,7 +19,14 @@ export default function AdminLoginPage() {
 
     try {
       await loginAdmin(username, password);
-      router.push("/admin/contracts");
+      const redirectParam = new URLSearchParams(window.location.search).get(
+        "redirect",
+      );
+      const redirectTo =
+        redirectParam && redirectParam.startsWith("/")
+          ? redirectParam
+          : "/admin/contracts";
+      router.push(redirectTo);
     } catch (loginError) {
       if (loginError instanceof ApiClientError) {
         setError(loginError.message);
@@ -35,10 +41,6 @@ export default function AdminLoginPage() {
   return (
     <main className="app-page app-page--center">
       <div className="app-container app-container--narrow app-panel">
-        <Link href="/" className="app-back-link">
-          ← 홈
-        </Link>
-
         <header className="app-header">
           <strong className="app-brand">이씨라메종</strong>
           <h1 className="app-title">관리자 로그인</h1>

@@ -68,10 +68,49 @@ export default function ContractWritePage() {
         next.taxInvoiceEmail = "";
       }
 
+      if (field === "cashReceiptType" && value) {
+        next.taxInvoiceRequested = false;
+        next.taxInvoiceEmail = "";
+      }
+
+      if (field === "taxInvoiceRequested" && value === true) {
+        next.cashReceiptType = "";
+        next.cashReceiptPhone = "";
+        next.cashReceiptBusinessNumber = "";
+      }
+
+      if (
+        field === "writtenDateYear" ||
+        field === "writtenDateMonth" ||
+        field === "writtenDateDay"
+      ) {
+        next.agreementDateYear = next.writtenDateYear;
+        next.agreementDateMonth = next.writtenDateMonth;
+        next.agreementDateDay = next.writtenDateDay;
+      }
+
+      if (field === "buyerName" && typeof nextValue === "string") {
+        next.signatureName = nextValue;
+      }
+
       return next;
     });
 
     clearFieldError(field);
+
+    if (
+      field === "writtenDateYear" ||
+      field === "writtenDateMonth" ||
+      field === "writtenDateDay"
+    ) {
+      clearFieldError("agreementDateYear");
+      clearFieldError("agreementDateMonth");
+      clearFieldError("agreementDateDay");
+    }
+
+    if (field === "buyerName") {
+      clearFieldError("signatureName");
+    }
   }
 
   function handleProductChange(
