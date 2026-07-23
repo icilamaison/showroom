@@ -22,6 +22,7 @@
   display: flex;
   flex-direction: row;
   align-items: baseline;
+  justify-content: space-between;
   gap: 0.7rem;
   padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--contract-rule);
@@ -29,8 +30,8 @@
 
 .contract-doc__brand-name {
   flex: 0 0 auto;
-  font-size: 0.96rem;
-  letter-spacing: 0;
+  height: 13px;
+  width: auto;
 }
 
 .contract-doc__brand-contact {
@@ -113,19 +114,40 @@
 }
 
 .contract-doc__table--products th:nth-child(2) {
-  width: 30%;
+  width: 24%;
 }
 
-.contract-doc__table--products th:nth-child(3),
+.contract-doc__table--products th:nth-child(3) {
+  width: 28%;
+}
+
 .contract-doc__table--products th:nth-child(4),
 .contract-doc__table--products th:nth-child(5) {
-  width: 10%;
+  width: 8%;
 }
 
 .contract-doc__table--products th:nth-child(6),
 .contract-doc__table--products th:nth-child(7) {
   width: 17%;
   text-align: center;
+}
+
+.contract-doc__row-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.contract-doc__row-action-button {
+  border: 1px solid var(--contract-line);
+  background: #fff;
+  padding: 0.35rem 0.7rem;
+  color: #111827;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.contract-doc__row-action-button:hover {
+  background: var(--contract-fill);
 }
 
 .contract-doc__amount {
@@ -143,6 +165,31 @@
 .contract-doc__total-row .contract-doc__total-value {
   text-align: right;
   font-weight: 700;
+}
+
+.contract-doc__total-discount-input {
+  width: 2.6rem;
+  min-height: 0;
+  border: none;
+  border-bottom: 1px solid var(--contract-rule);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  text-align: right;
+  padding: 0;
+  outline: none;
+}
+
+.contract-doc__total-discount-input:focus {
+  background: #fffef8;
+}
+
+.contract-doc__total-discount-amount {
+  margin-left: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: #6b7280;
 }
 
 .contract-doc__table--payment th {
@@ -194,10 +241,34 @@
 
 .contract-doc__set-option-name {
   display: block;
-  font-size: 0.75rem;
-  line-height: 1.35;
+  font-size: 0.78rem;
+  line-height: 1.45;
   color: #374151;
-  word-break: break-all;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.contract-doc__product-color-cell {
+  min-width: 220px;
+}
+
+.contract-doc__variant-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.contract-doc__cell-select--variant {
+  width: 100%;
+}
+
+.contract-doc__selected-variant {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: #374151;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .contract-doc__set-component-row {
@@ -220,6 +291,14 @@
   display: block;
   font-size: 0.85rem;
   color: #111827;
+}
+
+.contract-doc__set-component-value--center {
+  text-align: center;
+}
+
+.contract-doc__set-component-value--right {
+  text-align: right;
 }
 
 .contract-doc__cell-input--full {
@@ -284,7 +363,7 @@
   position: absolute;
   top: calc(100% + 2px);
   left: 0;
-  right: 0;
+  width: min(22rem, calc(100vw - 6rem));
   z-index: 20;
   margin: 0;
   padding: 0.2rem 0;
@@ -299,7 +378,7 @@
 .contract-doc__product-suggestion {
   display: flex;
   width: 100%;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.45rem 0.6rem;
@@ -319,9 +398,8 @@
 .contract-doc__product-suggestion-name {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .contract-doc__product-suggestion-meta {
@@ -475,7 +553,7 @@
   flex-direction: column;
   gap: 0.55rem;
   margin-bottom: 0.85rem;
-  padding-top: 0.15rem;
+  padding-top: 0.75rem;
   border-top: 1px solid var(--contract-line);
 }
 
@@ -492,9 +570,23 @@
   padding-left: 0.35rem;
 }
 
-.contract-doc__consent-detail {
-  margin: 0;
+.contract-doc__consent-details {
   padding-left: 1.35rem;
+}
+
+.contract-doc__consent-summary {
+  width: fit-content;
+  font-size: 0.78rem;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.contract-doc__consent-summary:hover {
+  color: #374151;
+}
+
+.contract-doc__consent-detail {
+  margin: 0.35rem 0 0;
   font-size: 0.8rem;
   line-height: 1.55;
   color: #374151;
@@ -738,6 +830,47 @@
   gap: 0.82rem;
 }
 
+/* 문서 shell — 화면용 (PDF는 .contract-doc__pdf-capture 별도) */
+.contract-doc-flow {
+  --contract-line: #b7b7b7;
+  width: 100%;
+  max-width: var(--doc-width);
+  margin: 0 auto;
+}
+
+.contract-doc--sheet {
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--doc-padding-y) var(--doc-padding-x);
+  background: var(--color-surface);
+  box-shadow: none;
+}
+
+.contract-doc--sheet.notice-document {
+  display: flex;
+  flex-direction: column;
+}
+
+.contract-doc-flow__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem var(--doc-padding-x) 1.15rem;
+  background: var(--color-surface);
+  box-shadow: none;
+}
+
+.contract-doc-flow__alert {
+  margin: 0 0 0.75rem;
+}
+
+.contract-doc__meta-item--block {
+  display: block;
+  width: 100%;
+  text-align: center;
+  line-height: 1.55;
+}
+
 .contract-doc__readonly-value {
   display: inline-block;
   min-height: 24px;
@@ -771,10 +904,11 @@
   position: fixed;
   left: -10000px;
   top: 0;
-  width: 860px;
+  /* A4 비율 캡처 폭 — exportContractDocumentToPdf에서 210×297mm로 출력 */
+  width: 794px;
   background: #fff;
   border: 1px solid #d1d5db;
-  padding: 1rem 2.25rem;
+  padding: 16mm 18mm;
   box-shadow: none;
   z-index: -1;
 }
@@ -789,7 +923,95 @@
   padding: 0.2rem 0.38rem;
 }
 
+/* 배송·교환·반품 안내문 (계약서와 동일한 문서 스타일) */
+.contract-doc__section-title--divider {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--contract-rule);
+  font-size: 0.98rem;
+}
+
+.notice-subtitle {
+  margin: 0.3rem 0 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.notice-text {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.notice-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.notice-list li {
+  margin-bottom: 0.4rem;
+}
+
+.notice-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* 안내문은 계약서보다 내용이 적어, A4 한 장에 맞춰 보이도록 간격을 넉넉하게 확대 */
+.notice-document {
+  gap: 2.1rem;
+  font-size: 0.92rem;
+}
+
+.notice-document .contract-doc__header {
+  gap: 0.6rem;
+}
+
+.notice-document .contract-doc__section {
+  gap: 0.65rem;
+}
+
+.notice-document .notice-subtitle {
+  margin-top: 1rem;
+  font-size: 0.92rem;
+}
+
+.notice-document .notice-text,
+.notice-document .notice-list {
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.notice-document .notice-list li {
+  margin-bottom: 0.3rem;
+}
+
+.notice-document .notice-footer {
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.notice-footer {
+  margin: 0;
+  padding-top: 0.7rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
 @media (max-width: 720px) {
+  .contract-doc--sheet {
+    padding: 1.35rem 1.15rem;
+  }
+
+  .contract-doc--sheet.notice-document {
+    min-height: auto;
+  }
+
+  .contract-doc-flow__actions {
+    padding: 1rem 1.15rem 1.15rem;
+  }
+
   .contract-doc__title {
     font-size: 1.35rem;
   }
@@ -806,5 +1028,49 @@
 
   .contract-doc__agreement-sign {
     justify-content: flex-start;
+  }
+
+  /* 좁은 화면에서 표 라벨(연락처, 배송지 주소 등)이 여러 줄로 줄바꿈되는 것을 막고 가로 스크롤로 대응 */
+  .contract-doc__section {
+    overflow-x: auto;
+  }
+
+  .contract-doc__table {
+    table-layout: auto;
+  }
+
+  .contract-doc__table th {
+    white-space: nowrap;
+  }
+}
+
+@media print {
+  .app-back-link,
+  .contract-doc-flow__actions {
+    display: none !important;
+  }
+
+  .app-page {
+    padding: 0;
+    background: #fff;
+  }
+
+  .contract-doc-flow {
+    max-width: 210mm;
+  }
+
+  .contract-doc--sheet {
+    max-width: 210mm;
+    padding: 16mm 18mm;
+  }
+
+  .contract-doc--sheet,
+  .contract-doc-flow__actions {
+    border: none;
+    box-shadow: none;
+  }
+
+  .contract-doc--sheet.notice-document {
+    min-height: auto;
   }
 }

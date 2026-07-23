@@ -1,5 +1,6 @@
 "use client";
 
+import { formatAmount, formatDigits, lineAmount } from "@/lib/contract-amount";
 import type { SetComponent } from "@/lib/product-catalog";
 import type { SetComponentSelection } from "@/lib/set-product";
 import ProductOptionSelect from "./ProductOptionSelect";
@@ -24,9 +25,15 @@ export default function SetProductComponents({
   return (
     <>
       {components.map((component, componentIndex) => {
-        const selection = selections[componentIndex] ?? { color: "", size: "" };
+        const selection = selections[componentIndex] ?? {
+          color: "",
+          size: "",
+          quantity: "",
+          unitPrice: "",
+        };
         const colorOptions = component.colors ?? [];
         const sizeOptions = component.sizes ?? [];
+        const amount = lineAmount(selection);
 
         return (
           <tr
@@ -61,7 +68,21 @@ export default function SetProductComponents({
                 </span>
               ) : null}
             </td>
-            <td colSpan={3} />
+            <td>
+              <span className="contract-doc__set-component-value contract-doc__set-component-value--center">
+                {selection.quantity}
+              </span>
+            </td>
+            <td>
+              <span className="contract-doc__set-component-value contract-doc__set-component-value--right">
+                {formatDigits(selection.unitPrice)}
+              </span>
+            </td>
+            <td>
+              <span className="contract-doc__set-component-value contract-doc__set-component-value--right">
+                {amount > 0 ? formatAmount(amount) : ""}
+              </span>
+            </td>
           </tr>
         );
       })}

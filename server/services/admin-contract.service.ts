@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto";
 import { pool } from "../db/pool";
 
 const DEFAULT_PAGE = 1;
@@ -285,6 +286,60 @@ export async function getContractById(
   }
 
   return mapContractDetail(result.rows[0]);
+}
+
+export async function getContractByNumberAndToken(
+  contractNumber: string,
+  token: string,
+): Promise<ContractDetail | null> {
+  const result = await pool.query<ContractDetailRow & { view_token: string | null }>(
+    `SELECT
+       id,
+       contract_number,
+       customer_name,
+       customer_phone,
+       customer_address,
+       product_name,
+       contract_amount,
+       contract_start_date,
+       contract_end_date,
+       special_terms,
+       terms_agreed,
+       signature_name,
+       status,
+       payload,
+       created_at,
+       updated_at,
+       view_token
+     FROM contracts
+     WHERE contract_number = $1`,
+    [contractNumber],
+  );
+
+  if (!result.rowCount) {
+    return null;
+  }
+
+  const row = result.rows[0];
+  const storedToken = row.view_token;
+
+  // 토큰 없는(구버전) 계약서는 조회 링크 자체가 발급되지 않았으므로 항상 거부
+  if (!storedToken || !isTokenMatch(storedToken, token)) {
+    return null;
+  }
+
+  return mapContractDetail(row);
+}
+
+function isTokenMatch(stored: string, provided: string): boolean {
+  const storedBuffer = Buffer.from(stored);
+  const providedBuffer = Buffer.from(provided);
+
+  if (storedBuffer.length !== providedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(storedBuffer, providedBuffer);
 }
 
 export type ContractStatusUpdateResult = {

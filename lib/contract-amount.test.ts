@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyTotalDiscount,
   contractTotal,
   formatAmount,
   formatDigits,
@@ -11,6 +12,12 @@ describe("contract-amount", () => {
   it("수량 × 단가로 줄 금액을 계산한다", () => {
     expect(lineAmount({ quantity: "2", unitPrice: "50000" })).toBe(100000);
     expect(lineAmount({ quantity: "1", unitPrice: "30000" })).toBe(30000);
+  });
+
+  it("전체 할인율을 소계에 적용한다", () => {
+    expect(applyTotalDiscount(163100, "5")).toBe(154945);
+    expect(applyTotalDiscount(20000, "10")).toBe(18000);
+    expect(applyTotalDiscount(10000, "")).toBe(10000);
   });
 
   it("빈칸이나 숫자가 아니면 0으로 처리한다", () => {

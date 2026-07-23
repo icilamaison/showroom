@@ -6,7 +6,7 @@ const ADMIN_TOKEN_COOKIE = "admin_token";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/admin/login") {
+  if (pathname === "/admin/login" || pathname.startsWith("/contract/view")) {
     return NextResponse.next();
   }
 

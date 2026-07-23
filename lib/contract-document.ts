@@ -18,6 +18,7 @@ export function purchasePayloadToFormValues(
     recipientAddress: payload.recipientAddress,
     recipientAddressDetail: payload.recipientAddressDetail,
     products: payload.products,
+    totalDiscountRate: payload.totalDiscountRate ?? "",
     paymentMethod: payload.paymentMethod,
     cashReceiptType: payload.cashReceiptType ?? "",
     cashReceiptPhone: payload.cashReceiptPhone,

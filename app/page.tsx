@@ -21,12 +21,16 @@ export default function HomePage() {
 
       <div className="app-container app-container--narrow app-panel">
         <header className="app-header">
-          <strong className="app-brand">이씨라메종</strong>
+          <img
+            className="app-brand"
+            src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
+            alt="이씨라메종"
+          />
           <h1 className="app-title">계약서 작성 시스템</h1>
         </header>
 
         <nav className="app-menu">
-          <Link href="/contract/write" className="app-menu__item">
+          <Link href="/contract/notice" className="app-menu__item">
             계약서 작성
           </Link>
           <Link href="/admin/contracts" className="app-menu__item">

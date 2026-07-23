@@ -1,17 +1,54 @@
-import type { SetComponent } from "./product-catalog";
+import type { CatalogProduct, SetComponent } from "./product-catalog";
+import {
+  findCatalogProductByCode,
+  findCatalogProductByName,
+} from "./product-catalog";
 
 export type SetComponentSelection = {
   color: string;
   size: string;
+  quantity: string;
+  unitPrice: string;
 };
+
+function resolveComponentCatalogProduct(
+  component: SetComponent,
+): CatalogProduct | null {
+  if (component.productCode) {
+    return findCatalogProductByCode(component.productCode);
+  }
+
+  return findCatalogProductByName(component.name);
+}
+
+function resolveComponentUnitPrice(
+  component: SetComponent,
+  catalogProduct: CatalogProduct | null,
+): string {
+  if (component.consumerPrice != null && component.consumerPrice > 0) {
+    return String(component.consumerPrice);
+  }
+
+  if (catalogProduct?.salePrice != null && catalogProduct.salePrice > 0) {
+    return String(catalogProduct.salePrice);
+  }
+
+  return "";
+}
 
 export function createSetComponentSelections(
   components: SetComponent[],
 ): SetComponentSelection[] {
-  return components.map((component) => ({
-    color: component.colors?.length === 1 ? component.colors[0] : "",
-    size: component.sizes?.length === 1 ? component.sizes[0] : "",
-  }));
+  return components.map((component) => {
+    const catalogProduct = resolveComponentCatalogProduct(component);
+
+    return {
+      color: component.colors?.length === 1 ? component.colors[0] : "",
+      size: component.sizes?.length === 1 ? component.sizes[0] : "",
+      quantity: String(component.quantity ?? 1),
+      unitPrice: resolveComponentUnitPrice(component, catalogProduct),
+    };
+  });
 }
 
 export function formatSetOptionName(
@@ -53,15 +90,20 @@ export function buildSetSelectionsFromColor(
 
   return components.map((component, index) => {
     const option = options[index] ?? "";
+    const catalogProduct = resolveComponentCatalogProduct(component);
+    const defaults = {
+      quantity: String(component.quantity ?? 1),
+      unitPrice: resolveComponentUnitPrice(component, catalogProduct),
+    };
 
     if (component.colors?.length) {
-      return { color: option, size: "" };
+      return { color: option, size: "", ...defaults };
     }
 
     if (component.sizes?.length) {
-      return { color: "", size: option };
+      return { color: "", size: option, ...defaults };
     }
 
-    return { color: option, size: "" };
+    return { color: option, size: "", ...defaults };
   });
 }

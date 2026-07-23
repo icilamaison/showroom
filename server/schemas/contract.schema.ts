@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { formatFullAddress } from "../../lib/address";
+import { applyTotalDiscount, contractTotal } from "../../lib/contract-amount";
 import {
   PRODUCT_ROW_COUNT,
   type ContractFormValues,
@@ -68,7 +69,8 @@ export const contractInputSchema = z
     recipientPostalCode: z.string().trim(),
     recipientAddress: z.string().trim(),
     recipientAddressDetail: z.string().trim(),
-    products: z.array(productRowSchema).length(PRODUCT_ROW_COUNT),
+    products: z.array(productRowSchema).min(PRODUCT_ROW_COUNT),
+    totalDiscountRate: z.string().trim().default(""),
     paymentMethod: z.enum(["card", "bank_transfer"], {
       errorMap: () => ({ message: "결제수단을 선택해주세요." }),
     }),
@@ -201,6 +203,19 @@ export const contractInputSchema = z
       }
     }
 
+    if (
+      data.totalDiscountRate.trim() &&
+      (!/^\d+(\.\d+)?$/.test(data.totalDiscountRate) ||
+        Number(data.totalDiscountRate) < 0 ||
+        Number(data.totalDiscountRate) > 100)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["totalDiscountRate"],
+        message: "할인율은 0~100 사이의 숫자로 입력해주세요.",
+      });
+    }
+
     if (data.paymentMethod === "bank_transfer") {
       if (data.cashReceiptType && data.taxInvoiceRequested) {
         ctx.addIssue({
@@ -302,10 +317,9 @@ export function mapContractInput(
   );
 
   const filledProducts = data.products.filter((product) => product.name.trim());
-  const contractAmount = filledProducts.reduce(
-    (sum, product) =>
-      sum + Number(product.unitPrice) * Number(product.quantity),
-    0,
+  const contractAmount = applyTotalDiscount(
+    contractTotal(data.products),
+    data.totalDiscountRate,
   );
 
   return {

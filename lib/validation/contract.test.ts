@@ -31,6 +31,7 @@ const validFormValues: ContractFormValues = {
         }
       : product,
   ),
+  totalDiscountRate: "",
   paymentMethod: "card",
   cashReceiptType: "",
   cashReceiptPhone: "",

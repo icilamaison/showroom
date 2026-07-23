@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getDefaultColor,
+  normalizeProductOptions,
   searchProducts,
   type CatalogProduct,
 } from "./product-catalog";
@@ -33,5 +34,20 @@ describe("getDefaultColor", () => {
     } as CatalogProduct;
 
     expect(getDefaultColor(product)).toBe("화이트");
+  });
+});
+
+describe("normalizeProductOptions", () => {
+  it("appends add-on price to label when size costs more than base", () => {
+    const options = normalizeProductOptions(
+      [
+        { name: "SS 차렵이불+베개커버1P", salePrice: 112700 },
+        { name: "QK겸용 차렵이불+베개커버2P", salePrice: 163100 },
+      ],
+      112700,
+    );
+
+    expect(options[0]?.label).toBe("SS 차렵이불+베개커버1P");
+    expect(options[1]?.label).toBe("QK겸용 차렵이불+베개커버2P (+50,400원)");
   });
 });

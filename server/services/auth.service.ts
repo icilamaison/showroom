@@ -4,6 +4,15 @@ import { pool } from "../db/pool";
 
 export const ADMIN_TOKEN_COOKIE = "admin_token";
 
+// 쿠키 삭제(clearCookie)는 심을 때와 동일한 옵션이어야 브라우저가 삭제를 인정한다.
+// 로그인 설정과 로그아웃 삭제가 이 옵션을 공유한다.
+export const ADMIN_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+};
+
 export type AdminTokenPayload = {
   adminId: number;
   username: string;

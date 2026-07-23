@@ -330,7 +330,11 @@ export default function AdminContractDetailPage() {
         </Link>
 
         <header className="app-header app-header--page">
-          <strong className="app-brand">이씨라메종</strong>
+          <img
+            className="app-brand"
+            src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
+            alt="이씨라메종"
+          />
           <h1 className="app-title app-title--page">계약서 상세</h1>
           <p className="app-description">
             고객이 제출한 계약 정보를 확인하고 상태를 변경할 수 있습니다.
@@ -440,10 +444,6 @@ export default function AdminContractDetailPage() {
                     <DetailItem
                       label="약관 동의"
                       value={contract.termsAgreed ? "동의함" : "미동의"}
-                    />
-                    <DetailItem
-                      label="요약"
-                      value={contract.specialTerms || "-"}
                     />
                   </div>
                 </section>

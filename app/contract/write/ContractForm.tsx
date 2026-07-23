@@ -4,11 +4,13 @@ import NextImage from "next/image";
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
   createEmptyProductRows,
+  PRODUCT_ROW_COUNT,
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
-import { isSetProduct, type CatalogProduct } from "@/lib/product-catalog";
+import { getVariantComponents, type CatalogProduct } from "@/lib/product-catalog";
 import {
+  applyTotalDiscount,
   contractTotal,
   formatAmount,
   formatDigits,
@@ -22,6 +24,7 @@ import ProductNameAutocomplete from "./ProductNameAutocomplete";
 import ProductOptionSelect from "./ProductOptionSelect";
 import SetProductComponents from "./SetProductComponents";
 import { ContractConsentSection } from "../ContractConsentSection";
+import { ContractCompanyFooterContent } from "../ContractCompanyFooter";
 import "./../contract.css";
 
 const CATALOG_DROPDOWN_ROW_LIMIT = 5;
@@ -40,6 +43,7 @@ export const emptyContractFormValues: ContractFormValues = {
   recipientAddress: "",
   recipientAddressDetail: "",
   products: createEmptyProductRows(),
+  totalDiscountRate: "",
   paymentMethod: "card",
   cashReceiptType: "",
   cashReceiptPhone: "",
@@ -85,6 +89,8 @@ type ContractFormProps = {
     value: string,
   ) => void;
   onProductSelect: (index: number, product: CatalogProduct) => void;
+  onAddProductRow: () => void;
+  onRemoveLastProductRow: () => void;
   onSetComponentChange: (
     index: number,
     componentIndex: number,
@@ -310,9 +316,13 @@ export default function ContractForm({
   onChange,
   onProductChange,
   onProductSelect,
+  onAddProductRow,
+  onRemoveLastProductRow,
   onSetComponentChange,
   onSubmit,
 }: ContractFormProps) {
+  const productsSubtotal = contractTotal(values.products);
+  const finalTotal = applyTotalDiscount(productsSubtotal, values.totalDiscountRate);
   const isSubmitDisabled = !values.termsAgreed || isSubmitting;
   const showBankTransferFields = values.paymentMethod === "bank_transfer";
   const recipientNameDisabled = values.recipientSameAsBuyer === true;
@@ -341,10 +351,18 @@ export default function ContractForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="contract-doc" noValidate>
+    <form
+      onSubmit={onSubmit}
+      className="contract-doc contract-doc--document contract-doc--sheet"
+      noValidate
+    >
       <header className="contract-doc__header">
         <div className="contract-doc__brand">
-          <strong className="contract-doc__brand-name">이씨라메종</strong>
+          <img
+            className="contract-doc__brand-name"
+            src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
+            alt="이씨라메종"
+          />
           <span className="contract-doc__brand-contact">
             쇼룸 070-4149-9149 | 고객센터 02-6949-3223 | icilamaison.com
           </span>
@@ -510,14 +528,21 @@ export default function ContractForm({
             {values.products.map((product, index) => {
               const selectedProduct = productSelections[index];
               const hasProductName = product.name.trim().length > 0;
-              const isSet = selectedProduct ? isSetProduct(selectedProduct) : false;
+              const variantName = product.color || product.size;
+              const activeComponents = selectedProduct
+                ? getVariantComponents(selectedProduct, variantName)
+                : [];
+              const isLegacySetColor = product.color.trim().startsWith("COLOR=");
+              const isSet = activeComponents.length > 0;
               const useCatalogDropdowns =
                 index < CATALOG_DROPDOWN_ROW_LIMIT && hasProductName && !isSet;
               const colorOptions =
                 selectedProduct?.colors && !isSet
                   ? Object.keys(selectedProduct.colors)
                   : [];
-              const sizeOptions = isSet ? [] : (selectedProduct?.sizes ?? []);
+              const hasColorVariants = colorOptions.length > 0;
+              const sizeOptions =
+                isSet || hasColorVariants ? [] : selectedProduct?.sizes;
 
               return (
               <Fragment key={index}>
@@ -530,8 +555,27 @@ export default function ContractForm({
                     onSelect={(selected) => onProductSelect(index, selected)}
                   />
                 </td>
-                <td>
-                  {isSet ? (
+                <td className="contract-doc__product-color-cell">
+                  {isSet && isLegacySetColor ? (
+                    <span className="contract-doc__set-option-name">
+                      {product.color || "구성 선택"}
+                    </span>
+                  ) : useCatalogDropdowns && hasColorVariants ? (
+                    <div className="contract-doc__variant-picker">
+                      <ProductOptionSelect
+                        value={product.color}
+                        options={colorOptions}
+                        onChange={(value) => onProductChange(index, "color", value)}
+                        placeholder="세트 구성 선택"
+                        className="contract-doc__cell-select--variant"
+                      />
+                      {product.color ? (
+                        <span className="contract-doc__selected-variant">
+                          {product.color}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : isSet ? (
                     <span className="contract-doc__set-option-name">
                       {product.color || "구성 선택"}
                     </span>
@@ -553,10 +597,11 @@ export default function ContractForm({
                   )}
                 </td>
                 <td>
-                  {isSet ? null : useCatalogDropdowns && sizeOptions.length > 0 ? (
+                  {isSet ? null : useCatalogDropdowns && (sizeOptions?.length ?? 0) > 0 ? (
                     <ProductOptionSelect
                       value={product.size}
                       options={sizeOptions}
+                      baseSalePrice={selectedProduct?.salePrice}
                       onChange={(value) => onProductChange(index, "size", value)}
                     />
                   ) : (
@@ -606,9 +651,9 @@ export default function ContractForm({
                   </span>
                 </td>
               </tr>
-              {isSet && selectedProduct?.components
+              {isSet && activeComponents.length
                 ? (() => {
-                    const components = selectedProduct.components;
+                    const components = activeComponents;
 
                     return (
                       <SetProductComponents
@@ -630,14 +675,67 @@ export default function ContractForm({
             })}
             <tr className="contract-doc__total-row">
               <td colSpan={6} className="contract-doc__total-label">
+                소계
+              </td>
+              <td className="contract-doc__total-value">
+                {formatAmount(productsSubtotal)}
+              </td>
+            </tr>
+            <tr className="contract-doc__total-row">
+              <td colSpan={6} className="contract-doc__total-label">
+                전체 할인율
+              </td>
+              <td className="contract-doc__total-value">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={values.totalDiscountRate}
+                  onChange={(event) =>
+                    onChange(
+                      "totalDiscountRate",
+                      event.target.value.replace(/[^\d.]/g, ""),
+                    )
+                  }
+                  className="contract-doc__total-discount-input"
+                  placeholder="0"
+                />
+                %
+                {productsSubtotal - finalTotal > 0 ? (
+                  <span className="contract-doc__total-discount-amount">
+                    (-{formatAmount(productsSubtotal - finalTotal)})
+                  </span>
+                ) : null}
+                <FieldError message={errors.totalDiscountRate} />
+              </td>
+            </tr>
+            <tr className="contract-doc__total-row">
+              <td colSpan={6} className="contract-doc__total-label">
                 합계
               </td>
               <td className="contract-doc__total-value">
-                {formatAmount(contractTotal(values.products))}
+                {formatAmount(finalTotal)}
               </td>
             </tr>
           </tbody>
         </table>
+        <div className="contract-doc__row-actions">
+          <button
+            type="button"
+            className="contract-doc__row-action-button"
+            onClick={onAddProductRow}
+          >
+            상품 추가
+          </button>
+          {values.products.length > PRODUCT_ROW_COUNT ? (
+            <button
+              type="button"
+              className="contract-doc__row-action-button"
+              onClick={onRemoveLastProductRow}
+            >
+              마지막 행 삭제
+            </button>
+          ) : null}
+        </div>
       </section>
 
       <section className="contract-doc__section">
@@ -857,15 +955,7 @@ export default function ContractForm({
           본 문서는 동일한 내용으로 2부 작성되며, 1부는 구매자 보관용, 1부는
           매장(판매자) 보관용입니다. © 이씨라메종
         </p>
-        <div className="contract-doc__footer-company">
-          <p>
-            이씨라메종 (홈온얼스 주식회사) | 사업자등록번호 772-86-01622 | 쇼룸
-            070-4149-9149
-          </p>
-          <p>
-            서울 강서구 마곡중앙6로 21, 8층 811-815호 (마곡동, 이너매스마곡 1)
-          </p>
-        </div>
+        <ContractCompanyFooterContent />
       </footer>
 
       <button

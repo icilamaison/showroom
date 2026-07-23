@@ -90,14 +90,17 @@ export function ContractConsentSection({
             label="개인정보 수집·이용에 동의합니다."
           />
         )}
-        <p className="contract-doc__consent-detail">
-          본인은 개인정보 수집·이용 안내를 확인하였으며, 상품 구매계약의 체결, 결제,
-          배송, A/S 및 고객 문의 응대, 관계 법령에 따른 보관을 위한 개인정보
-          수집·이용에 동의합니다.
-          <span className="contract-doc__consent-note">
-            (※ 이 항목은 계약을 위해 필요한 필수 동의입니다.)
-          </span>
-        </p>
+        <details className="contract-doc__consent-details">
+          <summary className="contract-doc__consent-summary">자세히 보기</summary>
+          <p className="contract-doc__consent-detail">
+            본인은 개인정보 수집·이용 안내를 확인하였으며, 상품 구매계약의 체결, 결제,
+            배송, A/S 및 고객 문의 응대, 관계 법령에 따른 보관을 위한 개인정보
+            수집·이용에 동의합니다.
+            <span className="contract-doc__consent-note">
+              (※ 이 항목은 계약을 위해 필요한 필수 동의입니다.)
+            </span>
+          </p>
+        </details>
         <FieldError message={errors.termsAgreed} />
       </div>
 
@@ -119,10 +122,13 @@ export function ContractConsentSection({
             label="마케팅 정보 수신 및 개인정보 활용에 동의합니다. (선택)"
           />
         )}
-        <p className="contract-doc__consent-detail">
-          본인은 이벤트, 신상품, 프로모션, 할인 혜택 등의 마케팅 정보를
-          문자메시지(SMS), 카카오 알림톡·채널 등을 통해 제공받는 것에 동의합니다.
-        </p>
+        <details className="contract-doc__consent-details">
+          <summary className="contract-doc__consent-summary">자세히 보기</summary>
+          <p className="contract-doc__consent-detail">
+            본인은 이벤트, 신상품, 프로모션, 할인 혜택 등의 마케팅 정보를
+            문자메시지(SMS), 카카오 알림톡·채널 등을 통해 제공받는 것에 동의합니다.
+          </p>
+        </details>
         <p className="contract-doc__consent-footnote">
           ※ 동의하지 않아도 상품 구매 및 서비스 이용에는 제한이 없습니다.
         </p>

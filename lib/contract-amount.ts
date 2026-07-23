@@ -10,9 +10,19 @@ export function lineAmount({ quantity, unitPrice }: AmountInput): number {
   return qty * price;
 }
 
-// 전체 합계 = 모든 줄 금액의 합.
+// 소계 = 모든 줄 금액의 합 (할인 적용 전).
 export function contractTotal(products: AmountInput[]): number {
   return products.reduce((sum, product) => sum + lineAmount(product), 0);
+}
+
+// 최종 합계 = 소계 × (1 - 전체 할인율). 원 단위 반올림.
+export function applyTotalDiscount(
+  subtotal: number,
+  discountRate: string,
+): number {
+  const rate = Number(discountRate);
+  const safeRate = Number.isFinite(rate) && rate > 0 ? rate : 0;
+  return Math.round(subtotal * (1 - safeRate / 100));
 }
 
 export function formatAmount(value: number): string {

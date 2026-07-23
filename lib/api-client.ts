@@ -13,6 +13,7 @@ export type ApiErrorResponse = {
 
 export type SubmitContractResult = {
   contractNumber: string;
+  viewToken: string;
   status: string;
 };
 
@@ -225,6 +226,29 @@ export async function fetchAdminContractById(
   id: number,
 ): Promise<ContractDetail> {
   return adminFetch<ContractDetail>(`/api/admin/contracts/${id}`);
+}
+
+export async function fetchPublicContract(
+  contractNumber: string,
+  token: string,
+): Promise<ContractDetail> {
+  const response = await fetch(
+    `/api/contracts/public/${encodeURIComponent(contractNumber)}?token=${encodeURIComponent(token)}`,
+  );
+
+  const body = await parseResponse<ContractDetail>(response);
+
+  if (!response.ok || !body.success) {
+    const errorBody = body as ApiErrorResponse;
+
+    throw new ApiClientError(
+      errorBody.message || "계약서를 찾을 수 없습니다.",
+      response.status,
+      errorBody.errors,
+    );
+  }
+
+  return body.data;
 }
 
 export async function updateAdminContractStatus(

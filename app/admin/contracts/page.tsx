@@ -125,7 +125,11 @@ export default function AdminContractsPage() {
         </Link>
 
         <header className="app-header app-header--page">
-          <strong className="app-brand">이씨라메종</strong>
+          <img
+            className="app-brand"
+            src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
+            alt="이씨라메종"
+          />
           <h1 className="app-title app-title--page">계약서 목록</h1>
           <p className="app-description">
             접수된 계약서를 조회하고 PlayAuto 주문 엑셀로 내려받을 수 있습니다.

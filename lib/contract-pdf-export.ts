@@ -8,11 +8,23 @@ export async function exportContractDocumentToPdf(
   element: HTMLElement,
   filename: string,
 ): Promise<void> {
+  // 동의 상세(<details>)가 접혀 있어도 PDF에는 전문이 그대로 남아야 하므로 캡처 직전 강제로 펼친다
+  const collapsedDetails = Array.from(
+    element.querySelectorAll("details:not([open])"),
+  ) as HTMLDetailsElement[];
+  collapsedDetails.forEach((details) => {
+    details.open = true;
+  });
+
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
     backgroundColor: "#ffffff",
     logging: false,
+  });
+
+  collapsedDetails.forEach((details) => {
+    details.open = false;
   });
 
   const pdf = new jsPDF({

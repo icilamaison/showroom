@@ -46,6 +46,7 @@ export type ContractFormValues = {
   recipientAddress: string;
   recipientAddressDetail: string;
   products: ProductRow[];
+  totalDiscountRate: string;
   paymentMethod: "card" | "bank_transfer" | "";
   cashReceiptType: "income_deduction" | "expense_proof" | "";
   cashReceiptPhone: string;
@@ -120,7 +121,8 @@ const contractFormSchema = z
     recipientPostalCode: z.string().trim(),
     recipientAddress: z.string().trim(),
     recipientAddressDetail: z.string().trim(),
-    products: z.array(productRowSchema).length(PRODUCT_ROW_COUNT),
+    products: z.array(productRowSchema).min(PRODUCT_ROW_COUNT),
+    totalDiscountRate: z.string().trim(),
     paymentMethod: z.enum(["card", "bank_transfer"], {
       errorMap: () => ({ message: "결제수단을 선택해주세요." }),
     }),
@@ -252,6 +254,19 @@ const contractFormSchema = z
           message: "금액은 1 이상의 숫자로 입력해주세요.",
         });
       }
+    }
+
+    if (
+      data.totalDiscountRate.trim() &&
+      (!/^\d+(\.\d+)?$/.test(data.totalDiscountRate) ||
+        Number(data.totalDiscountRate) < 0 ||
+        Number(data.totalDiscountRate) > 100)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["totalDiscountRate"],
+        message: "할인율은 0~100 사이의 숫자로 입력해주세요.",
+      });
     }
 
     if (data.paymentMethod === "bank_transfer") {

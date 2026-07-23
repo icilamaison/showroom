@@ -1,7 +1,24 @@
 import catalogData from "../product.json";
 
+export type CatalogSizeOption =
+  | string
+  | {
+      name: string;
+      consumerPrice?: number;
+      salePrice?: number;
+      components?: SetComponent[];
+    };
+
+export type ProductSelectOption = {
+  value: string;
+  label: string;
+};
+
 export type SetComponent = {
+  productCode?: string;
   name: string;
+  quantity?: number;
+  consumerPrice?: number;
   colors?: string[];
   sizes?: string[];
 };
@@ -17,9 +34,81 @@ export type CatalogProduct = {
   productPrice: number;
   salePrice: number;
   colors?: Record<string, string>;
-  sizes?: string[];
+  sizes?: CatalogSizeOption[];
   components?: SetComponent[];
 };
+
+export function getSizeOptionName(option: CatalogSizeOption): string {
+  return typeof option === "string" ? option : option.name;
+}
+
+export function normalizeProductOptions(
+  options: CatalogSizeOption[] | string[] | undefined,
+  baseSalePrice?: number,
+): ProductSelectOption[] {
+  if (!options?.length) {
+    return [];
+  }
+
+  return options.map((option) => {
+    const value = getSizeOptionName(option);
+    const salePrice = typeof option === "object" ? option.salePrice : undefined;
+
+    if (
+      baseSalePrice != null &&
+      salePrice != null &&
+      salePrice > baseSalePrice
+    ) {
+      const addPrice = salePrice - baseSalePrice;
+      return {
+        value,
+        label: `${value} (+${addPrice.toLocaleString("ko-KR")}원)`,
+      };
+    }
+
+    return { value, label: value };
+  });
+}
+
+export function getSizeSalePrice(
+  product: CatalogProduct,
+  sizeName: string,
+): number | null {
+  for (const option of product.sizes ?? []) {
+    if (typeof option === "string" || option.name !== sizeName) {
+      continue;
+    }
+
+    if (option.salePrice != null) {
+      return option.salePrice;
+    }
+  }
+
+  return null;
+}
+
+export function getVariantComponents(
+  product: CatalogProduct,
+  variantName: string,
+): SetComponent[] {
+  const normalized = variantName.trim();
+
+  if (!normalized) {
+    return product.components ?? [];
+  }
+
+  for (const option of product.sizes ?? []) {
+    if (
+      typeof option === "object" &&
+      option.name === normalized &&
+      option.components?.length
+    ) {
+      return option.components;
+    }
+  }
+
+  return product.components ?? [];
+}
 
 const catalog = catalogData as CatalogProduct[];
 
@@ -63,6 +152,18 @@ export function findCatalogProductByName(name: string): CatalogProduct | null {
 
   return (
     catalog.find((product) => product.productName.trim() === normalized) ?? null
+  );
+}
+
+export function findCatalogProductByCode(code: string): CatalogProduct | null {
+  const normalized = code.trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  return (
+    catalog.find((product) => product.productCode === normalized) ?? null
   );
 }
 

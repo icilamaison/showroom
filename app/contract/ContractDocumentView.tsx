@@ -2,17 +2,21 @@
 
 import { Fragment } from "react";
 import Image from "next/image";
+import { ContractCompanyFooterContent } from "./ContractCompanyFooter";
 import {
   findCatalogProductByName,
+  getVariantComponents,
   isSetProduct,
   type CatalogProduct,
 } from "@/lib/product-catalog";
 import {
   buildSetSelectionsFromColor,
+  createSetComponentSelections,
   type SetComponentSelection,
 } from "@/lib/set-product";
 import type { ContractFormValues, ProductRow } from "@/lib/validation/contract";
 import {
+  applyTotalDiscount,
   contractTotal,
   formatAmount,
   formatDigits,
@@ -104,9 +108,15 @@ function SetProductDocumentComponents({
   return (
     <>
       {components.map((component, componentIndex) => {
-        const selection = selections[componentIndex] ?? { color: "", size: "" };
+        const selection = selections[componentIndex] ?? {
+          color: "",
+          size: "",
+          quantity: "",
+          unitPrice: "",
+        };
         const colorOptions = component.colors ?? [];
         const sizeOptions = component.sizes ?? [];
+        const amount = lineAmount(selection);
 
         return (
           <tr
@@ -129,7 +139,21 @@ function SetProductDocumentComponents({
                 </span>
               ) : null}
             </td>
-            <td colSpan={3} />
+            <td>
+              <span className="contract-doc__set-component-value contract-doc__set-component-value--center">
+                {selection.quantity}
+              </span>
+            </td>
+            <td>
+              <span className="contract-doc__set-component-value contract-doc__set-component-value--right">
+                {formatDigits(selection.unitPrice)}
+              </span>
+            </td>
+            <td>
+              <span className="contract-doc__set-component-value contract-doc__set-component-value--right">
+                {amount > 0 ? formatAmount(amount) : ""}
+              </span>
+            </td>
           </tr>
         );
       })}
@@ -140,21 +164,36 @@ function SetProductDocumentComponents({
 function resolveProductRow(product: ProductRow): {
   catalogProduct: CatalogProduct | null;
   isSet: boolean;
+  activeComponents: CatalogProduct["components"];
   setSelections: SetComponentSelection[];
 } {
   const catalogProduct = findCatalogProductByName(product.name);
+  const variantName = product.color.trim() || product.size.trim();
+  const variantComponents = catalogProduct
+    ? getVariantComponents(catalogProduct, variantName)
+    : [];
+  const isLegacySetColor = product.color.trim().startsWith("COLOR=");
   const isSet =
+    variantComponents.length > 0 ||
     Boolean(catalogProduct && isSetProduct(catalogProduct)) ||
-    product.color.trim().startsWith("COLOR=");
+    isLegacySetColor;
+
+  const activeComponents =
+    variantComponents.length > 0
+      ? variantComponents
+      : catalogProduct?.components;
 
   const setSelections =
-    catalogProduct?.components && isSet
-      ? buildSetSelectionsFromColor(catalogProduct.components, product.color)
+    activeComponents && isSet
+      ? isLegacySetColor
+        ? buildSetSelectionsFromColor(activeComponents, product.color)
+        : createSetComponentSelections(activeComponents)
       : [];
 
   return {
     catalogProduct,
     isSet,
+    activeComponents,
     setSelections,
   };
 }
@@ -174,12 +213,18 @@ export default function ContractDocumentView({
   const displayedRecipientPhone = values.recipientSameAsBuyer
     ? values.buyerPhone
     : values.recipientPhone;
+  const productsSubtotal = contractTotal(values.products);
+  const finalTotal = applyTotalDiscount(productsSubtotal, values.totalDiscountRate);
 
   return (
     <article className={`contract-doc contract-doc--document ${className}`.trim()}>
       <header className="contract-doc__header">
         <div className="contract-doc__brand">
-          <strong className="contract-doc__brand-name">이씨라메종</strong>
+          <img
+            className="contract-doc__brand-name"
+            src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
+            alt="이씨라메종"
+          />
           <span className="contract-doc__brand-contact">
             쇼룸 070-4149-9149 | 고객센터 02-6949-3223 | icilamaison.com
           </span>
@@ -300,8 +345,9 @@ export default function ContractDocumentView({
           </thead>
           <tbody>
             {values.products.map((product, index) => {
-              const { catalogProduct, isSet, setSelections } =
+              const { catalogProduct, isSet, activeComponents, setSelections } =
                 resolveProductRow(product);
+              const isLegacySetColor = product.color.trim().startsWith("COLOR=");
 
               return (
                 <Fragment key={index}>
@@ -311,7 +357,7 @@ export default function ContractDocumentView({
                       <ReadonlyValue value={product.name} />
                     </td>
                     <td>
-                      {isSet ? (
+                      {isSet && isLegacySetColor ? (
                         <span className="contract-doc__set-option-name">
                           {product.color || "-"}
                         </span>
@@ -348,10 +394,10 @@ export default function ContractDocumentView({
                       />
                     </td>
                   </tr>
-                  {isSet && catalogProduct?.components ? (
+                  {isSet && activeComponents?.length ? (
                     <SetProductDocumentComponents
                       rowIndex={index}
-                      components={catalogProduct.components}
+                      components={activeComponents}
                       selections={setSelections}
                     />
                   ) : null}
@@ -360,10 +406,31 @@ export default function ContractDocumentView({
             })}
             <tr className="contract-doc__total-row">
               <td colSpan={6} className="contract-doc__total-label">
+                소계
+              </td>
+              <td className="contract-doc__total-value">
+                {formatAmount(productsSubtotal)}
+              </td>
+            </tr>
+            <tr className="contract-doc__total-row">
+              <td colSpan={6} className="contract-doc__total-label">
+                전체 할인율
+              </td>
+              <td className="contract-doc__total-value">
+                {values.totalDiscountRate ? `${values.totalDiscountRate}%` : "-"}
+                {productsSubtotal - finalTotal > 0 ? (
+                  <span className="contract-doc__total-discount-amount">
+                    (-{formatAmount(productsSubtotal - finalTotal)})
+                  </span>
+                ) : null}
+              </td>
+            </tr>
+            <tr className="contract-doc__total-row">
+              <td colSpan={6} className="contract-doc__total-label">
                 합계
               </td>
               <td className="contract-doc__total-value">
-                {formatAmount(contractTotal(values.products))}
+                {formatAmount(finalTotal)}
               </td>
             </tr>
           </tbody>
@@ -506,15 +573,7 @@ export default function ContractDocumentView({
           본 문서는 동일한 내용으로 2부 작성되며, 1부는 구매자 보관용, 1부는
           매장(판매자) 보관용입니다. © 이씨라메종
         </p>
-        <div className="contract-doc__footer-company">
-          <p>
-            이씨라메종 (홈온얼스 주식회사) | 사업자등록번호 772-86-01622 | 쇼룸
-            070-4149-9149
-          </p>
-          <p>
-            서울 강서구 마곡중앙6로 21, 8층 811-815호 (마곡동, 이너매스마곡 1)
-          </p>
-        </div>
+        <ContractCompanyFooterContent />
       </footer>
     </article>
   );

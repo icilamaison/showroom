@@ -1,7 +1,7 @@
 "use client";
 
 import { ApiClientError, submitContract } from "@/lib/api-client";
-import { isSetProduct, type CatalogProduct } from "@/lib/product-catalog";
+import { getSizeSalePrice, getVariantComponents, isSetProduct, type CatalogProduct } from "@/lib/product-catalog";
 import {
   createSetComponentSelections,
   formatSetOptionName,
@@ -9,7 +9,11 @@ import {
 } from "@/lib/set-product";
 import { formatPhoneInput, PHONE_FORM_FIELDS } from "@/lib/phone";
 import type { ContractFormValues, ProductRow } from "@/lib/validation/contract";
-import { validateContractForm } from "@/lib/validation/contract";
+import {
+  createEmptyProductRow,
+  PRODUCT_ROW_COUNT,
+  validateContractForm,
+} from "@/lib/validation/contract";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -156,6 +160,55 @@ export default function ContractWritePage() {
           };
         }
 
+        if (field === "color") {
+          const selected = productSelections[index];
+          const salePrice = selected ? getSizeSalePrice(selected, value) : null;
+          const components = selected ? getVariantComponents(selected, value) : [];
+
+          if (components.length) {
+            setSetComponentSelections((current) => ({
+              ...current,
+              [index]: createSetComponentSelections(components),
+            }));
+          } else {
+            setSetComponentSelections((current) => {
+              if (!current[index]) {
+                return current;
+              }
+
+              const next = { ...current };
+              delete next[index];
+              return next;
+            });
+          }
+
+          return {
+            ...product,
+            color: value,
+            size: "",
+            ...(salePrice != null ? { unitPrice: String(salePrice) } : {}),
+          };
+        }
+
+        if (field === "size") {
+          const selected = productSelections[index];
+          const salePrice = selected ? getSizeSalePrice(selected, value) : null;
+          const components = selected ? getVariantComponents(selected, value) : [];
+
+          if (components.length) {
+            setSetComponentSelections((current) => ({
+              ...current,
+              [index]: createSetComponentSelections(components),
+            }));
+          }
+
+          return {
+            ...product,
+            size: value,
+            ...(salePrice != null ? { unitPrice: String(salePrice) } : {}),
+          };
+        }
+
         return { ...product, [field]: value };
       }),
     }));
@@ -171,11 +224,15 @@ export default function ContractWritePage() {
     value: string,
   ) {
     const selectedProduct = productSelections[index];
-    if (!selectedProduct?.components) {
+    const row = values.products[index];
+    const variantName = row?.color || row?.size || "";
+    const components = selectedProduct
+      ? getVariantComponents(selectedProduct, variantName)
+      : [];
+
+    if (!components.length) {
       return;
     }
-
-    const components = selectedProduct.components;
     const nextSelections = [
       ...(setComponentSelections[index] ??
         createSetComponentSelections(components)),
@@ -196,7 +253,9 @@ export default function ContractWritePage() {
         productIndex === index
           ? {
               ...row,
-              color: formatSetOptionName(components, nextSelections),
+              color: selectedProduct?.components?.length
+                ? formatSetOptionName(components, nextSelections)
+                : row.color,
             }
           : row,
       ),
@@ -258,6 +317,26 @@ export default function ContractWritePage() {
     clearFieldError(`products.${index}.unitPrice`);
   }
 
+  function handleAddProductRow() {
+    setValues((current) => ({
+      ...current,
+      products: [...current.products, createEmptyProductRow()],
+    }));
+  }
+
+  function handleRemoveLastProductRow() {
+    setValues((current) => {
+      if (current.products.length <= PRODUCT_ROW_COUNT) {
+        return current;
+      }
+
+      return {
+        ...current,
+        products: current.products.slice(0, -1),
+      };
+    });
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError("");
@@ -275,7 +354,7 @@ export default function ContractWritePage() {
     try {
       const result = await submitContract(validation.data);
       router.push(
-        `/contract/complete?contractNumber=${encodeURIComponent(result.contractNumber)}`,
+        `/contract/complete?contractNumber=${encodeURIComponent(result.contractNumber)}&viewToken=${encodeURIComponent(result.viewToken)}`,
       );
     } catch (error) {
       if (error instanceof ApiClientError) {
@@ -295,13 +374,15 @@ export default function ContractWritePage() {
   return (
     <main className="app-page">
       <div className="app-container app-container--doc">
-        <Link href="/" className="app-back-link">
-          ← 뒤로 가기
+        <Link href="/contract/notice" className="app-back-link">
+          ← 안내로 돌아가기
         </Link>
 
-        <div className="app-panel">
+        <div className="contract-doc-flow">
           {formError ? (
-            <p className="app-alert app-alert--error">{formError}</p>
+            <p className="app-alert app-alert--error contract-doc-flow__alert">
+              {formError}
+            </p>
           ) : null}
 
           <ContractForm
@@ -313,6 +394,8 @@ export default function ContractWritePage() {
             onChange={handleChange}
             onProductChange={handleProductChange}
             onProductSelect={handleProductSelect}
+            onAddProductRow={handleAddProductRow}
+            onRemoveLastProductRow={handleRemoveLastProductRow}
             onSetComponentChange={handleSetComponentChange}
             onSubmit={handleSubmit}
           />

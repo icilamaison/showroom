@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import type { CatalogProduct } from "../../lib/product-catalog";
+import { getSizeOptionName, getSizeSalePrice, type CatalogProduct } from "../../lib/product-catalog";
 import {
   createSetComponentSelections,
   formatSetOptionName,
@@ -80,13 +80,16 @@ function buildProductRow(product: CatalogProduct, variant: number): ProductRow {
 
   const colorKeys = product.colors ? Object.keys(product.colors) : [];
   const sizes = product.sizes ?? [];
+  const sizeOption = sizes[variant % sizes.length];
+  const sizeName = sizeOption ? getSizeOptionName(sizeOption) : "";
+  const salePrice = getSizeSalePrice(product, sizeName) ?? product.salePrice;
 
   return {
     name: product.productName,
     color: colorKeys[variant % colorKeys.length] ?? "",
-    size: sizes[variant % sizes.length] ?? "",
+    size: sizeName,
     quantity: String((variant % 3) + 1),
-    unitPrice: String(product.salePrice),
+    unitPrice: String(salePrice),
     remarks: "",
   };
 }

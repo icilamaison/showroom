@@ -2,6 +2,7 @@ import { Router } from "express";
 import { sendError, sendSuccess } from "../../lib/api-response";
 import { parseAdminLoginInput } from "../../schemas/admin.schema";
 import {
+  ADMIN_COOKIE_OPTIONS,
   ADMIN_TOKEN_COOKIE,
   authenticateAdmin,
   signAdminToken,
@@ -30,9 +31,7 @@ authRouter.post("/", async (req, res) => {
   const token = signAdminToken(admin);
 
   res.cookie(ADMIN_TOKEN_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    ...ADMIN_COOKIE_OPTIONS,
     maxAge: ONE_DAY_MS,
   });
 

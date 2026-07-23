@@ -1,9 +1,11 @@
+import { randomBytes } from "crypto";
 import { pool } from "../db/pool";
 import type { ContractInput } from "../schemas/contract.schema";
 import { withContractNumberRetry } from "./contract-number";
 
 export type CreateContractResult = {
   contractNumber: string;
+  viewToken: string;
   status: "SUBMITTED";
 };
 
@@ -15,6 +17,8 @@ export async function createContract(
 
   try {
     await client.query("BEGIN");
+
+    const viewToken = randomBytes(24).toString("hex");
 
     const result = await withContractNumberRetry(client, async (contractNumber) => {
       await client.query(
@@ -31,9 +35,10 @@ export async function createContract(
           terms_agreed,
           signature_name,
           status,
-          payload
+          payload,
+          view_token
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14
         )`,
         [
           contractNumber,
@@ -55,11 +60,13 @@ export async function createContract(
             writtenDate: input.writtenDate,
             agreementDate: input.agreementDate,
           }),
+          viewToken,
         ],
       );
 
       return {
         contractNumber,
+        viewToken,
         status: "SUBMITTED" as const,
       };
     });

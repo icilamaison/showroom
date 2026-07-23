@@ -42,7 +42,11 @@ export default function AdminLoginPage() {
     <main className="app-page app-page--center">
       <div className="app-container app-container--narrow app-panel">
         <header className="app-header">
-          <strong className="app-brand">이씨라메종</strong>
+          <img
+            className="app-brand"
+            src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
+            alt="이씨라메종"
+          />
           <h1 className="app-title">관리자 로그인</h1>
         </header>
 
