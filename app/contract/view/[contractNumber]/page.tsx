@@ -13,7 +13,8 @@ import {
   purchasePayloadToFormValues,
 } from "@/lib/contract-document";
 import { exportContractDocumentToPdf } from "@/lib/contract-pdf-export";
-import ContractDocumentView from "@/app/contract/ContractDocumentView";
+import ContractDocumentViewer from "@/app/contract/ContractDocumentViewer";
+import ContractPdfDocument from "@/app/contract/ContractPdfDocument";
 import "../../contract.css";
 
 export default function ContractViewPage() {
@@ -25,7 +26,7 @@ export default function ContractViewPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const documentRef = useRef<HTMLDivElement>(null);
+  const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!token) {
@@ -64,7 +65,7 @@ export default function ContractViewPage() {
     : null;
 
   return (
-    <main className="app-page">
+    <main className="app-page app-page--contract-view">
       <div className="app-container app-container--doc">
         {isLoading ? (
           <p className="app-description">불러오는 중...</p>
@@ -72,19 +73,23 @@ export default function ContractViewPage() {
           <p className="app-alert app-alert--error">{error}</p>
         ) : documentValues ? (
           <>
-            <div className="app-panel">
-              <div ref={documentRef}>
-                <ContractDocumentView values={documentValues} />
-              </div>
+            <ContractDocumentViewer values={documentValues} />
+
+            <div
+              ref={pdfCaptureRef}
+              className="contract-doc__pdf-capture"
+              aria-hidden="true"
+            >
+              <ContractPdfDocument values={documentValues} />
             </div>
 
-            <div className="app-menu" style={{ marginTop: "1rem" }}>
+            <div className="app-menu app-menu--contract-view">
               <button
                 type="button"
                 className="app-button"
                 disabled={isDownloadingPdf}
                 onClick={() => {
-                  if (!contract || !documentRef.current) {
+                  if (!contract || !pdfCaptureRef.current) {
                     return;
                   }
 
@@ -94,7 +99,7 @@ export default function ContractViewPage() {
 
                     try {
                       await exportContractDocumentToPdf(
-                        documentRef.current as HTMLElement,
+                        pdfCaptureRef.current as HTMLElement,
                         buildContractPdfFilename(contract.contractNumber),
                       );
                     } catch {

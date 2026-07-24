@@ -16,7 +16,7 @@ import type { PurchaseContractPayload } from "@/lib/validation/contract";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import ContractDocumentView from "@/app/contract/ContractDocumentView";
+import ContractPdfDocument from "@/app/contract/ContractPdfDocument";
 import {
   buildContractPdfFilename,
   purchasePayloadToFormValues,
@@ -337,9 +337,7 @@ export default function AdminContractDetailPage() {
             alt="이씨라메종"
           />
           <h1 className="app-title app-title--page">계약서 상세</h1>
-          <p className="app-description">
-            고객이 제출한 계약 정보를 확인하고 상태를 변경할 수 있습니다.
-          </p>
+          <p className="app-description">제출된 계약 정보 및 처리 상태</p>
         </header>
 
         {error ? <p className="app-alert app-alert--error">{error}</p> : null}
@@ -459,7 +457,7 @@ export default function AdminContractDetailPage() {
                 className="contract-doc__pdf-capture"
                 aria-hidden="true"
               >
-                <ContractDocumentView values={documentValues} />
+                <ContractPdfDocument values={documentValues} />
               </div>
             ) : null}
 
@@ -470,7 +468,7 @@ export default function AdminContractDetailPage() {
                   <div className="admin-action-group">
                     <p className="admin-action-group__title">계약서 PDF</p>
                     <p className="admin-action-group__description">
-                      고객이 작성한 구매 계약서를 A4 PDF로 내려받을 수 있습니다.
+                      구매 계약서를 A4 PDF로 내려받습니다.
                     </p>
                     <div className="admin-detail-actions admin-detail-actions--start">
                       {contract.viewToken ? (
@@ -524,8 +522,7 @@ export default function AdminContractDetailPage() {
                   <div className="admin-action-group">
                     <p className="admin-action-group__title">PlayAuto 주문 엑셀</p>
                     <p className="admin-action-group__description">
-                      승인번호를 입력하면 SR이 자동으로 붙어 PlayAuto
-                      신규주문 업로드 양식으로 내려받습니다.
+                      승인번호 앞에 SR이 자동으로 붙습니다.
                     </p>
                     <div className="admin-detail-actions">
                       <div className="app-field">

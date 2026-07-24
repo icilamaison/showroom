@@ -63,15 +63,15 @@ export type ContractFormValues = {
 };
 
 const yearSchema = z
-  .string()
+  .string({ required_error: "연도를 입력해주세요." })
   .trim()
   .regex(/^\d{4}$/, "연도를 4자리로 입력해주세요.");
 const monthSchema = z
-  .string()
+  .string({ required_error: "월을 입력해주세요." })
   .trim()
   .regex(/^(0?[1-9]|1[0-2])$/, "월을 1~12 사이로 입력해주세요.");
 const daySchema = z
-  .string()
+  .string({ required_error: "일을 입력해주세요." })
   .trim()
   .regex(/^(0?[1-9]|[12]\d|3[01])$/, "일을 1~31 사이로 입력해주세요.");
 
@@ -102,15 +102,13 @@ const contractFormSchema = z
     writtenDateMonth: monthSchema,
     writtenDateDay: daySchema,
     buyerName: z
-      .string()
+      .string({ required_error: "구매자 성명을 입력해주세요." })
       .trim()
-      .min(1, "구매자 성명을 입력해주세요.")
       .min(2, "구매자 성명은 2자 이상 50자 이하로 입력해주세요.")
       .max(50, "구매자 성명은 2자 이상 50자 이하로 입력해주세요."),
     buyerPhone: z
-      .string()
+      .string({ required_error: "구매자 연락처를 입력해주세요." })
       .trim()
-      .min(1, "구매자 연락처를 입력해주세요.")
       .regex(phoneRegex, "연락처는 010-0000-0000 형식으로 입력해주세요."),
     recipientSameAsBuyer: z.boolean({
       required_error: "수령자 정보를 선택해주세요.",
@@ -122,22 +120,21 @@ const contractFormSchema = z
     recipientAddress: z.string().trim(),
     recipientAddressDetail: z.string().trim(),
     products: z.array(productRowSchema).min(PRODUCT_ROW_COUNT),
-    totalDiscountRate: z.string().trim(),
+    totalDiscountRate: z.string().trim().default(""),
     paymentMethod: z.enum(["card", "bank_transfer"], {
       errorMap: () => ({ message: "결제수단을 선택해주세요." }),
     }),
     cashReceiptType: z.enum(["income_deduction", "expense_proof", ""]).optional(),
-    cashReceiptPhone: z.string().trim(),
-    cashReceiptBusinessNumber: z.string().trim(),
-    taxInvoiceRequested: z.boolean(),
-    taxInvoiceEmail: z.string().trim(),
+    cashReceiptPhone: z.string().trim().default(""),
+    cashReceiptBusinessNumber: z.string().trim().default(""),
+    taxInvoiceRequested: z.boolean().default(false),
+    taxInvoiceEmail: z.string().trim().default(""),
     agreementDateYear: yearSchema,
     agreementDateMonth: monthSchema,
     agreementDateDay: daySchema,
     signatureName: z
-      .string()
+      .string({ required_error: "서명명을 입력해주세요." })
       .trim()
-      .min(1, "서명명을 입력해주세요.")
       .min(2, "서명명은 2자 이상 50자 이하로 입력해주세요.")
       .max(50, "서명명은 2자 이상 50자 이하로 입력해주세요."),
     signatureDataUrl: z.string().trim().min(1, "서명을 입력해주세요."),
@@ -146,7 +143,7 @@ const contractFormSchema = z
         message: "개인정보 수집·이용에 동의해야 합니다.",
       }),
     }),
-    marketingConsentAgreed: z.boolean(),
+    marketingConsentAgreed: z.boolean().default(false),
   })
   .superRefine((data, ctx) => {
     if (
@@ -342,12 +339,16 @@ const contractFormSchema = z
     }
   });
 
-export type ValidatedContractFormValues = z.infer<typeof contractFormSchema> & {
+export { contractFormSchema };
+
+export type ContractFormSchemaValues = z.infer<typeof contractFormSchema>;
+
+export type ValidatedContractFormValues = ContractFormSchemaValues & {
   writtenDate: string;
   agreementDate: string;
 };
 
-function formatValidationErrors(error: z.ZodError): Record<string, string> {
+export function formatValidationErrors(error: z.ZodError): Record<string, string> {
   const errors: Record<string, string> = {};
 
   for (const issue of error.issues) {

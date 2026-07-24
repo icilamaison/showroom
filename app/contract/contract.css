@@ -249,13 +249,16 @@
   color: #6b7280;
 }
 
-.contract-doc__set-option-name {
+.contract-doc__product-cell-text,
+.contract-doc__table--products .contract-doc__readonly-value {
   display: block;
-  font-size: 0.78rem;
+  font-size: inherit;
   line-height: 1.45;
-  color: #374151;
+  min-height: 0;
+  color: inherit;
   white-space: normal;
-  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .contract-doc__product-color-cell {
@@ -282,25 +285,37 @@
 }
 
 .contract-doc__set-component-row {
-  background: #fafaf8;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.76rem;
 }
 
 .contract-doc__set-component-row td {
   border-top: none;
   padding-top: 0.15rem;
   padding-bottom: 0.35rem;
+  color: #6b7280;
 }
 
 .contract-doc__set-component-name {
   padding-left: 1rem !important;
-  font-size: 0.85rem;
-  color: #374151;
+  font-size: inherit;
+  color: #6b7280;
 }
 
 .contract-doc__set-component-value {
   display: block;
-  font-size: 0.85rem;
-  color: #374151;
+  font-size: inherit;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.contract-doc__set-component-row .contract-doc__cell-select {
+  color: #6b7280;
+}
+
+.contract-doc__set-component-row .contract-doc__cell-select:focus {
+  background: #eef0f2;
 }
 
 .contract-doc__set-component-value--center {
@@ -500,10 +515,17 @@
 
 .contract-doc__checkbox {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.35rem;
   cursor: pointer;
   min-width: 0;
+}
+
+.contract-doc__option-group--stack .contract-doc__checkbox,
+.contract-doc__table--payment td > .contract-doc__checkbox {
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .contract-doc__checkbox-input {
@@ -518,21 +540,22 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: -0.05em;
   white-space: nowrap;
+  line-height: 1.45;
 }
 
 .contract-doc__checkbox > span:last-child {
+  flex: 1;
   min-width: 0;
+  line-height: 1.45;
   overflow-wrap: anywhere;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.15rem;
 }
 
 .contract-doc__checkbox .contract-doc__inline-input {
   max-width: 100%;
-}
-
-.contract-doc__tax-email-row {
-  display: block;
-  margin-top: 0.12rem;
-  white-space: nowrap;
 }
 
 .contract-doc__muted {
@@ -711,7 +734,7 @@
 .contract-doc__signature-stamp-image {
   position: absolute;
   left: 50%;
-  bottom: -5px;
+  bottom: 0; 
   transform: translateX(-50%);
   width: 82px;
   height: 30px;
@@ -846,6 +869,9 @@
   width: 100%;
   max-width: var(--doc-width);
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .contract-doc--sheet {
@@ -914,23 +940,22 @@
   position: fixed;
   left: -10000px;
   top: 0;
-  /* A4 비율 캡처 폭 — exportContractDocumentToPdf에서 210×297mm로 출력 */
-  width: 794px;
+  /* contract-pdf-export.ts PDF_RENDER_WIDTH_PX · 화면 계약서(--doc-width)와 동일 */
+  width: 860px;
   background: #fff;
-  border: 1px solid #d1d5db;
-  padding: 16mm 18mm;
   box-shadow: none;
   z-index: -1;
 }
 
-/* PDF 한 장에 맞도록 캡처 문서만 촘촘하게 (화면 표시엔 영향 없음) */
-.contract-doc__pdf-capture .contract-doc--document {
-  gap: 0.42rem;
+.contract-doc__pdf-document {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.contract-doc__pdf-capture .contract-doc__table th,
-.contract-doc__pdf-capture .contract-doc__table td {
-  padding: 0.2rem 0.38rem;
+.contract-doc__pdf-notice-section,
+.contract-doc__pdf-contract-section {
+  width: 100%;
 }
 
 /* 배송·교환·반품 안내문 (계약서와 동일한 문서 스타일) */
@@ -1007,6 +1032,164 @@
   font-size: 1rem;
   line-height: 1.7;
   color: var(--color-text);
+}
+
+/* 계약서 조회 — 모바일: 보험 앱처럼 페이지 넘김, 데스크톱: 세로 스크롤 */
+.contract-doc-viewer {
+  width: 100%;
+  max-width: var(--doc-width);
+  margin: 0 auto;
+}
+
+.contract-doc-viewer__toolbar,
+.contract-doc-viewer__dots,
+.contract-doc-viewer__nav {
+  display: none;
+}
+
+.contract-doc-viewer__viewport {
+  width: 100%;
+}
+
+.contract-doc-viewer__track {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contract-doc-viewer__page {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .app-page--contract-view {
+    padding: 0;
+    background: #eef0f3;
+  }
+
+  .app-page--contract-view .app-container--doc {
+    max-width: none;
+  }
+
+  .app-page--contract-view .app-menu {
+    margin: 0;
+    padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  .app-page--contract-view .app-menu--contract-view {
+    margin-top: 0;
+  }
+
+  .contract-doc-viewer__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .contract-doc-viewer__title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .contract-doc-viewer__counter {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--color-text-subtle);
+    white-space: nowrap;
+  }
+
+  .contract-doc-viewer__viewport {
+    overflow: hidden;
+    min-height: calc(100dvh - 8.5rem - env(safe-area-inset-bottom));
+  }
+
+  .contract-doc-viewer__track {
+    flex-direction: row;
+    gap: 0;
+    height: 100%;
+    transition: transform 0.28s ease;
+    will-change: transform;
+  }
+
+  .contract-doc-viewer__page {
+    flex: 0 0 100%;
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+  }
+
+  .contract-doc-viewer__page .contract-doc--sheet {
+    min-height: 100%;
+    box-shadow: none;
+  }
+
+  .contract-doc-viewer__dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.55rem 0 0.15rem;
+    background: #eef0f3;
+  }
+
+  .contract-doc-viewer__dot {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: #c5cad3;
+  }
+
+  .contract-doc-viewer__dot--active {
+    width: 1.1rem;
+    background: #111827;
+  }
+
+  .contract-doc-viewer__nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+    padding: 0.55rem 1rem 0.85rem;
+    background: #eef0f3;
+  }
+
+  .contract-doc-viewer__nav-button {
+    min-height: 2.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.55rem;
+    background: #fff;
+    color: var(--color-text);
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .contract-doc-viewer__nav-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .contract-doc-viewer__nav-button--primary {
+    border-color: #111827;
+    background: #111827;
+    color: #fff;
+  }
+
+  .contract-doc-viewer__nav-button--primary:disabled {
+    border-color: var(--color-border);
+    background: #fff;
+    color: var(--color-text-subtle);
+  }
 }
 
 @media (max-width: 720px) {

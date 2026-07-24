@@ -329,6 +329,8 @@ export default function ContractForm({
   const finalTotal = applyTotalDiscount(productsSubtotal, values.totalDiscountRate);
   const isSubmitDisabled = !values.termsAgreed || isSubmitting;
   const showBankTransferFields = values.paymentMethod === "bank_transfer";
+  const cashReceiptDisabled =
+    !showBankTransferFields || values.taxInvoiceRequested;
   const recipientNameDisabled = values.recipientSameAsBuyer === true;
   const recipientPhoneDisabled = values.recipientSameAsBuyer === true;
   const displayedRecipientName = recipientNameDisabled
@@ -567,7 +569,7 @@ export default function ContractForm({
                 </td>
                 <td className="contract-doc__product-color-cell">
                   {isSet && isLegacySetColor ? (
-                    <span className="contract-doc__set-option-name">
+                    <span className="contract-doc__product-cell-text">
                       {product.color || "구성 선택"}
                     </span>
                   ) : useCatalogDropdowns && hasColorVariants ? (
@@ -581,7 +583,7 @@ export default function ContractForm({
                       />
                     </div>
                   ) : isSet ? (
-                    <span className="contract-doc__set-option-name">
+                    <span className="contract-doc__product-cell-text">
                       {product.color || "구성 선택"}
                     </span>
                   ) : useCatalogDropdowns && colorOptions.length > 0 ? (
@@ -787,9 +789,14 @@ export default function ContractForm({
                     <input
                       type="checkbox"
                       checked={values.cashReceiptType === "income_deduction"}
-                      disabled={!showBankTransferFields}
+                      disabled={cashReceiptDisabled}
                       onChange={() =>
-                        onChange("cashReceiptType", "income_deduction")
+                        onChange(
+                          "cashReceiptType",
+                          values.cashReceiptType === "income_deduction"
+                            ? ""
+                            : "income_deduction",
+                        )
                       }
                       className="contract-doc__checkbox-input"
                     />
@@ -805,7 +812,7 @@ export default function ContractForm({
                           onChange("cashReceiptPhone", event.target.value)
                         }
                         className="contract-doc__inline-input contract-doc__inline-input--phone"
-                        disabled={!showBankTransferFields}
+                        disabled={cashReceiptDisabled}
                         placeholder="010-0000-0000"
                       />
                       )
@@ -815,9 +822,14 @@ export default function ContractForm({
                     <input
                       type="checkbox"
                       checked={values.cashReceiptType === "expense_proof"}
-                      disabled={!showBankTransferFields}
+                      disabled={cashReceiptDisabled}
                       onChange={() =>
-                        onChange("cashReceiptType", "expense_proof")
+                        onChange(
+                          "cashReceiptType",
+                          values.cashReceiptType === "expense_proof"
+                            ? ""
+                            : "expense_proof",
+                        )
                       }
                       className="contract-doc__checkbox-input"
                     />
@@ -836,9 +848,7 @@ export default function ContractForm({
                           )
                         }
                         className="contract-doc__inline-input contract-doc__inline-input--biz"
-                        disabled={
-                          !showBankTransferFields || values.taxInvoiceRequested
-                        }
+                        disabled={cashReceiptDisabled}
                         placeholder="000-00-00000"
                       />
                       )
@@ -867,23 +877,20 @@ export default function ContractForm({
                     [{values.taxInvoiceRequested ? "✓" : " "}]
                   </span>
                   <span>
-                    사업자등록증 별도 제출 필수.
-                    <span className="contract-doc__tax-email-row">
-                      (세금계산서 수령 이메일 :{" "}
-                      <input
-                        type="email"
-                        value={values.taxInvoiceEmail}
-                        onChange={(event) =>
-                          onChange("taxInvoiceEmail", event.target.value)
-                        }
-                        className="contract-doc__inline-input contract-doc__inline-input--email"
-                        disabled={
-                          !showBankTransferFields || !values.taxInvoiceRequested
-                        }
-                        placeholder="email@example.com"
-                      />
-                      )
-                    </span>
+                    사업자등록증 별도 제출 필수. (세금계산서 수령 이메일 :{" "}
+                    <input
+                      type="email"
+                      value={values.taxInvoiceEmail}
+                      onChange={(event) =>
+                        onChange("taxInvoiceEmail", event.target.value)
+                      }
+                      className="contract-doc__inline-input contract-doc__inline-input--email"
+                      disabled={
+                        !showBankTransferFields || !values.taxInvoiceRequested
+                      }
+                      placeholder="email@example.com"
+                    />
+                    )
                   </span>
                 </label>
                 <FieldError message={errors.taxInvoiceEmail} />

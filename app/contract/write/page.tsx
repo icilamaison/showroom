@@ -78,6 +78,11 @@ export default function ContractWritePage() {
         next.taxInvoiceEmail = "";
       }
 
+      if (field === "cashReceiptType" && !value) {
+        next.cashReceiptPhone = "";
+        next.cashReceiptBusinessNumber = "";
+      }
+
       if (field === "taxInvoiceRequested" && value === true) {
         next.cashReceiptType = "";
         next.cashReceiptPhone = "";

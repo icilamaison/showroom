@@ -347,26 +347,30 @@ export default function ContractDocumentView({
             {values.products.map((product, index) => {
               const { catalogProduct, isSet, activeComponents, setSelections } =
                 resolveProductRow(product);
-              const isLegacySetColor = product.color.trim().startsWith("COLOR=");
 
               return (
                 <Fragment key={index}>
                   <tr>
                     <td className="contract-doc__row-no">{index + 1}</td>
                     <td>
-                      <ReadonlyValue value={product.name} />
+                      <ReadonlyValue
+                        value={product.name}
+                        className="contract-doc__product-cell-text"
+                      />
                     </td>
                     <td>
-                      {isSet && isLegacySetColor ? (
-                        <span className="contract-doc__set-option-name">
-                          {product.color || "-"}
-                        </span>
-                      ) : (
-                        <ReadonlyValue value={product.color} />
+                      <ReadonlyValue
+                        value={product.color}
+                        className="contract-doc__product-cell-text"
+                      />
+                    </td>
+                    <td>
+                      {isSet ? null : (
+                        <ReadonlyValue
+                          value={product.size}
+                          className="contract-doc__product-cell-text"
+                        />
                       )}
-                    </td>
-                    <td>
-                      {isSet ? null : <ReadonlyValue value={product.size} />}
                     </td>
                     <td>
                       <ReadonlyValue
