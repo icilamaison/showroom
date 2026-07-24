@@ -1,0 +1,2 @@
+ALTER TABLE contracts
+  ADD COLUMN IF NOT EXISTS admin_id INTEGER REFERENCES admins(id);

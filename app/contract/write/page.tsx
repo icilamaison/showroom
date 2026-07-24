@@ -5,6 +5,7 @@ import { getSizeSalePrice, getVariantComponents, isSetProduct, type CatalogProdu
 import {
   createSetComponentSelections,
   formatSetOptionName,
+  resolveComponentPriceForSize,
   type SetComponentSelection,
 } from "@/lib/set-product";
 import { formatPhoneInput, PHONE_FORM_FIELDS } from "@/lib/phone";
@@ -162,7 +163,9 @@ export default function ContractWritePage() {
 
         if (field === "color") {
           const selected = productSelections[index];
-          const salePrice = selected ? getSizeSalePrice(selected, value) : null;
+          const salePrice = selected
+            ? getSizeSalePrice(selected, value) ?? selected.salePrice
+            : null;
           const components = selected ? getVariantComponents(selected, value) : [];
 
           if (components.length) {
@@ -192,7 +195,9 @@ export default function ContractWritePage() {
 
         if (field === "size") {
           const selected = productSelections[index];
-          const salePrice = selected ? getSizeSalePrice(selected, value) : null;
+          const salePrice = selected
+            ? getSizeSalePrice(selected, value) ?? selected.salePrice
+            : null;
           const components = selected ? getVariantComponents(selected, value) : [];
 
           if (components.length) {
@@ -240,6 +245,9 @@ export default function ContractWritePage() {
     nextSelections[componentIndex] = {
       ...nextSelections[componentIndex],
       [field]: value,
+      ...(field === "size"
+        ? { unitPrice: resolveComponentPriceForSize(components[componentIndex], value) }
+        : {}),
     };
 
     setSetComponentSelections((current) => ({

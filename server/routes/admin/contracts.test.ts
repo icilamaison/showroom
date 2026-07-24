@@ -298,6 +298,7 @@ describe("Admin API", () => {
       const agent = await loginAgent();
       const response = await agent
         .get(`/api/admin/contracts/${contractId}/order-excel`)
+        .query({ approvalNumber: "546450" })
         .expect(200);
 
       expect(response.headers["content-type"]).toContain(
@@ -307,6 +308,15 @@ describe("Admin API", () => {
         "playauto_order_",
       );
       expect(Number(response.headers["content-length"])).toBeGreaterThan(0);
+    });
+
+    it("requires an approval number", async () => {
+      const agent = await loginAgent();
+      const response = await agent
+        .get("/api/admin/contracts/1/order-excel")
+        .expect(400);
+
+      expect(response.body.message).toBe("승인번호를 입력해주세요.");
     });
 
     it("returns 401 without admin authentication", async () => {

@@ -144,7 +144,7 @@ function PurchaseContractDetails({ payload }: { payload: PurchaseContractPayload
         </div>
       </section>
 
-      <section className="admin-detail-card">
+      <section className="admin-detail-card admin-detail-card--full">
         <h2 className="app-section-title">구매자 / 수령자</h2>
         <div className="admin-detail-card__body">
           <DetailItem label="구매자 성명" value={payload.buyerName} />
@@ -249,6 +249,7 @@ export default function AdminContractDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [approvalNumber, setApprovalNumber] = useState("");
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -347,6 +348,7 @@ export default function AdminContractDetailPage() {
           <p className="app-empty">상세 정보를 불러오는 중...</p>
         ) : contract ? (
           <>
+            <div className="admin-detail-content">
             <section className="admin-detail-hero">
               <div className="admin-detail-hero__main">
                 <p className="admin-detail-hero__eyebrow">계약번호</p>
@@ -372,20 +374,21 @@ export default function AdminContractDetailPage() {
 
             <div className="admin-detail-grid">
               <section className="admin-detail-card">
-                <h2 className="app-section-title">계약 정보</h2>
+                <h2 className="app-section-title">관리 정보</h2>
                 <div className="admin-detail-card__body">
-                  <DetailItem label="계약번호" value={contract.contractNumber} />
-                  <DetailItem
-                    label="상태"
-                    value={getContractStatusLabel(contract.status)}
-                  />
-                  <DetailItem
-                    label="작성일"
-                    value={formatDateTime(contract.createdAt)}
-                  />
                   <DetailItem
                     label="최종 수정일"
                     value={formatDateTime(contract.updatedAt)}
+                  />
+                  <DetailItem
+                    label="작성자 계정"
+                    value={
+                      contract.createdByUsername
+                        ? contract.createdByName
+                          ? `${contract.createdByName} (${contract.createdByUsername})`
+                          : contract.createdByUsername
+                        : "-"
+                    }
                   />
                 </div>
               </section>
@@ -470,6 +473,21 @@ export default function AdminContractDetailPage() {
                       고객이 작성한 구매 계약서를 A4 PDF로 내려받을 수 있습니다.
                     </p>
                     <div className="admin-detail-actions admin-detail-actions--start">
+                      {contract.viewToken ? (
+                        <button
+                          type="button"
+                          className="app-button app-button--secondary"
+                          onClick={() => {
+                            window.open(
+                              `/contract/view/${encodeURIComponent(contract.contractNumber)}?token=${encodeURIComponent(contract.viewToken!)}`,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                          }}
+                        >
+                          계약서 웹으로 보기
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         className="app-button"
@@ -506,10 +524,31 @@ export default function AdminContractDetailPage() {
                   <div className="admin-action-group">
                     <p className="admin-action-group__title">PlayAuto 주문 엑셀</p>
                     <p className="admin-action-group__description">
-                      고객이 입력한 정보를 PlayAuto 신규주문 업로드 양식으로
-                      내려받을 수 있습니다.
+                      승인번호를 입력하면 SR이 자동으로 붙어 PlayAuto
+                      신규주문 업로드 양식으로 내려받습니다.
                     </p>
-                    <div className="admin-detail-actions admin-detail-actions--start">
+                    <div className="admin-detail-actions">
+                      <div className="app-field">
+                        <label htmlFor="approval-number" className="app-label">
+                          승인번호
+                        </label>
+                        <div className="admin-approval-input">
+                          <span aria-hidden="true">SR</span>
+                          <input
+                            id="approval-number"
+                            type="text"
+                            inputMode="numeric"
+                            value={approvalNumber}
+                            onChange={(event) =>
+                              setApprovalNumber(
+                                event.target.value.replace(/\D/g, ""),
+                              )
+                            }
+                            className="app-input"
+                            placeholder="30033857"
+                          />
+                        </div>
+                      </div>
                       <button
                         type="button"
                         className="app-button"
@@ -519,12 +558,20 @@ export default function AdminContractDetailPage() {
                             return;
                           }
 
+                          if (!approvalNumber.trim()) {
+                            window.alert("승인번호를 입력해주세요.");
+                            return;
+                          }
+
                           void (async () => {
                             setIsDownloading(true);
                             setError("");
 
                             try {
-                              await downloadAdminOrderExcel(contract.id);
+                              await downloadAdminOrderExcel(
+                                contract.id,
+                                approvalNumber,
+                              );
                             } catch (downloadError) {
                               if (
                                 downloadError instanceof ApiClientError &&
@@ -582,6 +629,7 @@ export default function AdminContractDetailPage() {
                   </button>
                 </div>
               </section>
+            </div>
             </div>
           </>
         ) : null}

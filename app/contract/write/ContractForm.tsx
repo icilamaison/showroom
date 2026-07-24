@@ -8,7 +8,11 @@ import {
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
-import { getVariantComponents, type CatalogProduct } from "@/lib/product-catalog";
+import {
+  getSizeOptionName,
+  getVariantComponents,
+  type CatalogProduct,
+} from "@/lib/product-catalog";
 import {
   applyTotalDiscount,
   contractTotal,
@@ -538,11 +542,17 @@ export default function ContractForm({
                 index < CATALOG_DROPDOWN_ROW_LIMIT && hasProductName && !isSet;
               const colorOptions =
                 selectedProduct?.colors && !isSet
-                  ? Object.keys(selectedProduct.colors)
+                  ? Object.keys(selectedProduct.colors).filter(
+                      (name) => !selectedProduct.soldOutColors?.includes(name),
+                    )
                   : [];
               const hasColorVariants = colorOptions.length > 0;
-              const sizeOptions =
-                isSet || hasColorVariants ? [] : selectedProduct?.sizes;
+              const sizeOptions = isSet
+                ? []
+                : selectedProduct?.sizes?.filter(
+                    (option) =>
+                      !selectedProduct.soldOutSizes?.includes(getSizeOptionName(option)),
+                  );
 
               return (
               <Fragment key={index}>
@@ -569,11 +579,6 @@ export default function ContractForm({
                         placeholder="세트 구성 선택"
                         className="contract-doc__cell-select--variant"
                       />
-                      {product.color ? (
-                        <span className="contract-doc__selected-variant">
-                          {product.color}
-                        </span>
-                      ) : null}
                     </div>
                   ) : isSet ? (
                     <span className="contract-doc__set-option-name">
@@ -605,13 +610,13 @@ export default function ContractForm({
                       onChange={(value) => onProductChange(index, "size", value)}
                     />
                   ) : (
-                    <input
-                      type="text"
+                    <textarea
+                      rows={1}
                       value={product.size}
                       onChange={(event) =>
                         onProductChange(index, "size", event.target.value)
                       }
-                      className="contract-doc__cell-input"
+                      className="contract-doc__cell-input contract-doc__cell-textarea"
                     />
                   )}
                 </td>
@@ -831,7 +836,9 @@ export default function ContractForm({
                           )
                         }
                         className="contract-doc__inline-input contract-doc__inline-input--biz"
-                        disabled={!showBankTransferFields}
+                        disabled={
+                          !showBankTransferFields || values.taxInvoiceRequested
+                        }
                         placeholder="000-00-00000"
                       />
                       )

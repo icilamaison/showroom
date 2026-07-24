@@ -54,26 +54,23 @@ describe("buildOrderExcelRows", () => {
       remarks: "",
     };
 
-    const rows = buildOrderExcelRows(
-      {
-        ...basePayload,
-        products,
-      },
-      "CT-20260701-0001",
-    );
+    const rows = buildOrderExcelRows({
+      ...basePayload,
+      products,
+    });
 
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({
       "쇼핑몰주문번호": "showroom",
       "주문자명": "홍길동",
-      "주문자ID": "CT-20260701-0001",
+      "주문자ID": "",
       "주문자휴대폰번호": "010-1234-5678",
       "수령자명": "김수령",
       "수령자휴대폰번호": "010-9999-8888",
       "우편번호": "06234",
       "주소": "서울시 강남구 테헤란로 1 101동 1001호",
       "온라인 상품명": "테스트 상품",
-      "옵션명": "블랙,L",
+      "옵션명": "COLOR=블랙, SIZE=L",
       "주문수량": "2",
       "금액": "50000",
       "배송메세지": "",
@@ -83,6 +80,28 @@ describe("buildOrderExcelRows", () => {
     expect(rows[1]["온라인 상품명"]).toBe("추가 상품");
     expect(rows[1]["금액"]).toBe("30000");
     expect(rows[1]["배송메세지"]).toBe("");
+  });
+
+  it("uses the approval number as the shopping mall order number", () => {
+    const products = createEmptyProductRows();
+    products[0] = {
+      name: "테스트 상품",
+      color: "",
+      size: "",
+      quantity: "1",
+      unitPrice: "10000",
+      remarks: "",
+    };
+
+    const rows = buildOrderExcelRows(
+      {
+        ...basePayload,
+        products,
+      },
+      "SR546450",
+    );
+
+    expect(rows[0]["쇼핑몰주문번호"]).toBe("SR546450");
   });
 
   it("keeps set product option names in the option column", () => {
@@ -96,13 +115,10 @@ describe("buildOrderExcelRows", () => {
       remarks: "P0000BST | should not appear",
     };
 
-    const rows = buildOrderExcelRows(
-      {
-        ...basePayload,
-        products,
-      },
-      "CT-20260701-0004",
-    );
+    const rows = buildOrderExcelRows({
+      ...basePayload,
+      products,
+    });
 
     expect(rows[0]["옵션명"]).toBe(
       "COLOR=화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
@@ -121,16 +137,13 @@ describe("buildOrderExcelRows", () => {
       remarks: "",
     };
 
-    const rows = buildOrderExcelRows(
-      {
-        ...basePayload,
-        recipientSameAsBuyer: true,
-        recipientName: "",
-        recipientPhone: "",
-        products,
-      },
-      "CT-20260701-0002",
-    );
+    const rows = buildOrderExcelRows({
+      ...basePayload,
+      recipientSameAsBuyer: true,
+      recipientName: "",
+      recipientPhone: "",
+      products,
+    });
 
     expect(rows[0]["수령자명"]).toBe("홍길동");
     expect(rows[0]["수령자휴대폰번호"]).toBe("010-1234-5678");
@@ -152,13 +165,10 @@ describe("findMissingOrderExcelRequiredFields", () => {
       remarks: "",
     };
 
-    const rows = buildOrderExcelRows(
-      {
-        ...basePayload,
-        products,
-      },
-      "CT-20260701-0003",
-    );
+    const rows = buildOrderExcelRows({
+      ...basePayload,
+      products,
+    });
 
     expect(findMissingOrderExcelRequiredFields(rows)).toEqual([]);
     expect(ORDER_EXCEL_REQUIRED_FIELDS).toContain("금액");

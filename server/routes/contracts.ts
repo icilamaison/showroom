@@ -38,7 +38,7 @@ contractsRouter.post("/", requireAdminAuth, async (req, res) => {
   }
 
   try {
-    const result = await createContract(parsed.data, req.body);
+    const result = await createContract(parsed.data, req.body, req.admin!.adminId);
     return sendSuccess(res, result, 201);
   } catch (error) {
     console.error("[contracts] Failed to create contract:", error);

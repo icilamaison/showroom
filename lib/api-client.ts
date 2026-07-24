@@ -200,6 +200,7 @@ export async function fetchAdminContracts(
 export type ContractDetail = {
   id: number;
   contractNumber: string;
+  viewToken?: string | null;
   customerName: string;
   customerPhone: string;
   customerAddress: string;
@@ -214,6 +215,8 @@ export type ContractDetail = {
   payload: unknown;
   createdAt: string;
   updatedAt: string;
+  createdByUsername: string | null;
+  createdByName: string | null;
 };
 
 export type ContractStatusUpdateResult = {
@@ -264,8 +267,11 @@ export async function updateAdminContractStatus(
   );
 }
 
-export function getAdminOrderExcelDownloadUrl(id: number): string {
-  return `/api/admin/contracts/${id}/order-excel`;
+export function getAdminOrderExcelDownloadUrl(
+  id: number,
+  approvalNumber: string,
+): string {
+  return `/api/admin/contracts/${id}/order-excel?approvalNumber=${encodeURIComponent(approvalNumber)}`;
 }
 
 export function getAdminBulkOrderExcelDownloadUrl(
@@ -365,9 +371,12 @@ async function downloadAdminExcelFile(
   return downloadAdminFile(url, fallbackFilename);
 }
 
-export async function downloadAdminOrderExcel(id: number): Promise<void> {
+export async function downloadAdminOrderExcel(
+  id: number,
+  approvalNumber: string,
+): Promise<void> {
   return downloadAdminExcelFile(
-    getAdminOrderExcelDownloadUrl(id),
+    getAdminOrderExcelDownloadUrl(id, approvalNumber),
     `playauto_order_${id}.xlsx`,
   );
 }

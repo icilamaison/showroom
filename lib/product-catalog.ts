@@ -21,6 +21,8 @@ export type SetComponent = {
   consumerPrice?: number;
   colors?: string[];
   sizes?: string[];
+  soldOutColors?: string[];
+  soldOutSizes?: string[];
 };
 
 export type CatalogProduct = {
@@ -36,6 +38,8 @@ export type CatalogProduct = {
   colors?: Record<string, string>;
   sizes?: CatalogSizeOption[];
   components?: SetComponent[];
+  soldOutColors?: string[];
+  soldOutSizes?: string[];
 };
 
 export function getSizeOptionName(option: CatalogSizeOption): string {

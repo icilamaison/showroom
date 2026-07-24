@@ -12,6 +12,7 @@ export type CreateContractResult = {
 export async function createContract(
   input: ContractInput,
   rawPayload: unknown,
+  adminId: number,
 ): Promise<CreateContractResult> {
   const client = await pool.connect();
 
@@ -36,9 +37,10 @@ export async function createContract(
           signature_name,
           status,
           payload,
-          view_token
+          view_token,
+          admin_id
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14, $15
         )`,
         [
           contractNumber,
@@ -61,6 +63,7 @@ export async function createContract(
             agreementDate: input.agreementDate,
           }),
           viewToken,
+          adminId,
         ],
       );
 

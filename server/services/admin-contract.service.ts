@@ -37,6 +37,7 @@ export type ContractListResult = {
 export type ContractDetail = {
   id: number;
   contractNumber: string;
+  viewToken?: string | null;
   customerName: string;
   customerPhone: string;
   customerAddress: string;
@@ -51,6 +52,8 @@ export type ContractDetail = {
   payload: unknown;
   createdAt: string;
   updatedAt: string;
+  createdByUsername: string | null;
+  createdByName: string | null;
 };
 
 type ContractListRow = {
@@ -67,6 +70,7 @@ type ContractListRow = {
 type ContractDetailRow = {
   id: number;
   contract_number: string;
+  view_token?: string | null;
   customer_name: string;
   customer_phone: string;
   customer_address: string;
@@ -81,6 +85,8 @@ type ContractDetailRow = {
   payload: unknown;
   created_at: Date;
   updated_at: Date;
+  created_by_username?: string | null;
+  created_by_name?: string | null;
 };
 
 function normalizePagination(page?: number, limit?: number) {
@@ -252,6 +258,8 @@ function mapContractDetail(row: ContractDetailRow): ContractDetail {
     payload: row.payload,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
+    createdByUsername: row.created_by_username ?? null,
+    createdByName: row.created_by_name ?? null,
   };
 }
 
@@ -260,24 +268,28 @@ export async function getContractById(
 ): Promise<ContractDetail | null> {
   const result = await pool.query<ContractDetailRow>(
     `SELECT
-       id,
-       contract_number,
-       customer_name,
-       customer_phone,
-       customer_address,
-       product_name,
-       contract_amount,
-       contract_start_date,
-       contract_end_date,
-       special_terms,
-       terms_agreed,
-       signature_name,
-       status,
-       payload,
-       created_at,
-       updated_at
+       contracts.id,
+       contracts.contract_number,
+       contracts.view_token,
+       contracts.customer_name,
+       contracts.customer_phone,
+       contracts.customer_address,
+       contracts.product_name,
+       contracts.contract_amount,
+       contracts.contract_start_date,
+       contracts.contract_end_date,
+       contracts.special_terms,
+       contracts.terms_agreed,
+       contracts.signature_name,
+       contracts.status,
+       contracts.payload,
+       contracts.created_at,
+       contracts.updated_at,
+       admins.username AS created_by_username,
+       admins.name AS created_by_name
      FROM contracts
-     WHERE id = $1`,
+     LEFT JOIN admins ON admins.id = contracts.admin_id
+     WHERE contracts.id = $1`,
     [id],
   );
 
@@ -285,7 +297,10 @@ export async function getContractById(
     return null;
   }
 
-  return mapContractDetail(result.rows[0]);
+  return {
+    ...mapContractDetail(result.rows[0]),
+    viewToken: result.rows[0].view_token ?? null,
+  };
 }
 
 export async function getContractByNumberAndToken(

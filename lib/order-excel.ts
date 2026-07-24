@@ -75,7 +75,12 @@ function buildOptionName(product: ProductRow): string {
     return color;
   }
 
-  return [color, size].filter(Boolean).join(",");
+  return [
+    color ? `COLOR=${color}` : "",
+    size ? `SIZE=${size}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 function resolveRecipientName(payload: PurchaseContractPayload): string {
@@ -110,16 +115,15 @@ function buildLineAmount(product: ProductRow): string {
 
 function buildSharedOrderFields(
   payload: PurchaseContractPayload,
-  contractNumber: string,
+  shoppingMallOrderNumber: string,
 ): Omit<
   OrderExcelRow,
   "온라인 상품명" | "옵션명" | "주문수량" | "금액" | "배송메세지"
 > {
   const row = createEmptyOrderExcelRow();
 
-  row["쇼핑몰주문번호"] = "showroom";
+  row["쇼핑몰주문번호"] = shoppingMallOrderNumber;
   row["주문자명"] = payload.buyerName;
-  row["주문자ID"] = contractNumber;
   row["주문자휴대폰번호"] = payload.buyerPhone;
   row["수령자명"] = resolveRecipientName(payload);
   row["수령자휴대폰번호"] = resolveRecipientPhone(payload);
@@ -137,9 +141,9 @@ function buildSharedOrderFields(
 
 export function buildOrderExcelRows(
   payload: PurchaseContractPayload,
-  contractNumber: string,
+  shoppingMallOrderNumber = "showroom",
 ): OrderExcelRow[] {
-  const sharedFields = buildSharedOrderFields(payload, contractNumber);
+  const sharedFields = buildSharedOrderFields(payload, shoppingMallOrderNumber);
 
   return payload.products
     .filter((product) => product.name.trim())

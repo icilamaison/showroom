@@ -81,9 +81,21 @@ contractsRouter.get("/order-excel", async (req, res) => {
 
 contractsRouter.get("/:id/order-excel", async (req, res) => {
   const id = Number(req.params.id);
+  const approvalNumber =
+    typeof req.query.approvalNumber === "string"
+      ? req.query.approvalNumber.trim().replace(/^SR/i, "")
+      : "";
 
   if (!Number.isInteger(id) || id <= 0) {
     return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
+  }
+
+  if (!approvalNumber) {
+    return sendError(res, "승인번호를 입력해주세요.", 400);
+  }
+
+  if (!/^\d+$/.test(approvalNumber)) {
+    return sendError(res, "승인번호는 숫자로 입력해주세요.", 400);
   }
 
   try {
@@ -93,7 +105,10 @@ contractsRouter.get("/:id/order-excel", async (req, res) => {
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
 
-    const buffer = await generateOrderExcelBuffer(contract);
+    const buffer = await generateOrderExcelBuffer(
+      contract,
+      `SR${approvalNumber}`,
+    );
     const filename = buildOrderExcelFilename(contract.contractNumber);
 
     return sendExcelFile(res, buffer, filename);

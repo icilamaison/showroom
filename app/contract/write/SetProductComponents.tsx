@@ -1,8 +1,12 @@
 "use client";
 
 import { formatAmount, formatDigits, lineAmount } from "@/lib/contract-amount";
-import type { SetComponent } from "@/lib/product-catalog";
-import type { SetComponentSelection } from "@/lib/set-product";
+import { getSizeOptionName, type SetComponent } from "@/lib/product-catalog";
+import {
+  resolveComponentBaseSalePrice,
+  resolveComponentSizeOptions,
+  type SetComponentSelection,
+} from "@/lib/set-product";
 import ProductOptionSelect from "./ProductOptionSelect";
 
 type SetProductComponentsProps = {
@@ -31,8 +35,13 @@ export default function SetProductComponents({
           quantity: "",
           unitPrice: "",
         };
-        const colorOptions = component.colors ?? [];
-        const sizeOptions = component.sizes ?? [];
+        const colorOptions = (component.colors ?? []).filter(
+          (name) => !component.soldOutColors?.includes(name),
+        );
+        const sizeOptions = resolveComponentSizeOptions(component).filter(
+          (option) => !component.soldOutSizes?.includes(getSizeOptionName(option)),
+        );
+        const baseSalePrice = resolveComponentBaseSalePrice(component);
         const amount = lineAmount(selection);
 
         return (
@@ -60,11 +69,12 @@ export default function SetProductComponents({
                 <ProductOptionSelect
                   value={selection.size}
                   options={sizeOptions}
+                  baseSalePrice={baseSalePrice}
                   onChange={(value) => onChange(componentIndex, "size", value)}
                 />
               ) : sizeOptions.length === 1 ? (
                 <span className="contract-doc__set-component-value">
-                  {sizeOptions[0]}
+                  {getSizeOptionName(sizeOptions[0])}
                 </span>
               ) : null}
             </td>
