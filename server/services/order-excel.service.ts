@@ -63,7 +63,9 @@ async function workbookToBuffer(workbook: ExcelJS.Workbook): Promise<Buffer> {
 
 function collectOrderExcelRows(
   contracts: ContractDetail[],
-  shoppingMallOrderNumber = "showroom",
+  resolveShoppingMallOrderNumber: (
+    contract: ContractDetail,
+  ) => string = () => "",
 ): OrderExcelRow[] {
   const rows: OrderExcelRow[] = [];
   const skippedContracts: string[] = [];
@@ -77,7 +79,7 @@ function collectOrderExcelRows(
 
       const contractRows = buildOrderExcelRows(
         contract.payload,
-        shoppingMallOrderNumber,
+        resolveShoppingMallOrderNumber(contract),
       );
 
       if (contractRows.length === 0) {
@@ -116,7 +118,7 @@ export async function generateOrderExcelBuffer(
   contract: ContractDetail,
   shoppingMallOrderNumber: string,
 ): Promise<Buffer> {
-  const rows = collectOrderExcelRows([contract], shoppingMallOrderNumber);
+  const rows = collectOrderExcelRows([contract], () => shoppingMallOrderNumber);
   const workbook = await createOrderExcelWorkbook(rows);
   return workbookToBuffer(workbook);
 }

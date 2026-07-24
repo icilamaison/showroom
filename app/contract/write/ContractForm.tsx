@@ -554,7 +554,7 @@ export default function ContractForm({
                 : selectedProduct?.sizes?.filter(
                     (option) =>
                       !selectedProduct.soldOutSizes?.includes(getSizeOptionName(option)),
-                  );
+                  ) ?? [];
 
               return (
               <Fragment key={index}>
@@ -604,7 +604,7 @@ export default function ContractForm({
                   )}
                 </td>
                 <td>
-                  {isSet ? null : useCatalogDropdowns && (sizeOptions?.length ?? 0) > 0 ? (
+                  {isSet ? null : useCatalogDropdowns && sizeOptions.length > 0 ? (
                     <ProductOptionSelect
                       value={product.size}
                       options={sizeOptions}

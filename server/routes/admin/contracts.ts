@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { parseContractListQuery } from "../../lib/contract-list-query";
 import { sendError, sendSuccess } from "../../lib/api-response";
+import { formatShoppingMallOrderNumber } from "../../../lib/order-excel";
 import { parseContractStatusUpdate } from "../../schemas/admin.schema";
 import {
   getContractById,
@@ -107,7 +108,7 @@ contractsRouter.get("/:id/order-excel", async (req, res) => {
 
     const buffer = await generateOrderExcelBuffer(
       contract,
-      `SR${approvalNumber}`,
+      formatShoppingMallOrderNumber(approvalNumber),
     );
     const filename = buildOrderExcelFilename(contract.contractNumber);
 

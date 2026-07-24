@@ -3,6 +3,7 @@ import { createEmptyProductRows } from "./validation/contract";
 import {
   buildOrderExcelRows,
   findMissingOrderExcelRequiredFields,
+  formatShoppingMallOrderNumber,
   ORDER_EXCEL_REQUIRED_FIELDS,
 } from "./order-excel";
 
@@ -61,7 +62,7 @@ describe("buildOrderExcelRows", () => {
 
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({
-      "쇼핑몰주문번호": "showroom",
+      "쇼핑몰주문번호": "",
       "주문자명": "홍길동",
       "주문자ID": "",
       "주문자휴대폰번호": "010-1234-5678",
@@ -102,6 +103,13 @@ describe("buildOrderExcelRows", () => {
     );
 
     expect(rows[0]["쇼핑몰주문번호"]).toBe("SR546450");
+  });
+
+  it("formats approval numbers with an SR prefix", () => {
+    expect(formatShoppingMallOrderNumber("546450")).toBe("SR546450");
+    expect(formatShoppingMallOrderNumber("SR546450")).toBe("SR546450");
+    expect(formatShoppingMallOrderNumber("")).toBe("");
+    expect(formatShoppingMallOrderNumber("abc")).toBe("");
   });
 
   it("keeps set product option names in the option column", () => {

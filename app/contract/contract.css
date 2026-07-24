@@ -292,8 +292,7 @@
 
 .contract-doc__set-component-row td {
   border-top: none;
-  padding-top: 0.15rem;
-  padding-bottom: 0.35rem;
+  padding: 0.28rem 0.38rem;
   color: #6b7280;
 }
 
@@ -599,7 +598,7 @@
 .contract-doc__consent-item {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0;
   padding-left: 0.35rem;
 }
 

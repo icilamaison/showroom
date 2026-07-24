@@ -42,7 +42,6 @@ export const ORDER_EXCEL_HEADERS = [
 ] as const;
 
 export const ORDER_EXCEL_REQUIRED_FIELDS = [
-  "쇼핑몰주문번호",
   "주문자명",
   "주문자휴대폰번호",
   "수령자명",
@@ -55,6 +54,18 @@ export const ORDER_EXCEL_REQUIRED_FIELDS = [
 ] as const satisfies ReadonlyArray<(typeof ORDER_EXCEL_HEADERS)[number]>;
 
 export type OrderExcelRow = Record<(typeof ORDER_EXCEL_HEADERS)[number], string>;
+
+export function formatShoppingMallOrderNumber(
+  approvalNumber: string | undefined | null,
+): string {
+  const normalized = approvalNumber?.trim().replace(/^SR/i, "") ?? "";
+
+  if (!normalized || !/^\d+$/.test(normalized)) {
+    return "";
+  }
+
+  return `SR${normalized}`;
+}
 
 export function isPurchaseContractPayload(
   payload: unknown,
@@ -141,7 +152,7 @@ function buildSharedOrderFields(
 
 export function buildOrderExcelRows(
   payload: PurchaseContractPayload,
-  shoppingMallOrderNumber = "showroom",
+  shoppingMallOrderNumber = "",
 ): OrderExcelRow[] {
   const sharedFields = buildSharedOrderFields(payload, shoppingMallOrderNumber);
 
