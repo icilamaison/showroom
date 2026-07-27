@@ -250,7 +250,8 @@ export default function ContractWritePage() {
     nextSelections[componentIndex] = {
       ...nextSelections[componentIndex],
       [field]: value,
-      ...(field === "size"
+      // 컬러별로 가격이 다른 구성품(예: 인견 패드 K)도 있어 컬러 변경 시에도 재계산
+      ...(field === "size" || field === "color"
         ? { unitPrice: resolveComponentPriceForSize(components[componentIndex], value) }
         : {}),
     };

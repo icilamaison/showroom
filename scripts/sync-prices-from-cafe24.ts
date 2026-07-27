@@ -29,6 +29,8 @@ type CatalogProduct = {
   productPrice: number;
   salePrice: number;
   sizes?: CatalogSizeOption[];
+  colors?: Record<string, string>;
+  colorPrices?: Record<string, number>;
   [key: string]: unknown;
 };
 
@@ -146,6 +148,39 @@ function applySizePrices(
   });
 }
 
+// 사이즈 옵션 없이 COLOR축 하나만 있는 상품(겨울용/봄가을용 등)은 색상별로 실제 가격이 다를 수 있음.
+// SIZE축과 결합된 COLOR는 가격에 영향 없음이 확인됐으므로, 축이 COLOR 하나뿐인 경우만 대상으로 함.
+function buildColorPriceMap(entries: StockEntry[]): Map<string, number> {
+  const priceByColor = new Map<string, number>();
+
+  for (const entry of entries) {
+    if (entry.option_price == null || entry.option_name !== "COLOR") {
+      continue;
+    }
+
+    priceByColor.set(entry.option_value.trim(), Math.round(Number(entry.option_price)));
+  }
+
+  return priceByColor;
+}
+
+function buildColorPrices(
+  colors: Record<string, string>,
+  priceByColor: Map<string, number>,
+  baseSalePrice: number,
+): Record<string, number> | undefined {
+  const nextColorPrices: Record<string, number> = {};
+
+  for (const name of Object.keys(colors)) {
+    const price = priceByColor.get(name);
+    if (price != null && price !== baseSalePrice) {
+      nextColorPrices[name] = price;
+    }
+  }
+
+  return Object.keys(nextColorPrices).length > 0 ? nextColorPrices : undefined;
+}
+
 async function fetchDetailHtml(productNo: number): Promise<string> {
   const res = await fetch(`${BASE_URL}${productNo}`, {
     headers: { "User-Agent": "Mozilla/5.0" },
@@ -212,6 +247,26 @@ async function main() {
           changed = true;
           console.log(`  ↳ 사이즈별 가격 → ${JSON.stringify(nextSizes)}`);
           product.sizes = nextSizes;
+        }
+      }
+    } else if (
+      !product.sizes?.length &&
+      product.colors &&
+      Object.keys(product.colors).length > 1
+    ) {
+      const stockData = parseOptionStockData(html);
+      if (stockData) {
+        const priceByColor = buildColorPriceMap(Object.values(stockData));
+        const nextColorPrices = buildColorPrices(product.colors, priceByColor, nextSalePrice);
+
+        if (JSON.stringify(nextColorPrices) !== JSON.stringify(product.colorPrices)) {
+          changed = true;
+          console.log(`  ↳ 색상별 가격 → ${JSON.stringify(nextColorPrices)}`);
+          if (nextColorPrices) {
+            product.colorPrices = nextColorPrices;
+          } else {
+            delete product.colorPrices;
+          }
         }
       }
     }

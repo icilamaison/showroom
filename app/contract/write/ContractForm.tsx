@@ -12,6 +12,7 @@ import {
   getSizeOptionName,
   getVariantComponents,
   type CatalogProduct,
+  type CatalogSizeOption,
 } from "@/lib/product-catalog";
 import {
   applyTotalDiscount,
@@ -542,11 +543,14 @@ export default function ContractForm({
               const isSet = activeComponents.length > 0;
               const useCatalogDropdowns =
                 index < CATALOG_DROPDOWN_ROW_LIMIT && hasProductName && !isSet;
-              const colorOptions =
+              const colorOptions: CatalogSizeOption[] =
                 selectedProduct?.colors && !isSet
-                  ? Object.keys(selectedProduct.colors).filter(
-                      (name) => !selectedProduct.soldOutColors?.includes(name),
-                    )
+                  ? Object.keys(selectedProduct.colors)
+                      .filter((name) => !selectedProduct.soldOutColors?.includes(name))
+                      .map((name) => {
+                        const salePrice = selectedProduct.colorPrices?.[name];
+                        return salePrice != null ? { name, salePrice } : name;
+                      })
                   : [];
               const hasColorVariants = colorOptions.length > 0;
               const sizeOptions = isSet
@@ -577,6 +581,7 @@ export default function ContractForm({
                       <ProductOptionSelect
                         value={product.color}
                         options={colorOptions}
+                        baseSalePrice={selectedProduct?.salePrice}
                         onChange={(value) => onProductChange(index, "color", value)}
                         placeholder="세트 구성 선택"
                         className="contract-doc__cell-select--variant"
@@ -590,6 +595,7 @@ export default function ContractForm({
                     <ProductOptionSelect
                       value={product.color}
                       options={colorOptions}
+                      baseSalePrice={selectedProduct?.salePrice}
                       onChange={(value) => onProductChange(index, "color", value)}
                     />
                   ) : (

@@ -36,6 +36,8 @@ export type CatalogProduct = {
   productPrice: number;
   salePrice: number;
   colors?: Record<string, string>;
+  // 사이즈 옵션 없이 색상만으로 갈리는 상품 중 일부는 색상별로 실제 판매가가 다름(예: 겨울용/봄가을용)
+  colorPrices?: Record<string, number>;
   sizes?: CatalogSizeOption[];
   components?: SetComponent[];
   soldOutColors?: string[];
@@ -88,7 +90,8 @@ export function getSizeSalePrice(
     }
   }
 
-  return null;
+  // 컬러 선택 시에도 이 함수로 가격을 조회하므로(ContractForm) colorPrices도 확인
+  return product.colorPrices?.[sizeName] ?? null;
 }
 
 export function getVariantComponents(

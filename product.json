@@ -12,6 +12,9 @@
         "colors": {
             "내추럴 원형100": "#fffded",
             "내추럴 원형145": "#fffded"
+        },
+        "colorPrices": {
+            "내추럴 원형145": 278400
         }
     },
     {
@@ -294,6 +297,9 @@
         "colors": {
             "화이트 K 230X240 겨울용 (중량 1200g )": "#ffffff",
             "화이트 K 230X240 봄/가을 (중량 700g )": "#ffffff"
+        },
+        "colorPrices": {
+            "화이트 K 230X240 겨울용 (중량 1200g )": 1386450
         }
     },
     {
@@ -309,6 +315,9 @@
         "colors": {
             "화이트 Q 200X230 겨울용 (중량 1000g)": "#ffffff",
             "화이트 Q 200X230 봄/가을용 (중량 600g)": "#ffffff"
+        },
+        "colorPrices": {
+            "화이트 Q 200X230 겨울용 (중량 1000g)": 1045850
         }
     },
     {
@@ -324,6 +333,9 @@
         "colors": {
             "화이트 SS 160X210 봄/가을용 (중량 500g)": "#ffffff",
             "화이트 SS 160X210 겨울용 (중량 850g)": "#ffffff"
+        },
+        "colorPrices": {
+            "화이트 SS 160X210 겨울용 (중량 850g)": 797550
         }
     },
     {
@@ -342,7 +354,8 @@
                 "name": "L",
                 "salePrice": 2500
             }
-        ]
+        ],
+        "discontinued": true
     },
     {
         "productCode": "P0000BVH",
@@ -421,7 +434,8 @@
             "쿨포터 바디필로우 20X100 (솜 포함)",
             "쿨포터 소파패드 3인 65X180",
             "쿨포터 소파패드 4인 65X230"
-        ]
+        ],
+        "discontinued": true
     },
     {
         "productCode": "P0000BSP",
@@ -436,6 +450,9 @@
         "colors": {
             "화이트 3인 65X180": "#ffffff",
             "화이트 4인 65X230": "#ffffff"
+        },
+        "colorPrices": {
+            "화이트 4인 65X230": 77350
         }
     },
     {
@@ -620,7 +637,8 @@
         "salePrice": 0,
         "colors": {
             "밀크글라스 아이보리 250ml": "#ffffff"
-        }
+        },
+        "discontinued": true
     },
     {
         "productCode": "P0000BRV",
@@ -1136,7 +1154,10 @@
         },
         "sizes": [
             "40X60",
-            "50X70"
+            {
+                "name": "50X70",
+                "salePrice": 28500
+            }
         ]
     },
     {
@@ -3118,7 +3139,8 @@
                     "크림화이트 SS 150X210"
                 ]
             }
-        ]
+        ],
+        "discontinued": true
     },
     {
         "productCode": "P0000BHO",
@@ -3149,7 +3171,8 @@
                     "크림화이트 SS 150X210"
                 ]
             }
-        ]
+        ],
+        "discontinued": true
     },
     {
         "productCode": "P0000BHN",
@@ -3180,7 +3203,8 @@
                     "크림화이트 QK겸용 200X220"
                 ]
             }
-        ]
+        ],
+        "discontinued": true
     },
     {
         "productCode": "P0000BHM",
@@ -3211,7 +3235,8 @@
                     "크림화이트 QK겸용 200X220"
                 ]
             }
-        ]
+        ],
+        "discontinued": true
     },
     {
         "productCode": "P0000BHL",
@@ -3293,6 +3318,29 @@
         "salePrice": 168570,
         "promotions": [
             "bedding"
+        ],
+        "components": [
+            {
+                "name": "본느윗 베개커버 3colors",
+                "quantity": 2,
+                "colors": [
+                    "크림화이트",
+                    "누디베이지",
+                    "소프트블랙"
+                ],
+                "sizes": [
+                    "40X60",
+                    "50X70"
+                ]
+            },
+            {
+                "name": "본느윗 이불커버 Q",
+                "colors": [
+                    "크림화이트 Q 200X230",
+                    "누디베이지 Q 200X230",
+                    "소프트블랙 Q 200X230"
+                ]
+            }
         ]
     },
     {
@@ -3307,6 +3355,28 @@
         "salePrice": 125350,
         "promotions": [
             "bedding"
+        ],
+        "components": [
+            {
+                "name": "본느윗 이불커버 3colors",
+                "colors": [
+                    "크림화이트 SS 160X210",
+                    "누디베이지 SS 160X210",
+                    "소프트블랙  SS 160X210"
+                ]
+            },
+            {
+                "name": "본느윗 베개커버 3colors",
+                "colors": [
+                    "크림화이트",
+                    "누디베이지",
+                    "소프트블랙"
+                ],
+                "sizes": [
+                    "40X60",
+                    "50X70"
+                ]
+            }
         ]
     },
     {
@@ -3321,6 +3391,51 @@
         "salePrice": 597310,
         "promotions": [
             "bedding"
+        ],
+        "components": [
+            {
+                "name": "퍼즈필 독일 경추 베개솜",
+                "quantity": 2,
+                "sizes": [
+                    "40X60",
+                    "50X70"
+                ]
+            },
+            {
+                "name": "본느윗 베개커버 3colors",
+                "quantity": 2,
+                "colors": [
+                    "크림화이트",
+                    "누디베이지",
+                    "소프트블랙"
+                ],
+                "sizes": [
+                    "40X60",
+                    "50X70"
+                ]
+            },
+            {
+                "name": "퍼즈필 독일 이불솜 K",
+                "colors": [
+                    "화이트 K 230X240"
+                ]
+            },
+            {
+                "name": "본느윗 이불커버 K",
+                "colors": [
+                    "크림화이트 K 230X240",
+                    "누디베이지 K 230X240",
+                    "소프트블랙 K 230X240"
+                ]
+            },
+            {
+                "name": "본느윗 패드 K",
+                "colors": [
+                    "크림화이트 K 180X210",
+                    "누디베이지 K 180X210",
+                    "소프트블랙 K 180X210"
+                ]
+            }
         ]
     },
     {
@@ -3335,6 +3450,51 @@
         "salePrice": 521550,
         "promotions": [
             "bedding"
+        ],
+        "components": [
+            {
+                "name": "퍼즈필 독일 경추 베개솜",
+                "quantity": 2,
+                "sizes": [
+                    "40X60",
+                    "50X70"
+                ]
+            },
+            {
+                "name": "본느윗 베개커버 3colors",
+                "quantity": 2,
+                "colors": [
+                    "크림화이트",
+                    "누디베이지",
+                    "소프트블랙"
+                ],
+                "sizes": [
+                    "40X60",
+                    "50X70"
+                ]
+            },
+            {
+                "name": "퍼즈필 독일 이불솜 Q",
+                "colors": [
+                    "화이트 Q 200X230"
+                ]
+            },
+            {
+                "name": "본느윗 이불커버 Q",
+                "colors": [
+                    "크림화이트 Q 200X230",
+                    "누디베이지 Q 200X230",
+                    "소프트블랙 Q 200X230"
+                ]
+            },
+            {
+                "name": "본느윗 패드 Q",
+                "colors": [
+                    "크림화이트 Q 155X210",
+                    "누디베이지 Q 155X210",
+                    "소프트블랙 Q 155X210"
+                ]
+            }
         ]
     },
     {
@@ -3349,6 +3509,49 @@
         "salePrice": 376810,
         "promotions": [
             "bedding"
+        ],
+        "components": [
+            {
+                "name": "퍼즈필 독일 이불솜",
+                "colors": [
+                    "화이트 SS 160X210"
+                ]
+            },
+            {
+                "name": "퍼즈필 독일 경추 베개솜",
+                "sizes": [
+                    "40X60",
+                    "50X70"
+                ]
+            },
+            {
+                "name": "본느윗 이불커버 3colors",
+                "colors": [
+                    "크림화이트 SS 160X210",
+                    "누디베이지 SS 160X210",
+                    "소프트블랙  SS 160X210"
+                ]
+            },
+            {
+                "name": "본느윗 베개커버 3colors",
+                "colors": [
+                    "크림화이트",
+                    "누디베이지",
+                    "소프트블랙"
+                ],
+                "sizes": [
+                    "40X60",
+                    "50X70"
+                ]
+            },
+            {
+                "name": "본느윗 패드 3colors",
+                "colors": [
+                    "크림화이트 SS 110X210",
+                    "누디베이지 SS 110X210",
+                    "소프트블랙 SS 110X210"
+                ]
+            }
         ]
     },
     {
@@ -3392,7 +3595,33 @@
         "consumerPrice": 0,
         "supplyPrice": 0,
         "productPrice": 238364,
-        "salePrice": 262200
+        "salePrice": 262200,
+        "components": [
+            {
+                "name": "인견 베개커버 2colors",
+                "quantity": 2,
+                "colors": [
+                    "아이보리 50X70",
+                    "베이지 50X70",
+                    "그레이 50X70"
+                ]
+            },
+            {
+                "name": "인견 이불 Q/K",
+                "colors": [
+                    "아이보리 QK겸용 200X230",
+                    "베이지 QK겸용 200X230",
+                    "그레이 QK겸용 200X230"
+                ]
+            },
+            {
+                "name": "인견 패드 K",
+                "colors": [
+                    "아이보리 K 195X225",
+                    "그레이 K 195X225 (밴드탈부착형)"
+                ]
+            }
+        ]
     },
     {
         "productCode": "P0000BHA",
@@ -3403,7 +3632,34 @@
         "consumerPrice": 0,
         "supplyPrice": 0,
         "productPrice": 213491,
-        "salePrice": 234840
+        "salePrice": 234840,
+        "components": [
+            {
+                "name": "인견 베개커버 2colors",
+                "quantity": 2,
+                "colors": [
+                    "아이보리 50X70",
+                    "베이지 50X70",
+                    "그레이 50X70"
+                ]
+            },
+            {
+                "name": "인견 이불 Q/K",
+                "colors": [
+                    "아이보리 QK겸용 200X230",
+                    "베이지 QK겸용 200X230",
+                    "그레이 QK겸용 200X230"
+                ]
+            },
+            {
+                "name": "인견 패드 Q",
+                "colors": [
+                    "아이보리 Q 155X210",
+                    "아이보리 고리형 Q 155X210 (밴드탈부착형)",
+                    "베이지 Q 155X210 (밴드탈부착형)"
+                ]
+            }
+        ]
     },
     {
         "productCode": "P0000BGV",
@@ -3411,12 +3667,31 @@
         "category": "침구",
         "productNo": 853,
         "productName": "[SET] 오브 차렵 Q/K",
-        "consumerPrice": 0,
+        "consumerPrice": 284000,
         "supplyPrice": 0,
         "productPrice": 201818,
         "salePrice": 222000,
         "promotions": [
             "bedding"
+        ],
+        "components": [
+            {
+                "name": "오브 베개커버 3colors",
+                "quantity": 2,
+                "colors": [
+                    "밀크화이트",
+                    "페일블루",
+                    "바닐라무스"
+                ]
+            },
+            {
+                "name": "오브 차렵이불 Q/K",
+                "colors": [
+                    "밀크화이트 QK겸용 200X220",
+                    "페일블루 QK겸용 200X220",
+                    "바닐라무스 QK겸용 200X220"
+                ]
+            }
         ]
     },
     {
@@ -3425,12 +3700,30 @@
         "category": "침구",
         "productNo": 852,
         "productName": "[SET] 오브 차렵 3colors",
-        "consumerPrice": 0,
+        "consumerPrice": 195000,
         "supplyPrice": 0,
         "productPrice": 132955,
         "salePrice": 146250,
         "promotions": [
             "bedding"
+        ],
+        "components": [
+            {
+                "name": "오브 베개커버 3colors",
+                "colors": [
+                    "밀크화이트",
+                    "페일블루",
+                    "바닐라무스"
+                ]
+            },
+            {
+                "name": "오브 차렵이불 3colors",
+                "colors": [
+                    "밀크화이트 SS 160X210",
+                    "페일블루 SS 160X210",
+                    "바닐라무스 SS 160X210"
+                ]
+            }
         ]
     },
     {
@@ -3450,7 +3743,10 @@
         "soldOutColors": [
             "아이보리 K 195X225",
             "그레이 K 195X225 (밴드탈부착형)"
-        ]
+        ],
+        "colorPrices": {
+            "그레이 K 195X225 (밴드탈부착형)": 129600
+        }
     },
     {
         "productCode": "P0000BGS",
@@ -3469,7 +3765,10 @@
         },
         "soldOutColors": [
             "아이보리 고리형 Q 155X210 (밴드탈부착형)"
-        ]
+        ],
+        "colorPrices": {
+            "베이지 Q 155X210 (밴드탈부착형)": 103680
+        }
     },
     {
         "productCode": "P0000BGR",
@@ -3689,12 +3988,30 @@
         "category": "침구",
         "productNo": 830,
         "productName": "[SET] 오브 차렵 110X150",
-        "consumerPrice": 0,
+        "consumerPrice": 124000,
         "supplyPrice": 0,
         "productPrice": 88636,
         "salePrice": 97500,
         "promotions": [
             "bedding"
+        ],
+        "components": [
+            {
+                "name": "오브 베개커버 3colors",
+                "colors": [
+                    "밀크화이트",
+                    "페일블루",
+                    "바닐라무스"
+                ]
+            },
+            {
+                "name": "오브 차렵이불 110X150",
+                "colors": [
+                    "밀크화이트 미니 110X150",
+                    "페일블루 미니 110X150",
+                    "바닐라무스 미니 110X150"
+                ]
+            }
         ]
     },
     {
@@ -3726,7 +4043,8 @@
                     "크림화이트 SS 150X210"
                 ]
             }
-        ]
+        ],
+        "discontinued": true
     },
     {
         "productCode": "P0000BFV",
@@ -3792,7 +4110,32 @@
         "consumerPrice": 0,
         "supplyPrice": 0,
         "productPrice": 172036,
-        "salePrice": 189240
+        "salePrice": 189240,
+        "components": [
+            {
+                "name": "인견 패드 3colors",
+                "colors": [
+                    "아이보리 S 115X205",
+                    "베이지 S 115X205 (밴드탈부착형)"
+                ]
+            },
+            {
+                "name": "인견 베개커버 2colors",
+                "colors": [
+                    "아이보리 50X70",
+                    "베이지 50X70",
+                    "그레이 50X70"
+                ]
+            },
+            {
+                "name": "인견 이불 2colors",
+                "colors": [
+                    "아이보리 SS 160X210",
+                    "베이지 SS 160X210",
+                    "그레이 SS 160X210"
+                ]
+            }
+        ]
     },
     {
         "productCode": "P0000BFQ",
@@ -4824,7 +5167,11 @@
         },
         "soldOutColors": [
             "브라운 30X50"
-        ]
+        ],
+        "colorPrices": {
+            "브라운 30X50": 23760,
+            "솔리드그레이 30X50": 23760
+        }
     },
     {
         "productCode": "P0000BDD",
@@ -4935,7 +5282,11 @@
         "soldOutColors": [
             "브라운 50X50",
             "그레이 50X50"
-        ]
+        ],
+        "colorPrices": {
+            "브라운 50X50": 30240,
+            "그레이 50X50": 30240
+        }
     },
     {
         "productCode": "P0000BCU",
@@ -5119,7 +5470,13 @@
             "브라운 30X50",
             "솔리드그레이 30X50",
             "그레이 30X50"
-        ]
+        ],
+        "colorPrices": {
+            "솔리드브라운 30X50": 23760,
+            "브라운 30X50": 23760,
+            "솔리드그레이 30X50": 23760,
+            "그레이 30X50": 23760
+        }
     },
     {
         "productCode": "P0000BCJ",
@@ -5283,7 +5640,8 @@
                 "name": "M 45X120",
                 "salePrice": 67200
             }
-        ]
+        ],
+        "discontinued": true
     },
     {
         "productCode": "P0000BBZ",
@@ -5644,7 +6002,11 @@
         "soldOutColors": [
             "베이지 SS 160X210",
             "그레이 SS 160X210"
-        ]
+        ],
+        "colorPrices": {
+            "베이지 SS 160X210": 65520,
+            "그레이 SS 160X210": 65520
+        }
     },
     {
         "productCode": "P0000BAT",
@@ -5664,7 +6026,11 @@
         "soldOutColors": [
             "베이지 50X70",
             "그레이 50X70"
-        ]
+        ],
+        "colorPrices": {
+            "베이지 50X70": 21600,
+            "그레이 50X70": 21600
+        }
     },
     {
         "productCode": "P0000BAS",
@@ -5679,6 +6045,9 @@
         "colors": {
             "아이보리 S 115X205": "#f7f6ef",
             "베이지 S 115X205 (밴드탈부착형)": "#f0e6d1"
+        },
+        "colorPrices": {
+            "베이지 S 115X205 (밴드탈부착형)": 92160
         }
     },
     {
