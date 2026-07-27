@@ -49,6 +49,7 @@ export type ContractDetail = {
   termsAgreed: boolean;
   signatureName: string;
   status: string;
+  approvalNumber: string | null;
   payload: unknown;
   createdAt: string;
   updatedAt: string;
@@ -82,6 +83,7 @@ type ContractDetailRow = {
   terms_agreed: boolean;
   signature_name: string;
   status: string;
+  approval_number: string | null;
   payload: unknown;
   created_at: Date;
   updated_at: Date;
@@ -214,6 +216,7 @@ const CONTRACT_DETAIL_SELECT = `
   terms_agreed,
   signature_name,
   status,
+  approval_number,
   payload,
   created_at,
   updated_at
@@ -255,6 +258,7 @@ function mapContractDetail(row: ContractDetailRow): ContractDetail {
     termsAgreed: row.terms_agreed,
     signatureName: row.signature_name,
     status: row.status,
+    approvalNumber: row.approval_number,
     payload: row.payload,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
@@ -282,6 +286,7 @@ export async function getContractById(
        contracts.terms_agreed,
        contracts.signature_name,
        contracts.status,
+       contracts.approval_number,
        contracts.payload,
        contracts.created_at,
        contracts.updated_at,
@@ -322,6 +327,7 @@ export async function getContractByNumberAndToken(
        terms_agreed,
        signature_name,
        status,
+       approval_number,
        payload,
        created_at,
        updated_at,
@@ -388,6 +394,41 @@ export async function updateContractStatus(
   return {
     id: row.id,
     status: row.status,
+    updatedAt: row.updated_at.toISOString(),
+  };
+}
+
+export type ContractApprovalNumberUpdateResult = {
+  id: number;
+  approvalNumber: string;
+  updatedAt: string;
+};
+
+export async function updateContractApprovalNumber(
+  id: number,
+  approvalNumber: string,
+): Promise<ContractApprovalNumberUpdateResult | null> {
+  const result = await pool.query<{
+    id: number;
+    approval_number: string;
+    updated_at: Date;
+  }>(
+    `UPDATE contracts
+     SET approval_number = $2, updated_at = NOW()
+     WHERE id = $1
+     RETURNING id, approval_number, updated_at`,
+    [id, approvalNumber],
+  );
+
+  if (!result.rowCount) {
+    return null;
+  }
+
+  const row = result.rows[0];
+
+  return {
+    id: row.id,
+    approvalNumber: row.approval_number,
     updatedAt: row.updated_at.toISOString(),
   };
 }

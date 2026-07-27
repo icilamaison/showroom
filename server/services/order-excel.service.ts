@@ -3,6 +3,7 @@ import path from "node:path";
 import {
   buildOrderExcelRows,
   findMissingOrderExcelRequiredFields,
+  formatShoppingMallOrderNumber,
   isPurchaseContractPayload,
   ORDER_EXCEL_HEADERS,
   type OrderExcelRow,
@@ -130,7 +131,23 @@ export async function generateBulkOrderExcelBuffer(
     throw new OrderExcelGenerationError("다운로드할 계약서가 없습니다.");
   }
 
-  const rows = collectOrderExcelRows(contracts);
+  const missingApprovalNumbers = contracts.filter(
+    (contract) => !formatShoppingMallOrderNumber(contract.approvalNumber),
+  );
+
+  if (missingApprovalNumbers.length > 0) {
+    const contractNumbers = missingApprovalNumbers
+      .map((contract) => contract.contractNumber)
+      .join(", ");
+
+    throw new OrderExcelGenerationError(
+      `계약번호 ${contractNumbers}는 SR 주문번호를 입력하지 않았습니다. 입력해주세요.`,
+    );
+  }
+
+  const rows = collectOrderExcelRows(contracts, (contract) =>
+    formatShoppingMallOrderNumber(contract.approvalNumber),
+  );
   const workbook = await createOrderExcelWorkbook(rows);
   return workbookToBuffer(workbook);
 }

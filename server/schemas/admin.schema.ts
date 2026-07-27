@@ -66,3 +66,30 @@ export function parseContractStatusUpdate(body: unknown):
     message: result.error.issues[0]?.message ?? "입력값을 확인해주세요.",
   };
 }
+
+export const contractApprovalNumberUpdateSchema = z.object({
+  approvalNumber: z
+    .string({ required_error: "승인번호를 입력해주세요." })
+    .trim()
+    .min(1, "승인번호를 입력해주세요.")
+    .regex(/^\d+$/, "승인번호는 숫자로 입력해주세요."),
+});
+
+export type ContractApprovalNumberUpdateInput = z.infer<
+  typeof contractApprovalNumberUpdateSchema
+>;
+
+export function parseContractApprovalNumberUpdate(body: unknown):
+  | { success: true; data: ContractApprovalNumberUpdateInput }
+  | { success: false; message: string } {
+  const result = contractApprovalNumberUpdateSchema.safeParse(body);
+
+  if (result.success) {
+    return { success: true, data: result.data };
+  }
+
+  return {
+    success: false,
+    message: result.error.issues[0]?.message ?? "입력값을 확인해주세요.",
+  };
+}

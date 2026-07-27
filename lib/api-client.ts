@@ -212,6 +212,7 @@ export type ContractDetail = {
   termsAgreed: boolean;
   signatureName: string;
   status: string;
+  approvalNumber: string | null;
   payload: unknown;
   createdAt: string;
   updatedAt: string;
@@ -222,6 +223,12 @@ export type ContractDetail = {
 export type ContractStatusUpdateResult = {
   id: number;
   status: string;
+  updatedAt: string;
+};
+
+export type ContractApprovalNumberUpdateResult = {
+  id: number;
+  approvalNumber: string;
   updatedAt: string;
 };
 
@@ -263,6 +270,19 @@ export async function updateAdminContractStatus(
     {
       method: "PATCH",
       body: JSON.stringify({ status }),
+    },
+  );
+}
+
+export async function updateAdminContractApprovalNumber(
+  id: number,
+  approvalNumber: string,
+): Promise<ContractApprovalNumberUpdateResult> {
+  return adminFetch<ContractApprovalNumberUpdateResult>(
+    `/api/admin/contracts/${id}/approval-number`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ approvalNumber }),
     },
   );
 }

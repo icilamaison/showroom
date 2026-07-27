@@ -2,11 +2,15 @@ import { Router } from "express";
 import { parseContractListQuery } from "../../lib/contract-list-query";
 import { sendError, sendSuccess } from "../../lib/api-response";
 import { formatShoppingMallOrderNumber } from "../../../lib/order-excel";
-import { parseContractStatusUpdate } from "../../schemas/admin.schema";
+import {
+  parseContractApprovalNumberUpdate,
+  parseContractStatusUpdate,
+} from "../../schemas/admin.schema";
 import {
   getContractById,
   listContracts,
   listContractsForExport,
+  updateContractApprovalNumber,
   updateContractStatus,
 } from "../../services/admin-contract.service";
 import {
@@ -167,6 +171,39 @@ contractsRouter.patch("/:id/status", async (req, res) => {
     return sendSuccess(res, updated);
   } catch (error) {
     console.error("[admin/contracts] Failed to update contract status:", error);
+    return sendError(res, "서버 오류가 발생했습니다.", 500);
+  }
+});
+
+contractsRouter.patch("/:id/approval-number", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
+  }
+
+  const parsed = parseContractApprovalNumberUpdate(req.body);
+
+  if (!parsed.success) {
+    return sendError(res, parsed.message, 400);
+  }
+
+  try {
+    const updated = await updateContractApprovalNumber(
+      id,
+      parsed.data.approvalNumber,
+    );
+
+    if (!updated) {
+      return sendError(res, "계약서를 찾을 수 없습니다.", 404);
+    }
+
+    return sendSuccess(res, updated);
+  } catch (error) {
+    console.error(
+      "[admin/contracts] Failed to update approval number:",
+      error,
+    );
     return sendError(res, "서버 오류가 발생했습니다.", 500);
   }
 });

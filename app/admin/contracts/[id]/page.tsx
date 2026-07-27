@@ -4,6 +4,7 @@ import {
   ApiClientError,
   downloadAdminOrderExcel,
   fetchAdminContractById,
+  updateAdminContractApprovalNumber,
   updateAdminContractStatus,
   type ContractDetail,
 } from "@/lib/api-client";
@@ -12,6 +13,7 @@ import {
   getContractStatusLabel,
 } from "@/lib/constants/contract-status";
 import { formatFullAddress } from "@/lib/address";
+import { findCatalogProductByName } from "@/lib/product-catalog";
 import type { PurchaseContractPayload } from "@/lib/validation/contract";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -69,6 +71,7 @@ function ProductTable({
         <table className="admin-product-table">
           <thead>
             <tr>
+              <th>상품번호</th>
               <th>제품명</th>
               <th>컬러</th>
               <th>사이즈</th>
@@ -79,6 +82,7 @@ function ProductTable({
           <tbody>
             {filledProducts.map((product, index) => (
               <tr key={`${product.name}-${index}`}>
+                <td>{findCatalogProductByName(product.name)?.productNo ?? "-"}</td>
                 <td>{product.name}</td>
                 <td>{product.color || "-"}</td>
                 <td>{product.size || "-"}</td>
@@ -250,6 +254,7 @@ export default function AdminContractDetailPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [approvalNumber, setApprovalNumber] = useState("");
+  const [isSavingApprovalNumber, setIsSavingApprovalNumber] = useState(false);
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -267,6 +272,7 @@ export default function AdminContractDetailPage() {
         const result = await fetchAdminContractById(contractId);
         setContract(result);
         setSelectedStatus(result.status);
+        setApprovalNumber(result.approvalNumber ?? "");
       } catch (loadError) {
         if (loadError instanceof ApiClientError) {
           if (loadError.status === 401) {
@@ -313,6 +319,38 @@ export default function AdminContractDetailPage() {
       }
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleApprovalNumberSave() {
+    if (!contract) {
+      return;
+    }
+
+    if (!approvalNumber.trim()) {
+      window.alert("승인번호를 입력해주세요.");
+      return;
+    }
+
+    setIsSavingApprovalNumber(true);
+    setError("");
+
+    try {
+      await updateAdminContractApprovalNumber(contract.id, approvalNumber);
+      window.alert("저장되었습니다.");
+    } catch (saveError) {
+      if (saveError instanceof ApiClientError) {
+        if (saveError.status === 401) {
+          router.push("/admin/login");
+          return;
+        }
+
+        setError(saveError.message);
+      } else {
+        setError("승인번호 저장 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setIsSavingApprovalNumber(false);
     }
   }
 
@@ -467,9 +505,6 @@ export default function AdminContractDetailPage() {
                   <h2 className="app-section-title">다운로드</h2>
                   <div className="admin-action-group">
                     <p className="admin-action-group__title">계약서 PDF</p>
-                    <p className="admin-action-group__description">
-                      구매 계약서를 A4 PDF로 내려받습니다.
-                    </p>
                     <div className="admin-detail-actions admin-detail-actions--start">
                       {contract.viewToken ? (
                         <button
@@ -521,9 +556,6 @@ export default function AdminContractDetailPage() {
 
                   <div className="admin-action-group">
                     <p className="admin-action-group__title">PlayAuto 주문 엑셀</p>
-                    <p className="admin-action-group__description">
-                      승인번호 앞에 SR이 자동으로 붙습니다.
-                    </p>
                     <div className="admin-detail-actions">
                       <div className="app-field">
                         <label htmlFor="approval-number" className="app-label">
@@ -546,6 +578,16 @@ export default function AdminContractDetailPage() {
                           />
                         </div>
                       </div>
+                      <button
+                        type="button"
+                        className="app-button app-button--secondary"
+                        disabled={isSavingApprovalNumber}
+                        onClick={() => {
+                          void handleApprovalNumberSave();
+                        }}
+                      >
+                        {isSavingApprovalNumber ? "저장 중..." : "저장"}
+                      </button>
                       <button
                         type="button"
                         className="app-button"

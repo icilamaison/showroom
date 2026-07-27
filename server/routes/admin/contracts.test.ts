@@ -326,7 +326,11 @@ describe("Admin API", () => {
 
   describe("GET /api/admin/contracts/order-excel", () => {
     it("returns a bulk Excel file for filtered contracts", async () => {
-      await createTestContract("2009", "엑셀일괄");
+      const created = await createTestContract("2009", "엑셀일괄");
+      await pool.query(
+        "UPDATE contracts SET approval_number = $1 WHERE contract_number = $2",
+        ["546450", created.contractNumber],
+      );
 
       const agent = await loginAgent();
       const response = await agent
@@ -341,6 +345,19 @@ describe("Admin API", () => {
         "playauto_orders_",
       );
       expect(Number(response.headers["content-length"])).toBeGreaterThan(0);
+    });
+
+    it("returns 400 when a contract is missing its SR approval number", async () => {
+      const created = await createTestContract("2010", "엑셀승인번호없음");
+
+      const agent = await loginAgent();
+      const response = await agent
+        .get("/api/admin/contracts/order-excel")
+        .query({ customerName: "엑셀승인번호없음" })
+        .expect(400);
+
+      expect(response.body.message).toContain(created.contractNumber);
+      expect(response.body.message).toContain("SR 주문번호");
     });
 
     it("returns 400 for invalid date range", async () => {
