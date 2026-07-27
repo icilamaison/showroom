@@ -366,7 +366,18 @@
         "consumerPrice": 496500,
         "supplyPrice": 0,
         "productPrice": 315955,
-        "salePrice": 347550
+        "salePrice": 347550,
+        "sizes": [
+            "스노우그레이 반호 150X200",
+            {
+                "name": "스노우그레이 1호 160X240",
+                "salePrice": 447550
+            },
+            {
+                "name": "스노우그레이 2호 200X300",
+                "salePrice": 497550
+            }
+        ]
     },
     {
         "productCode": "P0000BVG",
@@ -6090,7 +6101,15 @@
         "consumerPrice": 1180000,
         "supplyPrice": 0,
         "productPrice": 858182,
-        "salePrice": 944000
+        "salePrice": 944000,
+        "colors": {
+            "아이보리 원형 300": "#ffffff",
+            "그레이시베이지 원형 300": "#ffffff",
+            "라이트그레이 원형 300": "#ffffff"
+        },
+        "soldOutColors": [
+            "라이트그레이 원형 300"
+        ]
     },
     {
         "productCode": "P0000BAN",
@@ -6101,7 +6120,12 @@
         "consumerPrice": 520000,
         "supplyPrice": 0,
         "productPrice": 378182,
-        "salePrice": 416000
+        "salePrice": 416000,
+        "colors": {
+            "아이보리 원형 200": "#ffffff",
+            "그레이시베이지 원형 200": "#ffffff",
+            "라이트그레이 원형 200": "#ffffff"
+        }
     },
     {
         "productCode": "P0000BAM",
@@ -6112,7 +6136,15 @@
         "consumerPrice": 290000,
         "supplyPrice": 0,
         "productPrice": 210909,
-        "salePrice": 232000
+        "salePrice": 232000,
+        "colors": {
+            "아이보리 원형 150": "#ffffff",
+            "그레이시베이지 원형 150": "#ffffff",
+            "라이트그레이 원형 150": "#ffffff"
+        },
+        "soldOutColors": [
+            "라이트그레이 원형 150"
+        ]
     },
     {
         "productCode": "P0000BAK",
@@ -6123,7 +6155,15 @@
         "consumerPrice": 920000,
         "supplyPrice": 0,
         "productPrice": 669091,
-        "salePrice": 736000
+        "salePrice": 736000,
+        "colors": {
+            "아이보리 3호 240X330": "#ffffff",
+            "그레이시베이지 3호 240X330": "#ffffff",
+            "라이트그레이 3호 240X330": "#ffffff"
+        },
+        "soldOutColors": [
+            "라이트그레이 3호 240X330"
+        ]
     },
     {
         "productCode": "P0000BAJ",
@@ -6134,7 +6174,15 @@
         "consumerPrice": 660000,
         "supplyPrice": 0,
         "productPrice": 480000,
-        "salePrice": 528000
+        "salePrice": 528000,
+        "colors": {
+            "아이보리 2호 200X300": "#ffffff",
+            "그레이시베이지 2호 200X300": "#ffffff",
+            "라이트그레이 2호 200X300": "#ffffff"
+        },
+        "soldOutColors": [
+            "라이트그레이 2호 200X300"
+        ]
     },
     {
         "productCode": "P0000BAI",
@@ -6145,7 +6193,15 @@
         "consumerPrice": 420000,
         "supplyPrice": 0,
         "productPrice": 305455,
-        "salePrice": 336000
+        "salePrice": 336000,
+        "colors": {
+            "아이보리 1호 160X240": "#ffffff",
+            "그레이시베이지 1호 160X240": "#ffffff",
+            "라이트그레이 1호 160X240": "#ffffff"
+        },
+        "soldOutColors": [
+            "라이트그레이 1호 160X240"
+        ]
     },
     {
         "productCode": "P0000BAH",
