@@ -535,7 +535,8 @@ export default function ContractDocumentView({
         <div className="contract-doc__agreement-box">
           <p className="contract-doc__agreement-text">
             본인은 위 상품·결제·배송 정보 및 별첨 안내문(배송·교환·반품 등 안내)의
-            내용을 모두 안내받아 이해하였으며, 이에 동의하여 아래와 같이 서명합니다.
+            내용을 모두 안내받아 이해하였으며, 이에 동의하여 아래와 같이
+            서명합니다.
           </p>
 
           <ContractConsentSection

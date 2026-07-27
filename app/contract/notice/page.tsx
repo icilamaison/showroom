@@ -19,7 +19,7 @@ export default function ContractNoticePage() {
           ← 홈으로
         </Link>
 
-        <div className="contract-doc-flow">
+        <div className="contract-doc-flow contract-doc-flow--attached">
           <ContractNoticeDocument className="contract-doc contract-doc--document contract-doc--sheet notice-document" />
 
           <div className="contract-doc-flow__actions">

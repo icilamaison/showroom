@@ -285,9 +285,9 @@
 }
 
 .contract-doc__set-component-row {
-  background: #f3f4f6;
   color: #6b7280;
-  font-size: 0.76rem;
+  background: #f3f4f6;
+  font-size: 0.8rem;
 }
 
 .contract-doc__set-component-row td {
@@ -573,11 +573,13 @@
   border: 1px solid var(--contract-rule);
   padding: 0.75rem 0.85rem;
   background: var(--contract-cell);
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .contract-doc__agreement-text {
   margin: 0 0 0.75rem;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .contract-doc__consent {
@@ -871,6 +873,19 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.contract-doc-flow--attached {
+  gap: 0;
+}
+
+.contract-doc-flow--attached .contract-doc--sheet.notice-document {
+  padding-bottom: 0;
+}
+
+.contract-doc-flow--attached .contract-doc-flow__actions {
+  gap: 0.55rem;
+  padding-top: 3rem;
 }
 
 .contract-doc--sheet {
