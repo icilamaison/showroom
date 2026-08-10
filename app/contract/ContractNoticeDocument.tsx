@@ -90,7 +90,7 @@ export default function ContractNoticeDocument({
           러그 전문 세탁 업체 안내
         </h2>
         <p className="notice-text">
-          워셔블 러그를 제외한 모든 러그는 러그 전문 세탁 업체를 통해 [습식세탁]
+          워셔블 러그를 제외한 모든 러그는 러그 전문 세탁 업체를 통해 [드라이클리닝]
           권장드립니다. (Tel : 010-5495-6706)
         </p>
       </section>
