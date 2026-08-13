@@ -1,0 +1,133 @@
+/* 커튼 주문서 — 열 = 창(항목) 전치 테이블 */
+.curtain-doc__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.curtain-doc__brand {
+  height: 22px;
+  width: auto;
+  margin: 0 auto;
+}
+
+.curtain-doc__date {
+  display: inline-flex;
+  align-self: flex-end;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.curtain-doc__date-input {
+  width: 8.5rem;
+  text-align: center;
+  font-weight: 400;
+}
+
+.curtain-table {
+  font-size: 0.78rem;
+}
+
+.curtain-table__col-label {
+  width: 11%;
+}
+
+.curtain-table__col-item {
+  width: 11.125%;
+}
+
+.curtain-table__row-label {
+  width: auto;
+  white-space: pre-line;
+  line-height: 1.2;
+}
+
+.curtain-table__side-note,
+.curtain-table__remarks {
+  resize: none;
+}
+
+.curtain-table__side-note {
+  height: 100%;
+  min-height: 190px;
+}
+
+.curtain-table__remarks {
+  min-height: 120px;
+}
+
+/* 레일 단가 헤더 — 자수 + 단가 2줄 */
+.curtain-table__rail-head {
+  background: var(--contract-fill);
+  text-align: center;
+  font-weight: 600;
+}
+
+.curtain-table__rail-name,
+.curtain-table__rail-price {
+  display: block;
+  line-height: 1.25;
+}
+
+.curtain-table__rail-price {
+  min-height: 1.25em;
+  font-weight: 400;
+}
+
+.curtain-table__total {
+  font-weight: 700;
+}
+
+/* 확인사항 — 체크리스트 */
+.curtain-table__notice {
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+}
+
+.curtain-notice__lead {
+  margin: 0 0 0.7rem;
+  font-weight: 700;
+}
+
+.curtain-notice__title {
+  margin: 0.7rem 0 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.curtain-notice__text {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.curtain-notice__check {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  line-height: 1.7;
+  cursor: pointer;
+}
+
+.curtain-notice__blank {
+  width: 3.5rem;
+  margin: 0 0.15rem;
+  text-align: center;
+}
+
+.curtain-table__delivery {
+  padding: 0.45rem 0.7rem;
+  text-align: left;
+  line-height: 1.6;
+}
+
+@media (max-width: 1024px) {
+  .curtain-table-scroll {
+    overflow-x: auto;
+  }
+
+  .curtain-table-scroll .curtain-table {
+    min-width: 900px;
+  }
+}
