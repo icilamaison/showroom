@@ -40,7 +40,7 @@ export function createApp() {
   return app;
 }
 
-const PORT = Number(process.env.SERVER_PORT ?? 4000);
+const PORT = Number(process.env.PORT ?? process.env.SERVER_PORT ?? 4000);
 const app = createApp();
 
 async function startServer(): Promise<void> {
