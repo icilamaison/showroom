@@ -34,7 +34,7 @@ export default function HomePage() {
             러그 계약서 작성
           </Link>
           <Link href="/contract/curtain" className="app-menu__item">
-            커튼 주문서 작성
+            커튼 주문서 작성(테스트)
           </Link>
           <Link href="/admin/contracts" className="app-menu__item">
             계약서 조회

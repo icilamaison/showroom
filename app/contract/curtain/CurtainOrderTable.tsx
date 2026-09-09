@@ -19,6 +19,10 @@ import { SignaturePad } from "../write/ContractForm";
 import "../contract.css";
 import "./curtain.css";
 
+// ponytail: 커튼 주문서는 테스트 단계 — 제출 시 저장하지 않고 안내만 띄운다.
+// 실제 저장을 열 때 true로 바꾸면 된다.
+const SUBMIT_ENABLED: boolean = false;
+
 const ITEM_COLUMN_COUNT = 6;
 
 // 레일 단가표 — 시트 고정값. 레일커넥터는 단가 미정(비워둠).
@@ -282,6 +286,12 @@ export default function CurtainOrderTable() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!SUBMIT_ENABLED) {
+      alert("준비 중입니다.");
+      return;
+    }
+
     setFormError("");
 
     const confirmErrors = validateConfirmChecks();
