@@ -1,8 +1,21 @@
 "use client";
 
+import NextImage from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ApiClientError, submitContract } from "@/lib/api-client";
 import { formatAmount, formatDigits, toDigits } from "@/lib/contract-amount";
 import { formatDaumAddress, openDaumPostcode } from "@/lib/daum-postcode";
+import { formatPhoneInput } from "@/lib/phone";
+import {
+  createEmptyProductRow,
+  PRODUCT_ROW_COUNT,
+  validateContractForm,
+  type ContractFormValues,
+  type ProductRow,
+} from "@/lib/validation/contract";
+import { ContractConsentSection } from "../ContractConsentSection";
+import { SignaturePad } from "../write/ContractForm";
 import "../contract.css";
 import "./curtain.css";
 
@@ -67,6 +80,14 @@ function createEmptyChecks(): ConfirmChecks {
   };
 }
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) {
+    return null;
+  }
+
+  return <p className="contract-doc__error">{message}</p>;
+}
+
 // 오늘 날짜 (YYYY-MM-DD). 서버/클라이언트 시간대 차이로 인한
 // hydration 불일치를 피하려고 마운트 후 채운다.
 function todayValue(): string {
@@ -87,6 +108,7 @@ const ITEM_FIELDS: { field: keyof CurtainItem; label: string }[] = [
 ];
 
 export default function CurtainOrderTable() {
+  const router = useRouter();
   const [orderDate, setOrderDate] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -106,6 +128,21 @@ export default function CurtainOrderTable() {
   const [railQuantities, setRailQuantities] = useState<string[]>(() =>
     RAIL_OPTIONS.map(() => ""),
   );
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "bank_transfer" | "">("");
+  const [cashReceiptType, setCashReceiptType] = useState<
+    "income_deduction" | "expense_proof" | ""
+  >("");
+  const [cashReceiptPhone, setCashReceiptPhone] = useState("");
+  const [cashReceiptBusinessNumber, setCashReceiptBusinessNumber] = useState("");
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [marketingConsentAgreed, setMarketingConsentAgreed] = useState(false);
+  const [signatureName, setSignatureName] = useState("");
+  const [signatureDataUrl, setSignatureDataUrl] = useState("");
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [draftSignature, setDraftSignature] = useState("");
+  const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setOrderDate(todayValue());
@@ -136,6 +173,170 @@ export default function CurtainOrderTable() {
     setConfirm((prev) => ({ ...prev, [key]: value }));
   }
 
+  // 커튼 항목·레일을 기존 계약서 상품행(ProductRow)으로 옮긴다.
+  // 단가가 없는 레일커넥터는 금액이 0이라 상품행에서 제외하고 payload에만 남긴다.
+  function buildProductRows(): ProductRow[] {
+    const rows: ProductRow[] = [];
+
+    items.forEach((item, index) => {
+      if (!item.productName.trim()) {
+        return;
+      }
+
+      const sizeParts = [
+        item.measuredWidth.trim() && item.measuredHeight.trim()
+          ? `${item.measuredWidth.trim()}×${item.measuredHeight.trim()}cm`
+          : "",
+        item.curtainSize.trim() ? `${item.curtainSize.trim()}호` : "",
+        item.style,
+      ].filter(Boolean);
+
+      rows.push({
+        ...createEmptyProductRow(),
+        name: `${index + 1}. ${item.productName.trim()}${item.space.trim() ? ` (${item.space.trim()})` : ""}`,
+        color: item.color.trim(),
+        size: sizeParts.join(" / "),
+        quantity: "1",
+        unitPrice: toDigits(item.amount),
+      });
+    });
+
+    RAIL_OPTIONS.forEach((rail, index) => {
+      const quantity = Number(railQuantities[index] || 0);
+
+      if (rail.price === null || quantity < 1) {
+        return;
+      }
+
+      rows.push({
+        ...createEmptyProductRow(),
+        name: `레일 ${rail.label}`,
+        quantity: String(quantity),
+        unitPrice: String(rail.price),
+      });
+    });
+
+    while (rows.length < PRODUCT_ROW_COUNT) {
+      rows.push(createEmptyProductRow());
+    }
+
+    return rows;
+  }
+
+  function buildFormValues(): ContractFormValues {
+    const [year = "", month = "", day = ""] = orderDate.split("-");
+
+    return {
+      managerName: "",
+      writtenDateYear: year,
+      writtenDateMonth: month,
+      writtenDateDay: day,
+      buyerName: customerName,
+      buyerPhone: customerPhone,
+      recipientSameAsBuyer: true,
+      recipientName: "",
+      recipientPhone: "",
+      recipientPostalCode: postalCode,
+      recipientAddress: customerAddress,
+      recipientAddressDetail: addressDetail,
+      products: buildProductRows(),
+      totalDiscountRate: "",
+      paymentMethod,
+      cashReceiptType,
+      cashReceiptPhone,
+      cashReceiptBusinessNumber,
+      taxInvoiceRequested: false,
+      taxInvoiceEmail: "",
+      agreementDateYear: year,
+      agreementDateMonth: month,
+      agreementDateDay: day,
+      signatureName,
+      signatureDataUrl,
+      termsAgreed,
+      marketingConsentAgreed,
+    };
+  }
+
+  // 확인사항 2·3·4번은 택1 필수. 스키마에 없는 커튼 전용 검증이라 여기서 확인한다.
+  function validateConfirmChecks(): Record<string, string> {
+    const errors: Record<string, string> = {};
+
+    if (!confirm.makeSize) {
+      errors.makeSize = "제작 사이즈를 선택해주세요.";
+    } else if (confirm.makeSize === "custom" && !confirm.makeSizeCm) {
+      errors.makeSize = "짧게 제작할 길이(cm)를 입력해주세요.";
+    }
+
+    if (!confirm.layers) {
+      errors.layers = "커튼 겹수를 선택해주세요.";
+    }
+
+    if (!confirm.rail) {
+      errors.rail = "기존 레일 유무 및 철거를 선택해주세요.";
+    } else if (confirm.rail === "request" && !confirm.railCount) {
+      errors.rail = "철거할 레일 개수를 입력해주세요.";
+    }
+
+    return errors;
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError("");
+
+    const confirmErrors = validateConfirmChecks();
+    const validation = validateContractForm(buildFormValues());
+
+    if (!validation.valid || Object.keys(confirmErrors).length > 0) {
+      const errors = {
+        ...(validation.valid ? {} : validation.errors),
+        ...confirmErrors,
+      };
+      setFieldErrors(errors);
+      setFormError("입력값을 확인해주세요.");
+      return;
+    }
+
+    setFieldErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const result = await submitContract({
+        ...validation.data,
+        // 커튼 시트 원본 값은 payload(JSONB)에 그대로 보관한다.
+        curtain: {
+          orderDate,
+          items,
+          railQuantities,
+          confirm,
+          sideNote,
+          remarks,
+          refundBank,
+          refundAccount,
+          refundHolder,
+          railTotal,
+          itemTotal,
+        },
+      } as Parameters<typeof submitContract>[0]);
+
+      router.push(
+        `/contract/complete?contractNumber=${encodeURIComponent(result.contractNumber)}&viewToken=${encodeURIComponent(result.viewToken)}`,
+      );
+    } catch (error) {
+      if (error instanceof ApiClientError) {
+        setFormError(error.message);
+
+        if (error.errors) {
+          setFieldErrors(error.errors);
+        }
+      } else {
+        setFormError("제출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
+
+      setIsSubmitting(false);
+    }
+  }
+
   function handleItemChange(
     index: number,
     field: keyof CurtainItem,
@@ -162,9 +363,20 @@ export default function CurtainOrderTable() {
     return sum + (rail.price ?? 0) * quantity;
   }, 0);
   const grandTotal = itemTotal + railTotal;
+  // 상품 관련 오류는 products / products.0.unitPrice 처럼 키가 여러 개라 첫 건만 보여준다.
+  const productErrorKey = Object.keys(fieldErrors).find(
+    (key) => key === "products" || key.startsWith("products."),
+  );
+  const productError = productErrorKey
+    ? `상품 정보를 확인해주세요. (${fieldErrors[productErrorKey]})`
+    : "";
 
   return (
-    <div className="contract-doc contract-doc--document contract-doc--sheet curtain-doc">
+    <form
+      onSubmit={handleSubmit}
+      className="contract-doc contract-doc--document contract-doc--sheet curtain-doc"
+      noValidate
+    >
       <header className="curtain-doc__header">
         <img
           className="curtain-doc__brand"
@@ -201,15 +413,20 @@ export default function CurtainOrderTable() {
                 onChange={(event) => setCustomerName(event.target.value)}
                 className="contract-doc__cell-input"
               />
+              <FieldError message={fieldErrors.buyerName} />
             </td>
             <th scope="row">연락처</th>
             <td colSpan={3}>
               <input
                 type="text"
                 value={customerPhone}
-                onChange={(event) => setCustomerPhone(event.target.value)}
+                onChange={(event) =>
+                  setCustomerPhone(formatPhoneInput(event.target.value))
+                }
+                placeholder="010-0000-0000"
                 className="contract-doc__cell-input"
               />
+              <FieldError message={fieldErrors.buyerPhone} />
             </td>
           </tr>
 
@@ -241,9 +458,12 @@ export default function CurtainOrderTable() {
                   aria-label="기본주소"
                 />
               </div>
-              {addressError ? (
-                <p className="contract-doc__error">{addressError}</p>
-              ) : null}
+              <FieldError message={addressError} />
+              <FieldError
+                message={
+                  fieldErrors.recipientPostalCode || fieldErrors.recipientAddress
+                }
+              />
               <input
                 type="text"
                 value={addressDetail}
@@ -319,6 +539,14 @@ export default function CurtainOrderTable() {
               </td>
             ))}
           </tr>
+
+          {productError ? (
+            <tr>
+              <td colSpan={9}>
+                <FieldError message={productError} />
+              </td>
+            </tr>
+          ) : null}
 
           <tr>
             <th scope="row" rowSpan={2} className="curtain-table__row-label">
@@ -399,6 +627,8 @@ export default function CurtainOrderTable() {
                 cm 짧게 제작
               </label>
 
+              <FieldError message={fieldErrors.makeSize} />
+
               <h3 className="curtain-notice__title">3. 커튼 겹수 선택</h3>
               <label className="curtain-notice__check">
                 <input
@@ -418,6 +648,8 @@ export default function CurtainOrderTable() {
                 />
                 2중 커튼 (속커튼 + 겉커튼) — 커튼박스 폭 15cm 이상 필요
               </label>
+
+              <FieldError message={fieldErrors.layers} />
 
               <h3 className="curtain-notice__title">4. 기존 레일 유무 및 철거</h3>
               <label className="curtain-notice__check">
@@ -457,6 +689,8 @@ export default function CurtainOrderTable() {
                 />
                 개 (개당 10,000원)
               </label>
+
+              <FieldError message={fieldErrors.rail} />
 
               <h3 className="curtain-notice__title">5. 특수 시공 환경 (해당 시 체크)</h3>
               <label className="curtain-notice__check">
@@ -542,9 +776,203 @@ export default function CurtainOrderTable() {
               주문량이 많거나 상품의 특성에 따라 발송 기간이 다소 지연될 수 있습니다.
             </td>
           </tr>
+
+          <tr>
+            <th scope="row" className="curtain-table__row-label">
+              결제수단
+            </th>
+            <td colSpan={8} className="curtain-table__payment">
+              <label className="curtain-notice__check">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  checked={paymentMethod === "card"}
+                  onChange={() => setPaymentMethod("card")}
+                />
+                카드
+              </label>
+              <label className="curtain-notice__check">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  checked={paymentMethod === "bank_transfer"}
+                  onChange={() => setPaymentMethod("bank_transfer")}
+                />
+                계좌이체
+                <span className="contract-doc__muted">
+                  (신한은행 140-014-980017 / 예금주 : 홈온얼스(주))
+                </span>
+              </label>
+              {fieldErrors.paymentMethod ? (
+                <p className="contract-doc__error">{fieldErrors.paymentMethod}</p>
+              ) : null}
+
+              {paymentMethod === "bank_transfer" ? (
+                <div className="curtain-table__cash-receipt">
+                  <p className="curtain-notice__title">현금영수증 발행</p>
+                  <label className="curtain-notice__check">
+                    <input
+                      type="radio"
+                      name="cashReceiptType"
+                      checked={cashReceiptType === "income_deduction"}
+                      onChange={() => setCashReceiptType("income_deduction")}
+                    />
+                    소득공제용 (휴대폰번호
+                    <input
+                      type="tel"
+                      value={cashReceiptPhone}
+                      onChange={(event) =>
+                        setCashReceiptPhone(formatPhoneInput(event.target.value))
+                      }
+                      className="contract-doc__inline-input contract-doc__inline-input--phone"
+                      placeholder="010-0000-0000"
+                    />
+                    )
+                  </label>
+                  <label className="curtain-notice__check">
+                    <input
+                      type="radio"
+                      name="cashReceiptType"
+                      checked={cashReceiptType === "expense_proof"}
+                      onChange={() => setCashReceiptType("expense_proof")}
+                    />
+                    지출증빙용 (사업자등록번호
+                    <input
+                      type="text"
+                      value={cashReceiptBusinessNumber}
+                      onChange={(event) =>
+                        setCashReceiptBusinessNumber(event.target.value)
+                      }
+                      className="contract-doc__inline-input contract-doc__inline-input--biz"
+                      placeholder="000-00-00000"
+                    />
+                    )
+                  </label>
+                  {fieldErrors.cashReceiptType ? (
+                    <p className="contract-doc__error">{fieldErrors.cashReceiptType}</p>
+                  ) : null}
+                  {fieldErrors.cashReceiptPhone ? (
+                    <p className="contract-doc__error">{fieldErrors.cashReceiptPhone}</p>
+                  ) : null}
+                  {fieldErrors.cashReceiptBusinessNumber ? (
+                    <p className="contract-doc__error">
+                      {fieldErrors.cashReceiptBusinessNumber}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </td>
+          </tr>
         </tbody>
       </table>
       </div>
-    </div>
+
+      <div className="contract-doc__agreement-box">
+        <p className="contract-doc__agreement-text">
+          본인은 위 주문 내역·확인사항 및 배송 안내의 내용을 모두 안내받아
+          이해하였으며, 이에 동의하여 아래와 같이 서명합니다.
+        </p>
+
+        <ContractConsentSection
+          termsAgreed={termsAgreed}
+          marketingConsentAgreed={marketingConsentAgreed}
+          onChange={(field, value) =>
+            field === "termsAgreed"
+              ? setTermsAgreed(value)
+              : setMarketingConsentAgreed(value)
+          }
+          errors={fieldErrors}
+        />
+
+        <div className="contract-doc__agreement-sign">
+          <span>{orderDate || "-"}</span>
+          <label className="contract-doc__signature">
+            <span>주문자 :</span>
+            <input
+              type="text"
+              value={signatureName}
+              onChange={(event) => setSignatureName(event.target.value)}
+              className="contract-doc__signature-buyer-name"
+              aria-label="서명 주문자명"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setDraftSignature(signatureDataUrl);
+                setIsSignatureModalOpen(true);
+              }}
+              className="contract-doc__signature-trigger"
+              aria-label="서명 패드 열기"
+            >
+              <span className="contract-doc__signature-stamp-wrap">
+                {signatureDataUrl ? (
+                  <NextImage
+                    src={signatureDataUrl}
+                    alt="입력된 서명"
+                    className="contract-doc__signature-stamp-image"
+                    width={82}
+                    height={30}
+                    unoptimized
+                  />
+                ) : null}
+                <span className="contract-doc__signature-stamp-text">(인)</span>
+              </span>
+            </button>
+          </label>
+        </div>
+        {fieldErrors.signatureName || fieldErrors.signatureDataUrl ? (
+          <p className="contract-doc__error">
+            {fieldErrors.signatureName || fieldErrors.signatureDataUrl}
+          </p>
+        ) : null}
+      </div>
+
+      {formError ? <p className="app-alert app-alert--error">{formError}</p> : null}
+
+      <button type="submit" disabled={isSubmitting} className="contract-doc__submit">
+        {isSubmitting ? "제출 중..." : "주문서 제출"}
+      </button>
+
+      {isSignatureModalOpen ? (
+        <div
+          className="contract-doc__signature-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="contract-doc__signature-modal">
+            <p className="contract-doc__signature-modal-title">
+              서명을 입력해주세요.
+            </p>
+            <SignaturePad value={draftSignature} onChange={setDraftSignature} />
+            <div className="contract-doc__signature-modal-actions">
+              <button
+                type="button"
+                onClick={() => setDraftSignature("")}
+                className="contract-doc__signature-clear"
+              >
+                지우기
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSignatureModalOpen(false)}
+                className="contract-doc__signature-cancel"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSignatureDataUrl(draftSignature);
+                  setIsSignatureModalOpen(false);
+                }}
+                className="contract-doc__signature-save"
+              >
+                적용
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </form>
   );
 }

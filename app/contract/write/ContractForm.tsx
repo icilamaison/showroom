@@ -197,7 +197,7 @@ function DocCheckbox({
   );
 }
 
-function SignaturePad({
+export function SignaturePad({
   value,
   onChange,
 }: {

@@ -116,6 +116,17 @@
   text-align: center;
 }
 
+.curtain-table__payment {
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+}
+
+.curtain-table__cash-receipt {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--contract-line);
+}
+
 .curtain-table__delivery {
   padding: 0.45rem 0.7rem;
   text-align: left;
