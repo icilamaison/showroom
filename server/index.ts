@@ -40,7 +40,9 @@ export function createApp() {
   return app;
 }
 
-const PORT = Number(process.env.PORT ?? process.env.SERVER_PORT ?? 4000);
+// SERVER_PORT(로컬 .env) 우선 — 로컬 dev는 PORT=3000이 Next 몫이라 Express가 가로채면 안 된다.
+// Render/Cloud Run은 SERVER_PORT 없이 PORT만 주입하므로 그때는 PORT를 쓴다.
+const PORT = Number(process.env.SERVER_PORT ?? process.env.PORT ?? 4000);
 const app = createApp();
 
 async function startServer(): Promise<void> {
