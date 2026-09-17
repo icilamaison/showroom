@@ -76,6 +76,22 @@ export function normalizeProductOptions(
   });
 }
 
+// 품절 옵션을 목록에서 빼면 카페24에서 재고를 다시 채워도 이 화면에서는 고를 수 없다.
+// product.json은 동기화 시점의 스냅샷이라 항상 늦다. 지우지 말고 표시만 해서 담당자가 판단하게 한다.
+export function withSoldOutLabels(
+  options: CatalogSizeOption[] | string[] | undefined,
+  soldOutNames: string[] | undefined,
+  baseSalePrice?: number,
+): ProductSelectOption[] {
+  const soldOut = new Set(soldOutNames ?? []);
+
+  return normalizeProductOptions(options, baseSalePrice).map((option) =>
+    soldOut.has(option.value)
+      ? { ...option, label: `${option.label} (품절)` }
+      : option,
+  );
+}
+
 export function getSizeSalePrice(
   product: CatalogProduct,
   sizeName: string,

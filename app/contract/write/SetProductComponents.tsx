@@ -1,7 +1,7 @@
 "use client";
 
 import { formatAmount, formatDigits, lineAmount } from "@/lib/contract-amount";
-import { getSizeOptionName, type SetComponent } from "@/lib/product-catalog";
+import { withSoldOutLabels, type SetComponent } from "@/lib/product-catalog";
 import {
   resolveComponentBaseSalePrice,
   resolveComponentSizeOptions,
@@ -35,13 +35,16 @@ export default function SetProductComponents({
           quantity: "",
           unitPrice: "",
         };
-        const colorOptions = (component.colors ?? []).filter(
-          (name) => !component.soldOutColors?.includes(name),
-        );
-        const sizeOptions = resolveComponentSizeOptions(component).filter(
-          (option) => !component.soldOutSizes?.includes(getSizeOptionName(option)),
-        );
         const baseSalePrice = resolveComponentBaseSalePrice(component);
+        const colorOptions = withSoldOutLabels(
+          component.colors ?? [],
+          component.soldOutColors,
+        );
+        const sizeOptions = withSoldOutLabels(
+          resolveComponentSizeOptions(component),
+          component.soldOutSizes,
+          baseSalePrice,
+        );
         const amount = lineAmount(selection);
 
         return (
@@ -60,7 +63,7 @@ export default function SetProductComponents({
                 />
               ) : colorOptions.length === 1 ? (
                 <span className="contract-doc__set-component-value">
-                  {colorOptions[0]}
+                  {colorOptions[0].label}
                 </span>
               ) : null}
             </td>
@@ -74,7 +77,7 @@ export default function SetProductComponents({
                 />
               ) : sizeOptions.length === 1 ? (
                 <span className="contract-doc__set-component-value">
-                  {getSizeOptionName(sizeOptions[0])}
+                  {sizeOptions[0].label}
                 </span>
               ) : null}
             </td>

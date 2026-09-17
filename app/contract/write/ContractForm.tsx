@@ -13,6 +13,7 @@ import {
   getVariantComponents,
   type CatalogProduct,
   type CatalogSizeOption,
+  withSoldOutLabels,
 } from "@/lib/product-catalog";
 import {
   applyTotalDiscount,
@@ -543,22 +544,25 @@ export default function ContractForm({
               const isSet = activeComponents.length > 0;
               const useCatalogDropdowns =
                 index < CATALOG_DROPDOWN_ROW_LIMIT && hasProductName && !isSet;
-              const colorOptions: CatalogSizeOption[] =
+              const colorOptions =
                 selectedProduct?.colors && !isSet
-                  ? Object.keys(selectedProduct.colors)
-                      .filter((name) => !selectedProduct.soldOutColors?.includes(name))
-                      .map((name) => {
+                  ? withSoldOutLabels(
+                      Object.keys(selectedProduct.colors).map((name) => {
                         const salePrice = selectedProduct.colorPrices?.[name];
                         return salePrice != null ? { name, salePrice } : name;
-                      })
+                      }),
+                      selectedProduct.soldOutColors,
+                      selectedProduct.salePrice,
+                    )
                   : [];
               const hasColorVariants = colorOptions.length > 0;
               const sizeOptions = isSet
                 ? []
-                : selectedProduct?.sizes?.filter(
-                    (option) =>
-                      !selectedProduct.soldOutSizes?.includes(getSizeOptionName(option)),
-                  ) ?? [];
+                : withSoldOutLabels(
+                    selectedProduct?.sizes,
+                    selectedProduct?.soldOutSizes,
+                    selectedProduct?.salePrice,
+                  );
 
               return (
               <Fragment key={index}>
