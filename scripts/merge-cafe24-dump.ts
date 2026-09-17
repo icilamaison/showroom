@@ -83,9 +83,7 @@ function findColorGroup(options: DumpOption[] | undefined): DumpOption | undefin
 }
 
 function findSizeGroup(options: DumpOption[] | undefined): DumpOption | undefined {
-  return options?.length === 1 && options[0].option_name === "SIZE"
-    ? options[0]
-    : undefined;
+  return options?.find((option) => option.option_name === "SIZE");
 }
 
 function optionTextsOf(group: DumpOption | undefined): string[] {
@@ -189,6 +187,13 @@ function main(): void {
         for (const change of changes) console.log(`    ${change}`);
       }
       continue;
+    }
+
+    // sizes가 비어 있으면 화면에서 사이즈를 고를 수 없고 단가도 기본가로 굳는다.
+    const sizeTexts = optionTextsOf(findSizeGroup(source.options));
+    if (sizeTexts.length > 0 && !product.sizes?.length) {
+      product.sizes = sizeTexts;
+      changes.push(`사이즈 ${sizeTexts.join("/")}`);
     }
 
     const colorGroup = findColorGroup(source.options);

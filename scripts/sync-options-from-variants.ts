@@ -1,12 +1,15 @@
 /**
- * product.json의 사이즈별 판매가를 카페24 Admin API(variants)로 반영하는 스크립트.
- * sync-product-size-prices.ts는 수기로 내려받은 product3.xlsx를 읽었지만 이쪽은 API가 출처다.
+ * product.json의 색상·사이즈 목록과 사이즈별 판매가를 카페24 Admin API(variants)에 맞추는 스크립트.
+ * API가 기준이다. API에 없는 옵션은 지우고, API에만 있는 옵션은 추가한다.
  *
- *   npx tsx scripts/sync-size-prices-from-variants.ts           # dry-run
- *   npx tsx scripts/sync-size-prices-from-variants.ts --write   # 반영
+ *   npx tsx scripts/sync-options-from-variants.ts           # dry-run
+ *   npx tsx scripts/sync-options-from-variants.ts --write   # 반영
  *
  * 사이즈 판매가 = 상품 판매가(price) + 해당 사이즈 variant의 additional_amount.
- * 추가금이 0인 사이즈는 문자열로 두고, 0보다 크면 { name, salePrice } 객체로 바꾼다.
+ * 추가금은 음수일 수도 있다(기본가보다 싼 사이즈). 0일 때만 문자열로 둔다.
+ *
+ * 색상 hex는 API의 option_color가 비어 있으면 기존 값을 유지한다.
+ * 카페24 관리자에 색상칩을 지정하지 않은 옵션이 많아서, 덮어쓰면 수기 값이 전부 날아간다.
  * sizes[]에 components가 들어 있는 세트형은 구성 조합이라 사이즈가 아니므로 건드리지 않는다.
  */
 
@@ -24,6 +27,8 @@ type Variant = {
   additional_amount?: string;
 };
 
+type AxisValues = { order: string[]; addPrices: Map<string, number>; conflicts: string[] };
+
 type ApiProduct = {
   product_no: number;
   variants?: Variant[];
@@ -35,7 +40,9 @@ type CatalogProduct = {
   productNo: number;
   productName: string;
   salePrice?: number;
+  colors?: Record<string, string>;
   sizes?: CatalogSizeOption[];
+  components?: unknown[];
   [key: string]: unknown;
 };
 
@@ -72,6 +79,11 @@ function requireEnv(env: Map<string, string>, key: string): string {
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// 기존 키에 연속 공백이 섞인 경우가 있다("소프트블랙  SS"). 공백만 다르면 같은 옵션으로 본다.
+function normalizeSpace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function getSizeOptionName(option: CatalogSizeOption): string {
@@ -133,17 +145,19 @@ async function fetchAllProducts(mallId: string, accessToken: string): Promise<Ap
   return products;
 }
 
-// 같은 사이즈가 색상마다 반복되므로 추가금이 갈리는지 확인한다. 갈리면 사이즈 단위로 정할 수 없다.
-function collectSizeAddPrices(variants: Variant[]): {
-  byName: Map<string, number>;
-  conflicts: string[];
-} {
+// 축(COLOR·SIZE) 값을 API 순서 그대로 모은다.
+// 같은 사이즈가 색상마다 반복되므로 추가금이 갈리는지도 함께 본다. 갈리면 사이즈 단위로 정할 수 없다.
+function collectAxis(variants: Variant[], axis: "COLOR" | "SIZE"): AxisValues {
+  const order: string[] = [];
   const seen = new Map<string, Set<number>>();
 
   for (const variant of variants) {
     for (const option of variant.options ?? []) {
-      if (option.name !== "SIZE" || !option.value) continue;
+      if (option.name !== axis || !option.value) continue;
+
       const name = option.value.trim();
+      if (!seen.has(name)) order.push(name);
+
       const amount = Number(variant.additional_amount ?? 0);
       const set = seen.get(name) ?? new Set<number>();
       set.add(Number.isNaN(amount) ? 0 : amount);
@@ -151,7 +165,7 @@ function collectSizeAddPrices(variants: Variant[]): {
     }
   }
 
-  const byName = new Map<string, number>();
+  const addPrices = new Map<string, number>();
   const conflicts: string[] = [];
 
   for (const [name, amounts] of seen) {
@@ -159,10 +173,10 @@ function collectSizeAddPrices(variants: Variant[]): {
       conflicts.push(`${name} (${[...amounts].join("/")})`);
       continue;
     }
-    byName.set(name, [...amounts][0]);
+    addPrices.set(name, [...amounts][0]);
   }
 
-  return { byName, conflicts };
+  return { order, addPrices, conflicts };
 }
 
 async function main(): Promise<void> {
@@ -187,37 +201,94 @@ async function main(): Promise<void> {
   const conflicted: string[] = [];
 
   for (const product of catalog) {
-    const sizes = product.sizes;
-    const basePrice = product.salePrice;
-    if (!sizes?.length || !basePrice) continue;
+    // 세트 상품의 옵션은 구성품에 있다. variants로는 판단할 수 없다.
+    if (product.components?.length) continue;
 
-    // 세트 조합은 사이즈가 아니다.
+    const sizes = product.sizes ?? [];
     if (sizes.some((size) => typeof size === "object" && Array.isArray(size.components))) continue;
 
     const variants = variantsByProductNo.get(product.productNo);
-    if (!variants?.length) continue;
-
-    const { byName, conflicts } = collectSizeAddPrices(variants);
-    if (conflicts.length > 0) {
-      conflicted.push(`${product.productNo} ${product.productName}: ${conflicts.join(", ")}`);
-    }
+    const basePrice = product.salePrice;
+    if (!variants?.length || !basePrice) continue;
 
     const changes: string[] = [];
-    const nextSizes = sizes.map((size) => {
-      const name = getSizeOptionName(size);
-      const addPrice = byName.get(name);
-      if (addPrice === undefined) return size;
+    const colorAxis = collectAxis(variants, "COLOR");
+    const sizeAxis = collectAxis(variants, "SIZE");
 
-      const salePrice = basePrice + addPrice;
-      const before = typeof size === "object" ? size.salePrice : undefined;
-      if (before === salePrice || (addPrice === 0 && before === undefined)) return size;
+    if (sizeAxis.conflicts.length > 0) {
+      conflicted.push(`${product.productNo} ${product.productName}: ${sizeAxis.conflicts.join(", ")}`);
+    }
 
-      changes.push(`${name} ${before ?? basePrice} → ${salePrice}`);
-      return addPrice > 0 ? { ...(typeof size === "object" ? size : {}), name, salePrice } : name;
-    });
+    /* ---------- 색상 ---------- */
+    if (colorAxis.order.length > 0) {
+      const current = product.colors ?? {};
+      const currentByNormalized = new Map(
+        Object.entries(current).map(([key, hex]) => [normalizeSpace(key), hex]),
+      );
+      const nextColors: Record<string, string> = {};
+
+      for (const name of colorAxis.order) {
+        // hex는 API가 주지 않는 경우가 많다. 기존 값을 살린다.
+        nextColors[name] = currentByNormalized.get(normalizeSpace(name)) ?? "";
+      }
+
+      const nextNormalized = new Set(colorAxis.order.map(normalizeSpace));
+      const added = colorAxis.order.filter(
+        (name) => !currentByNormalized.has(normalizeSpace(name)),
+      );
+      const removed = Object.keys(current).filter(
+        (name) => !nextNormalized.has(normalizeSpace(name)),
+      );
+
+      if (added.length > 0 || removed.length > 0) {
+        if (added.length > 0) changes.push(`색상 추가 ${added.join("/")}`);
+        if (removed.length > 0) changes.push(`색상 삭제 ${removed.join("/")}`);
+        product.colors = nextColors;
+      }
+    }
+
+    /* ---------- 사이즈 ---------- */
+    if (sizeAxis.order.length > 0) {
+      const currentByName = new Map(
+        sizes.map((size) => [normalizeSpace(getSizeOptionName(size)), size]),
+      );
+      const nextSizes: CatalogSizeOption[] = [];
+
+      for (const name of sizeAxis.order) {
+        const before = currentByName.get(normalizeSpace(name));
+        const addPrice = sizeAxis.addPrices.get(name);
+
+        // 추가금이 색상마다 갈리는 사이즈는 가격을 정할 수 없으니 기존 값을 그대로 둔다.
+        if (addPrice === undefined) {
+          nextSizes.push(before ?? name);
+          continue;
+        }
+
+        const salePrice = basePrice + addPrice;
+        const beforePrice = typeof before === "object" ? before.salePrice : undefined;
+
+        if (addPrice === 0) {
+          nextSizes.push(name);
+          if (beforePrice != null) changes.push(`${name} ${beforePrice} → ${salePrice}`);
+          continue;
+        }
+
+        nextSizes.push({ ...(typeof before === "object" ? before : {}), name, salePrice });
+        if (beforePrice !== salePrice) {
+          changes.push(`${name} ${beforePrice ?? basePrice} → ${salePrice}`);
+        }
+      }
+
+      const nextSizeNames = new Set(sizeAxis.order.map(normalizeSpace));
+      const added = sizeAxis.order.filter((name) => !currentByName.has(normalizeSpace(name)));
+      const removed = [...currentByName.keys()].filter((name) => !nextSizeNames.has(name));
+      if (added.length > 0) changes.push(`사이즈 추가 ${added.join("/")}`);
+      if (removed.length > 0) changes.push(`사이즈 삭제 ${removed.join("/")}`);
+
+      if (changes.length > 0) product.sizes = nextSizes;
+    }
 
     if (changes.length > 0) {
-      product.sizes = nextSizes;
       updated += 1;
       console.log(`● ${product.productName} (${product.productNo})`);
       for (const change of changes) console.log(`    ${change}`);
