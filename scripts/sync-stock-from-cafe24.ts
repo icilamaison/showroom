@@ -56,9 +56,9 @@ function hasNestedComponents(sizes: CatalogSizeOption[]): boolean {
 type StockEntry = {
   option_name: string;
   option_value: string;
-  stock_number: number;
+  option_value_orginal?: string[];
+  is_display: string;
   is_selling: string;
-  use_stock: boolean;
 };
 
 type SetOptionEntry = {
@@ -127,14 +127,19 @@ function findSoldOutNames(
       continue;
     }
 
-    const name = entry.option_value.split("-")[axisIndex]?.trim();
+    // option_value는 "모노타입-아이보리"처럼 '-'로 이어 붙인 문자열이라
+    // 색상명 자체에 '-'가 들어가면(ORDER-MADE) 잘린다. 축별로 나뉜 원본 배열을 먼저 쓴다.
+    const name = (
+      entry.option_value_orginal?.[axisIndex] ??
+      entry.option_value.split("-")[axisIndex]
+    )?.trim();
     if (!name) {
       continue;
     }
 
-    const inStock = entry.use_stock
-      ? Number(entry.stock_number) > 0 && entry.is_selling === "T"
-      : entry.is_selling === "T";
+    // 재고를 쓰는 옵션이라도 수량이 충분하면 카페24가 stock_number를 아예 안 내려준다.
+    // 그 값으로 판단하면 정상 판매 옵션이 전부 품절로 찍힌다. 노출·판매 플래그만 본다.
+    const inStock = entry.is_display === "T" && entry.is_selling === "T";
 
     hasStockByName.set(name, (hasStockByName.get(name) ?? false) || inStock);
   }
