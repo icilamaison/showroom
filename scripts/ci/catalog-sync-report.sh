@@ -99,11 +99,29 @@ set -e
   tail -n 50 "$STOCK_LOG"
   echo '```'
   echo
-  echo "## 다음 단계"
+  echo "## 다음 단계 (로컬에서 전체 반영)"
   echo
-  echo "1. 위 변경/신규 후보를 확인한다."
-  echo "2. 로컬에서 \`npx tsx scripts/merge-cafe24-dump.ts --write --add-new\` 등으로 반영한다."
-  echo "3. 세트 품절이 필요하면 \`npx tsx scripts/sync-stock-from-cafe24.ts --write\` 를 따로 돌린다."
+  echo "CI는 dry-run만 한다. product.json에 쓰려면 로컬에서 아래 순서로 실행한다."
+  echo
+  echo '```bash'
+  echo 'cd /path/to/showroom   # 또는 play-auto'
+  echo
+  echo '# 1) 카페24 덤프 (없으면/오래됐으면)'
+  echo 'npx tsx scripts/sync-products-from-cafe24.ts --dump'
+  echo
+  echo '# 2) 상품명·가격·옵션·세트·신규 반영'
+  echo 'npx tsx scripts/merge-cafe24-dump.ts --write --add-new'
+  echo
+  echo '# 3) 품절 (일반 상품)'
+  echo 'npx tsx scripts/sync-stock-from-variants.ts --write'
+  echo
+  echo '# 4) 품절 (세트 구성품)'
+  echo 'npx tsx scripts/sync-stock-from-cafe24.ts --write'
+  echo '```'
+  echo
+  echo "- 신규 상품은 \`internalCode\` / \`category\`가 비어 있을 수 있으니 확인한다."
+  echo "- 세트 구성품 색이 비면: \`npx tsx scripts/merge-cafe24-dump.ts --write --refresh-sets\`"
+  echo "- 반영 후 product.json을 커밋한다."
 } >> "$SUMMARY"
 
 # dump 외 merge/stock 실패도 job 실패로 보이게 한다.
