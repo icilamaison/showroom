@@ -7,7 +7,11 @@
 #   CAFE24_CLIENT_SECRET
 #   CAFE24_REFRESH_TOKEN
 #   CAFE24_SYNC_PAT          # repo secrets 쓰기 권한 있는 PAT (refresh_token 갱신 저장용)
+#   MAIL_USERNAME            # 발신 메일 (예: kimhi1105@icilamaison.com)
+#   MAIL_PASSWORD            # Google 앱 비밀번호 (일반 비밀번호 X)
+#   MAIL_SERVER              # 선택, 기본 smtp.gmail.com
 #
+# 완료 알림: kimhi1105@icilamaison.com
 # 수동 실행: Actions → Catalog sync report → Run workflow
 
 name: Catalog sync report
@@ -100,3 +104,63 @@ jobs:
             cafe24-products.json
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Check mail secrets
+        id: mail
+        if: always()
+        env:
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+        run: |
+          if [ -n "$MAIL_USERNAME" ] && [ -n "$MAIL_PASSWORD" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "MAIL_USERNAME/MAIL_PASSWORD 없음 — 메일 알림 스킵"
+          fi
+
+      - name: Build mail body
+        id: mailbody
+        if: always() && steps.mail.outputs.enabled == 'true'
+        env:
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then
+            echo "subject=[showroom] catalog sync dry-run 완료" >> "$GITHUB_OUTPUT"
+          else
+            echo "subject=[showroom] catalog sync dry-run 실패" >> "$GITHUB_OUTPUT"
+          fi
+
+          {
+            echo "body<<MAIL_BODY_EOF"
+            echo "Catalog sync dry-run: ${JOB_STATUS}"
+            echo
+            echo "실행 보기: ${RUN_URL}"
+            echo
+            if [ -f artifacts/catalog-sync/merge-dry-run.log ]; then
+              echo "[merge]"
+              grep -E '\(dry-run\)|\[신규 추가\]' artifacts/catalog-sync/merge-dry-run.log | tail -n 8 || true
+              echo
+            fi
+            if [ -f artifacts/catalog-sync/stock-variants-dry-run.log ]; then
+              echo "[stock]"
+              grep -E '\(dry-run\)' artifacts/catalog-sync/stock-variants-dry-run.log | tail -n 3 || true
+            fi
+            echo "MAIL_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Notify by email
+        if: always() && steps.mail.outputs.enabled == 'true'
+        uses: dawidd6/action-send-mail@v4
+        with:
+          # Google Workspace / Gmail 기본값. 다른 SMTP면 MAIL_SERVER 시크릿으로 덮어쓴다.
+          server_address: ${{ secrets.MAIL_SERVER != '' && secrets.MAIL_SERVER || 'smtp.gmail.com' }}
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: ${{ steps.mailbody.outputs.subject }}
+          to: kimhi1105@icilamaison.com
+          from: Catalog Sync <${{ secrets.MAIL_USERNAME }}>
+          body: ${{ steps.mailbody.outputs.body }}
