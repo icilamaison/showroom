@@ -58,12 +58,12 @@ jobs:
               exit 1
             fi
           done
-          cat > .env.local <<EOF
-CAFE24_MALL_ID=${CAFE24_MALL_ID}
-CAFE24_CLIENT_ID=${CAFE24_CLIENT_ID}
-CAFE24_CLIENT_SECRET=${CAFE24_CLIENT_SECRET}
-CAFE24_REFRESH_TOKEN=${CAFE24_REFRESH_TOKEN}
-EOF
+          {
+            echo "CAFE24_MALL_ID=${CAFE24_MALL_ID}"
+            echo "CAFE24_CLIENT_ID=${CAFE24_CLIENT_ID}"
+            echo "CAFE24_CLIENT_SECRET=${CAFE24_CLIENT_SECRET}"
+            echo "CAFE24_REFRESH_TOKEN=${CAFE24_REFRESH_TOKEN}"
+          } > .env.local
 
       - name: Run catalog sync report (dry-run)
         run: bash scripts/ci/catalog-sync-report.sh
