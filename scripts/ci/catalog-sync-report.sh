@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# 카탈로그 동기화 1단계: dump + dry-run만 하고 product.json은 쓰지 않는다.
+# 결과는 GitHub Actions Job Summary / artifacts로 남긴다.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$ROOT"
+
+mkdir -p artifacts/catalog-sync
+SUMMARY="${GITHUB_STEP_SUMMARY:-artifacts/catalog-sync/summary.md}"
+DUMP_LOG="artifacts/catalog-sync/dump.log"
+MERGE_LOG="artifacts/catalog-sync/merge-dry-run.log"
+STOCK_LOG="artifacts/catalog-sync/stock-variants-dry-run.log"
+
+if [[ ! -f .env.local ]]; then
+  echo ".env.local이 없습니다. CI에서 시크릿으로 먼저 만들어주세요." >&2
+  exit 1
+fi
+
+{
+  echo "# Catalog sync report (dry-run)"
+  echo
+  echo "- 시각: $(date -u +"%Y-%m-%d %H:%M:%SZ")"
+  echo "- 모드: dump → merge dry-run(--add-new) → stock variants dry-run"
+  echo "- product.json 쓰기: **없음**"
+  echo
+} > "$SUMMARY"
+
+echo "==> 1/3 dump"
+set +e
+npx tsx scripts/sync-products-from-cafe24.ts --dump 2>&1 | tee "$DUMP_LOG"
+DUMP_EXIT=${PIPESTATUS[0]}
+set -e
+
+{
+  echo "## 1. Dump"
+  echo
+  if [[ "$DUMP_EXIT" -eq 0 ]]; then
+    echo "✅ 성공"
+  else
+    echo "❌ 실패 (exit $DUMP_EXIT)"
+  fi
+  echo
+  echo '```'
+  tail -n 40 "$DUMP_LOG"
+  echo '```'
+  echo
+} >> "$SUMMARY"
+
+if [[ "$DUMP_EXIT" -ne 0 ]]; then
+  exit "$DUMP_EXIT"
+fi
+
+echo "==> 2/3 merge dry-run (+ 신규 후보)"
+set +e
+npx tsx scripts/merge-cafe24-dump.ts --add-new 2>&1 | tee "$MERGE_LOG"
+MERGE_EXIT=${PIPESTATUS[0]}
+set -e
+
+{
+  echo "## 2. Merge dry-run (--add-new)"
+  echo
+  if [[ "$MERGE_EXIT" -eq 0 ]]; then
+    echo "✅ 성공 (파일 미반영)"
+  else
+    echo "❌ 실패 (exit $MERGE_EXIT)"
+  fi
+  echo
+  echo "### 신규 추가 후보"
+  echo '```'
+  grep -E "\[신규 추가\]|^[[:space:]]+[0-9]+ " "$MERGE_LOG" || echo "(없음)"
+  echo '```'
+  echo
+  echo "### 변경 요약 (끝부분)"
+  echo '```'
+  tail -n 60 "$MERGE_LOG"
+  echo '```'
+  echo
+} >> "$SUMMARY"
+
+echo "==> 3/3 stock variants dry-run"
+set +e
+npx tsx scripts/sync-stock-from-variants.ts 2>&1 | tee "$STOCK_LOG"
+STOCK_EXIT=${PIPESTATUS[0]}
+set -e
+
+{
+  echo "## 3. Stock variants dry-run"
+  echo
+  if [[ "$STOCK_EXIT" -eq 0 ]]; then
+    echo "✅ 성공 (파일 미반영)"
+  else
+    echo "❌ 실패 (exit $STOCK_EXIT)"
+  fi
+  echo
+  echo "> 세트 구성품 품절은 HTML 파싱(\`sync-stock-from-cafe24.ts\`)이라 CI 1단계에서는 제외했습니다."
+  echo
+  echo '```'
+  tail -n 50 "$STOCK_LOG"
+  echo '```'
+  echo
+  echo "## 다음 단계"
+  echo
+  echo "1. 위 변경/신규 후보를 확인한다."
+  echo "2. 로컬에서 \`npx tsx scripts/merge-cafe24-dump.ts --write --add-new\` 등으로 반영한다."
+  echo "3. 세트 품절이 필요하면 \`npx tsx scripts/sync-stock-from-cafe24.ts --write\` 를 따로 돌린다."
+} >> "$SUMMARY"
+
+# dump 외 merge/stock 실패도 job 실패로 보이게 한다.
+if [[ "$MERGE_EXIT" -ne 0 || "$STOCK_EXIT" -ne 0 ]]; then
+  exit 1
+fi

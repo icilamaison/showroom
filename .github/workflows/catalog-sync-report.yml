@@ -1,0 +1,102 @@
+# 카탈로그 동기화 1단계: 매일 dump + dry-run 리포트만.
+# product.json은 CI에서 쓰지 않는다. 사람이 리포트를 보고 로컬/PR로 반영한다.
+#
+# 필요 Secrets
+#   CAFE24_MALL_ID
+#   CAFE24_CLIENT_ID
+#   CAFE24_CLIENT_SECRET
+#   CAFE24_REFRESH_TOKEN
+#   CAFE24_SYNC_PAT          # repo secrets 쓰기 권한 있는 PAT (refresh_token 갱신 저장용)
+#
+# 수동 실행: Actions → Catalog sync report → Run workflow
+
+name: Catalog sync report
+
+on:
+  schedule:
+    # 매일 09:00 KST (00:00 UTC)
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-sync-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write Cafe24 .env.local
+        # process.env에 CAFE24_REFRESH_TOKEN을 넣지 않는다.
+        # 스크립트가 토큰을 갱신하면 .env.local만 바뀌고, 다음 단계는 그 파일을 읽어야 한다.
+        env:
+          CAFE24_MALL_ID: ${{ secrets.CAFE24_MALL_ID }}
+          CAFE24_CLIENT_ID: ${{ secrets.CAFE24_CLIENT_ID }}
+          CAFE24_CLIENT_SECRET: ${{ secrets.CAFE24_CLIENT_SECRET }}
+          CAFE24_REFRESH_TOKEN: ${{ secrets.CAFE24_REFRESH_TOKEN }}
+        run: |
+          for key in CAFE24_MALL_ID CAFE24_CLIENT_ID CAFE24_CLIENT_SECRET CAFE24_REFRESH_TOKEN; do
+            if [ -z "${!key}" ]; then
+              echo "Missing secret: $key" >&2
+              exit 1
+            fi
+          done
+          cat > .env.local <<EOF
+CAFE24_MALL_ID=${CAFE24_MALL_ID}
+CAFE24_CLIENT_ID=${CAFE24_CLIENT_ID}
+CAFE24_CLIENT_SECRET=${CAFE24_CLIENT_SECRET}
+CAFE24_REFRESH_TOKEN=${CAFE24_REFRESH_TOKEN}
+EOF
+
+      - name: Run catalog sync report (dry-run)
+        run: bash scripts/ci/catalog-sync-report.sh
+
+      - name: Persist refreshed Cafe24 refresh_token
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.CAFE24_SYNC_PAT }}
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "CAFE24_SYNC_PAT이 없어 refresh_token을 Secrets에 저장하지 못했습니다."
+            echo "다음 실행 전에 CAFE24_REFRESH_TOKEN을 수동으로 갱신해야 할 수 있습니다."
+            exit 0
+          fi
+          if [ ! -f .env.local ]; then
+            echo ".env.local 없음 — 토큰 저장 스킵"
+            exit 0
+          fi
+          NEW_TOKEN="$(grep -E '^CAFE24_REFRESH_TOKEN=' .env.local | cut -d= -f2- | tr -d '\r')"
+          if [ -z "$NEW_TOKEN" ]; then
+            echo "새 refresh_token을 찾지 못함"
+            exit 0
+          fi
+          echo "$NEW_TOKEN" | gh secret set CAFE24_REFRESH_TOKEN
+          echo "CAFE24_REFRESH_TOKEN secret 갱신 완료"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-sync-report
+          path: |
+            artifacts/catalog-sync/
+            cafe24-products.json
+          if-no-files-found: warn
+          retention-days: 14

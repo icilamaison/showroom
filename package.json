@@ -17,6 +17,7 @@
     "db:seed:contracts": "tsx server/db/seed-contracts.ts",
     "db:seed:contracts:reset": "tsx server/db/seed-contracts.ts --reset",
     "products:sync-sizes": "tsx scripts/sync-product-sizes.ts",
+    "catalog:report": "bash scripts/ci/catalog-sync-report.sh",
     "lint": "next lint"
   },
   "dependencies": {
