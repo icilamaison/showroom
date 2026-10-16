@@ -64,6 +64,23 @@ export function resolveComponentSizeOptions(
   return component.sizes ?? [];
 }
 
+// 색상도 사이즈와 같이 단독 상품 colors를 우선 사용한다.
+// 세트 components에 colors가 비어 있어도(덤프 options 누락) 하위 메뉴가 나오게 한다.
+export function resolveComponentColorOptions(
+  component: SetComponent,
+): string[] {
+  if (component.colors?.length) {
+    return component.colors;
+  }
+
+  const catalogProduct = resolveComponentCatalogProduct(component);
+  if (catalogProduct?.colors) {
+    return Object.keys(catalogProduct.colors);
+  }
+
+  return [];
+}
+
 export function resolveComponentBaseSalePrice(
   component: SetComponent,
 ): number | undefined {
@@ -79,10 +96,17 @@ export function createSetComponentSelections(
 ): SetComponentSelection[] {
   return components.map((component) => {
     const catalogProduct = resolveComponentCatalogProduct(component);
-    const size = component.sizes?.length === 1 ? component.sizes[0] : "";
+    const colors = resolveComponentColorOptions(component);
+    const sizes = resolveComponentSizeOptions(component);
+    const size =
+      sizes.length === 1
+        ? typeof sizes[0] === "string"
+          ? sizes[0]
+          : sizes[0].name
+        : "";
 
     return {
-      color: component.colors?.length === 1 ? component.colors[0] : "",
+      color: colors.length === 1 ? colors[0] : "",
       size,
       quantity: String(component.quantity ?? 1),
       unitPrice: resolveComponentUnitPrice(component, catalogProduct, size),

@@ -1,9 +1,13 @@
 /**
  * sync-products-from-cafe24.ts --dump이 만든 cafe24-products.json을 product.json에 머지한다.
  * API가 주는 값만 덮어쓴다: 상품명, 가격 4종, 색상 옵션 키.
+ * 세트는 bundleComponents → components로 넣고, 구성품 색/사이즈는
+ * 덤프 options → 없으면 product.json 단독 상품에서 가져온다.
  *
- *   npx tsx scripts/merge-cafe24-dump.ts            # dry-run (변경 내역만 출력)
- *   npx tsx scripts/merge-cafe24-dump.ts --write    # product.json 반영
+ *   npx tsx scripts/merge-cafe24-dump.ts                 # dry-run
+ *   npx tsx scripts/merge-cafe24-dump.ts --write         # product.json 반영
+ *   npx tsx scripts/merge-cafe24-dump.ts --write --add-new
+ *   npx tsx scripts/merge-cafe24-dump.ts --write --refresh-sets  # 세트 구성품 옵션 다시 채움
  *
  * 건드리지 않는 값(API에 없거나 다른 스크립트 담당):
  *   internalCode / category  — 수작업 분류. API의 internal_product_name과 값이 다르다.
@@ -17,6 +21,7 @@ import path from "node:path";
 
 const WRITE = process.argv.includes("--write");
 const ADD_NEW = process.argv.includes("--add-new");
+const REFRESH_SETS = process.argv.includes("--refresh-sets");
 
 // 진열·판매중인데 카탈로그에 없는 상품을 추가할 때, 판매 상품이 아닌 것은 걸러낸다.
 const SKIP_NAME_PATTERN = /사은품|샘플/;
@@ -52,6 +57,9 @@ type CatalogComponent = {
   name: string;
   quantity?: number;
   colors?: string[];
+  sizes?: string[];
+  soldOutColors?: string[];
+  soldOutSizes?: string[];
 };
 
 type CatalogProduct = {
@@ -98,17 +106,57 @@ function toNumber(value: string | undefined): number | undefined {
   return Number.isNaN(parsed) ? undefined : parsed;
 }
 
-// 세트 상품의 구성품은 products가 아니라 bundleproducts에만 있다.
-// 구성품의 색상은 구성품 상품 자체의 COLOR 옵션에서 가져온다.
+function sizeNamesOf(sizes: CatalogProduct["sizes"]): string[] {
+  return (sizes ?? []).map((option) =>
+    typeof option === "string" ? option : option.name,
+  );
+}
+
+function sameStringList(a: string[] | undefined, b: string[] | undefined): boolean {
+  const left = a ?? [];
+  const right = b ?? [];
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
+
+function componentsIncomplete(components: CatalogComponent[] | undefined): boolean {
+  if (!components?.length) return true;
+  return components.some(
+    (component) => !component.colors?.length && !component.sizes?.length,
+  );
+}
+
+// 세트 구성품은 bundleproducts에만 있다.
+// 색/사이즈: ① 덤프 구성품 options ② 없으면 product.json 단독 상품(colors/sizes).
 function buildComponents(
   source: DumpProduct,
   byProductNo: Map<number, DumpProduct>,
+  catalogByCode: Map<string, CatalogProduct>,
+  existing: CatalogComponent[] | undefined,
 ): CatalogComponent[] {
   return (source.bundleComponents ?? []).map((component) => {
     const target = byProductNo.get(component.product_no);
-    const colors = (findColorGroup(target?.options)?.option_value ?? [])
-      .map((value) => value.option_text)
-      .filter((text): text is string => Boolean(text));
+    const solo =
+      catalogByCode.get(component.product_code) ??
+      [...catalogByCode.values()].find(
+        (product) => product.productName === component.product_name,
+      );
+
+    let colors = optionTextsOf(findColorGroup(target?.options));
+    let sizes = optionTextsOf(findSizeGroup(target?.options));
+
+    if (colors.length === 0 && solo?.colors) {
+      colors = Object.keys(solo.colors);
+    }
+    if (sizes.length === 0 && solo?.sizes?.length) {
+      sizes = sizeNamesOf(solo.sizes);
+    }
+
+    const previous = existing?.find(
+      (item) =>
+        item.productCode === component.product_code ||
+        item.name === component.product_name,
+    );
 
     const result: CatalogComponent = {
       productCode: component.product_code,
@@ -121,8 +169,35 @@ function buildComponents(
     if (colors.length > 0) {
       result.colors = colors;
     }
+    if (sizes.length > 0) {
+      result.sizes = sizes;
+    }
+    if (previous?.soldOutColors?.length) {
+      result.soldOutColors = previous.soldOutColors;
+    }
+    if (previous?.soldOutSizes?.length) {
+      result.soldOutSizes = previous.soldOutSizes;
+    }
 
     return result;
+  });
+}
+
+function componentsChanged(
+  before: CatalogComponent[] | undefined,
+  after: CatalogComponent[],
+): boolean {
+  if (!before || before.length !== after.length) return true;
+
+  return after.some((component, index) => {
+    const previous = before[index];
+    return (
+      previous.productCode !== component.productCode ||
+      previous.name !== component.name ||
+      previous.quantity !== component.quantity ||
+      !sameStringList(previous.colors, component.colors) ||
+      !sameStringList(previous.sizes, component.sizes)
+    );
   });
 }
 
@@ -134,6 +209,11 @@ function main(): void {
   const dump = JSON.parse(readFileSync(dumpPath, "utf8")) as DumpProduct[];
   const catalog = JSON.parse(readFileSync(jsonPath, "utf8")) as CatalogProduct[];
   const byProductNo = new Map(dump.map((item) => [item.product_no, item]));
+  const catalogByCode = new Map(
+    catalog
+      .filter((product) => product.productCode)
+      .map((product) => [product.productCode!, product]),
+  );
 
   let updated = 0;
   let missing = 0;
@@ -168,17 +248,42 @@ function main(): void {
       (product[key] as number) = value;
     }
 
-    // 옵션 그룹은 TYPE·COLOR·SIZE가 섞여 온다. COLOR 그룹만 colors에 대응한다.
-    // 그룹이 하나뿐이면 이름이 달라도(예: '선택') 그게 색상 그룹이다.
-    // 이미 colors가 비어 있는 상품은 수작업으로 비워둔 것이므로 새로 채우지 않는다.
-    // 세트 상품은 옵션이 없고 구성품으로 갈린다. components가 비어 있으면 화면에 아무것도 뜨지 않는다.
+    // 세트: bundleproducts 구성품을 components에 넣고, 색/사이즈는 구성품 단독 상품에서 보강.
+    // 이미 components가 있어도 옵션이 비었거나 --refresh-sets면 다시 채운다.
     if ((source.bundleComponents?.length ?? 0) > 0) {
-      if (!product.components?.length) {
-        product.components = buildComponents(source, byProductNo);
-        delete product.colors;
-        changes.push(
-          `구성품 ${product.components.map((component) => component.name).join(" + ")}`,
+      const shouldRefresh =
+        REFRESH_SETS || componentsIncomplete(product.components);
+
+      if (shouldRefresh) {
+        const nextComponents = buildComponents(
+          source,
+          byProductNo,
+          catalogByCode,
+          product.components,
         );
+
+        if (componentsChanged(product.components, nextComponents)) {
+          const summary = nextComponents
+            .map((component) => {
+              const bits = [
+                component.colors?.length
+                  ? `색${component.colors.length}`
+                  : null,
+                component.sizes?.length
+                  ? `사이즈${component.sizes.length}`
+                  : null,
+              ].filter(Boolean);
+              return `${component.name}${bits.length ? `(${bits.join(",")})` : ""}`;
+            })
+            .join(" + ");
+          changes.push(
+            product.components?.length
+              ? `구성품 옵션 보강 ${summary}`
+              : `구성품 ${summary}`,
+          );
+          product.components = nextComponents;
+          delete product.colors;
+        }
       }
 
       if (changes.length > 0) {
@@ -274,7 +379,7 @@ function main(): void {
 
       const components =
         (source.bundleComponents?.length ?? 0) > 0
-          ? buildComponents(source, byProductNo)
+          ? buildComponents(source, byProductNo, catalogByCode, undefined)
           : undefined;
       const sizes = optionTextsOf(findSizeGroup(source.options));
 

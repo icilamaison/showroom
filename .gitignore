@@ -39,3 +39,4 @@ next-env.d.ts
 
 # 카페24 상품 원본 덤프
 cafe24-products.json
+all_product.json

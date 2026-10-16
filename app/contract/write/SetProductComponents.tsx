@@ -4,6 +4,7 @@ import { formatAmount, formatDigits, lineAmount } from "@/lib/contract-amount";
 import { withSoldOutLabels, type SetComponent } from "@/lib/product-catalog";
 import {
   resolveComponentBaseSalePrice,
+  resolveComponentColorOptions,
   resolveComponentSizeOptions,
   type SetComponentSelection,
 } from "@/lib/set-product";
@@ -37,7 +38,7 @@ export default function SetProductComponents({
         };
         const baseSalePrice = resolveComponentBaseSalePrice(component);
         const colorOptions = withSoldOutLabels(
-          component.colors ?? [],
+          resolveComponentColorOptions(component),
           component.soldOutColors,
         );
         const sizeOptions = withSoldOutLabels(
