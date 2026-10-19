@@ -78,6 +78,7 @@ function ProductTable({
               <th>사이즈</th>
               <th>수량</th>
               <th>금액</th>
+              <th>비고</th>
             </tr>
           </thead>
           <tbody>
@@ -94,6 +95,7 @@ function ProductTable({
                     ? `${Number(product.unitPrice).toLocaleString("ko-KR")}원`
                     : "-"}
                 </td>
+                <td>{product.remarks?.trim() ? product.remarks : "-"}</td>
               </tr>
             ))}
           </tbody>
