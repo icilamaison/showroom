@@ -70,6 +70,7 @@ function buildProductRow(product: CatalogProduct, variant: number): ProductRow {
 
     return {
       name: product.productName,
+      type: "",
       color: formatSetOptionName(product.components, selections),
       size: "",
       quantity: String((variant % 3) + 1),
@@ -79,6 +80,7 @@ function buildProductRow(product: CatalogProduct, variant: number): ProductRow {
   }
 
   const colorKeys = product.colors ? Object.keys(product.colors) : [];
+  const types = product.types ?? [];
   const sizes = product.sizes ?? [];
   const sizeOption = sizes[variant % sizes.length];
   const sizeName = sizeOption ? getSizeOptionName(sizeOption) : "";
@@ -86,6 +88,7 @@ function buildProductRow(product: CatalogProduct, variant: number): ProductRow {
 
   return {
     name: product.productName,
+    type: types[variant % types.length] ?? "",
     color: colorKeys[variant % colorKeys.length] ?? "",
     size: sizeName,
     quantity: String((variant % 3) + 1),

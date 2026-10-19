@@ -40,6 +40,7 @@ describe("buildOrderExcelRows", () => {
     const products = createEmptyProductRows();
     products[0] = {
       name: "테스트 상품",
+      type: "라이트타입 1.5cm",
       color: "블랙",
       size: "L",
       quantity: "2",
@@ -48,6 +49,7 @@ describe("buildOrderExcelRows", () => {
     };
     products[1] = {
       name: "추가 상품",
+      type: "",
       color: "화이트",
       size: "",
       quantity: "1",
@@ -70,15 +72,16 @@ describe("buildOrderExcelRows", () => {
       "수령자휴대폰번호": "010-9999-8888",
       "우편번호": "06234",
       "주소": "서울시 강남구 테헤란로 1 101동 1001호",
-      "온라인 상품명": "테스트 상품",
-      "옵션명": "COLOR=블랙, SIZE=L",
+      "온라인 상품명": "테스트 상품 라이트타입 1.5cm 블랙 L",
+      "옵션명": "",
       "주문수량": "2",
       "금액": "50000",
-      "배송메세지": "",
+      "배송메세지": "문 앞에 놔주세요",
       "주문일": "2026-07-01",
       "국가코드": "KR",
     });
-    expect(rows[1]["온라인 상품명"]).toBe("추가 상품");
+    expect(rows[1]["온라인 상품명"]).toBe("추가 상품 화이트");
+    expect(rows[1]["옵션명"]).toBe("");
     expect(rows[1]["금액"]).toBe("30000");
     expect(rows[1]["배송메세지"]).toBe("");
   });
@@ -87,6 +90,7 @@ describe("buildOrderExcelRows", () => {
     const products = createEmptyProductRows();
     products[0] = {
       name: "테스트 상품",
+      type: "",
       color: "",
       size: "",
       quantity: "1",
@@ -112,15 +116,16 @@ describe("buildOrderExcelRows", () => {
     expect(formatShoppingMallOrderNumber("abc")).toBe("");
   });
 
-  it("keeps set product option names in the option column", () => {
+  it("folds set product options into the online product name", () => {
     const products = createEmptyProductRows();
     products[0] = {
       name: "쿨포터 세트",
+      type: "",
       color: "COLOR=화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
       size: "",
       quantity: "1",
       unitPrice: "150000",
-      remarks: "P0000BST | should not appear",
+      remarks: "문 앞에 놔주세요",
     };
 
     const rows = buildOrderExcelRows({
@@ -128,16 +133,18 @@ describe("buildOrderExcelRows", () => {
       products,
     });
 
-    expect(rows[0]["옵션명"]).toBe(
-      "COLOR=화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
+    expect(rows[0]["온라인 상품명"]).toBe(
+      "쿨포터 세트 화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
     );
-    expect(rows[0]["배송메세지"]).toBe("");
+    expect(rows[0]["옵션명"]).toBe("");
+    expect(rows[0]["배송메세지"]).toBe("문 앞에 놔주세요");
   });
 
   it("uses buyer info when recipient is the same as buyer", () => {
     const products = createEmptyProductRows();
     products[0] = {
       name: "단일 상품",
+      type: "",
       color: "",
       size: "",
       quantity: "1",
@@ -166,6 +173,7 @@ describe("findMissingOrderExcelRequiredFields", () => {
     const products = createEmptyProductRows();
     products[0] = {
       name: "단일 상품",
+      type: "",
       color: "",
       size: "",
       quantity: "1",

@@ -1,6 +1,6 @@
 /**
  * sync-products-from-cafe24.ts --dump이 만든 cafe24-products.json을 product.json에 머지한다.
- * API가 주는 값만 덮어쓴다: 상품명, 가격 4종, 색상 옵션 키.
+ * API가 주는 값만 덮어쓴다: 상품명, 가격 4종, 색상·타입 옵션 키.
  * 세트는 bundleComponents → components로 넣고, 구성품 색/사이즈는
  * 덤프 options → 없으면 product.json 단독 상품에서 가져온다.
  *
@@ -73,6 +73,7 @@ type CatalogProduct = {
   productPrice?: number;
   supplyPrice?: number;
   components?: CatalogComponent[];
+  types?: string[];
   sizes?: (string | { name: string })[];
   colors?: Record<string, string>;
 };
@@ -92,6 +93,15 @@ function findColorGroup(options: DumpOption[] | undefined): DumpOption | undefin
 
 function findSizeGroup(options: DumpOption[] | undefined): DumpOption | undefined {
   return options?.find((option) => option.option_name === "SIZE");
+}
+
+function findTypeGroup(options: DumpOption[] | undefined): DumpOption | undefined {
+  return options?.find(
+    (option) =>
+      option.option_name === "TYPE" ||
+      option.option_name === "타입" ||
+      option.option_name === "시리즈",
+  );
 }
 
 function optionTextsOf(group: DumpOption | undefined): string[] {
@@ -299,6 +309,16 @@ function main(): void {
     if (sizeTexts.length > 0 && !product.sizes?.length) {
       product.sizes = sizeTexts;
       changes.push(`사이즈 ${sizeTexts.join("/")}`);
+    }
+
+    const typeTexts = optionTextsOf(findTypeGroup(source.options));
+    if (typeTexts.length > 0 && !sameStringList(product.types, typeTexts)) {
+      changes.push(
+        product.types?.length
+          ? `타입 ${product.types.join("/")} → ${typeTexts.join("/")}`
+          : `타입 ${typeTexts.join("/")}`,
+      );
+      product.types = typeTexts;
     }
 
     const colorGroup = findColorGroup(source.options);

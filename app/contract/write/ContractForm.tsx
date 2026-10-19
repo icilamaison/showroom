@@ -20,7 +20,6 @@ import {
   contractTotal,
   formatAmount,
   formatDigits,
-  lineAmount,
   toDigits,
 } from "@/lib/contract-amount";
 import type { SetComponentSelection } from "@/lib/set-product";
@@ -525,11 +524,12 @@ export default function ContractForm({
             <tr>
               <th>No</th>
               <th>제품명</th>
+              <th>타입</th>
               <th>컬러</th>
               <th>사이즈</th>
               <th>수량</th>
-              <th>단가</th>
               <th>금액</th>
+              <th>비고</th>
             </tr>
           </thead>
           <tbody>
@@ -556,6 +556,13 @@ export default function ContractForm({
                     )
                   : [];
               const hasColorVariants = colorOptions.length > 0;
+              const typeOptions = isSet
+                ? []
+                : withSoldOutLabels(
+                    selectedProduct?.types,
+                    selectedProduct?.soldOutTypes,
+                    selectedProduct?.salePrice,
+                  );
               const sizeOptions = isSet
                 ? []
                 : withSoldOutLabels(
@@ -574,6 +581,25 @@ export default function ContractForm({
                     onChange={(value) => onProductChange(index, "name", value)}
                     onSelect={(selected) => onProductSelect(index, selected)}
                   />
+                </td>
+                <td>
+                  {useCatalogDropdowns && typeOptions.length > 0 ? (
+                    <ProductOptionSelect
+                      value={product.type}
+                      options={typeOptions}
+                      onChange={(value) => onProductChange(index, "type", value)}
+                      placeholder="타입 선택"
+                    />
+                  ) : typeOptions.length > 0 || product.type ? (
+                    <input
+                      type="text"
+                      value={product.type}
+                      onChange={(event) =>
+                        onProductChange(index, "type", event.target.value)
+                      }
+                      className="contract-doc__cell-input"
+                    />
+                  ) : null}
                 </td>
                 <td className="contract-doc__product-color-cell">
                   {isSet && isLegacySetColor ? (
@@ -661,11 +687,14 @@ export default function ContractForm({
                   <FieldError message={errors[`products.${index}.unitPrice`]} />
                 </td>
                 <td>
-                  <span className="contract-doc__cell-input contract-doc__cell-input--numeric contract-doc__amount">
-                    {lineAmount(product) > 0
-                      ? formatAmount(lineAmount(product))
-                      : ""}
-                  </span>
+                  <input
+                    type="text"
+                    value={product.remarks}
+                    onChange={(event) =>
+                      onProductChange(index, "remarks", event.target.value)
+                    }
+                    className="contract-doc__cell-input"
+                  />
                 </td>
               </tr>
               {isSet && activeComponents.length
@@ -697,6 +726,7 @@ export default function ContractForm({
               <td className="contract-doc__total-value">
                 {formatAmount(productsSubtotal)}
               </td>
+              <td />
             </tr>
             <tr className="contract-doc__total-row">
               <td colSpan={6} className="contract-doc__total-label">
@@ -724,6 +754,7 @@ export default function ContractForm({
                 ) : null}
                 <FieldError message={errors.totalDiscountRate} />
               </td>
+              <td />
             </tr>
             <tr className="contract-doc__total-row">
               <td colSpan={6} className="contract-doc__total-label">
@@ -732,6 +763,7 @@ export default function ContractForm({
               <td className="contract-doc__total-value">
                 {formatAmount(finalTotal)}
               </td>
+              <td />
             </tr>
           </tbody>
         </table>

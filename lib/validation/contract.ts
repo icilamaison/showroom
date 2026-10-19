@@ -10,6 +10,7 @@ export const PRODUCT_ROW_COUNT = 10;
 
 export type ProductRow = {
   name: string;
+  type: string;
   color: string;
   size: string;
   quantity: string;
@@ -20,6 +21,7 @@ export type ProductRow = {
 export function createEmptyProductRow(): ProductRow {
   return {
     name: "",
+    type: "",
     color: "",
     size: "",
     quantity: "",
@@ -77,6 +79,7 @@ const daySchema = z
 
 const productRowSchema = z.object({
   name: z.string().trim(),
+  type: z.string().trim().default(""),
   color: z.string().trim(),
   size: z.string().trim(),
   quantity: z.string().trim(),

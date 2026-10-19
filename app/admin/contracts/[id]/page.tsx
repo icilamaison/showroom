@@ -73,6 +73,7 @@ function ProductTable({
             <tr>
               <th>상품번호</th>
               <th>제품명</th>
+              <th>타입</th>
               <th>컬러</th>
               <th>사이즈</th>
               <th>수량</th>
@@ -84,6 +85,7 @@ function ProductTable({
               <tr key={`${product.name}-${index}`}>
                 <td>{findCatalogProductByName(product.name)?.productNo ?? "-"}</td>
                 <td>{product.name}</td>
+                <td>{product.type?.trim() ? product.type : "-"}</td>
                 <td>{product.color || "-"}</td>
                 <td>{product.size || "-"}</td>
                 <td>{product.quantity}</td>

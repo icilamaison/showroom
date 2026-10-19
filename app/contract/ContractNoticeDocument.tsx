@@ -38,10 +38,6 @@ export default function ContractNoticeDocument({
             평균 발송 기간은 2-10일(주말, 공휴일 제외) 소요됩니다. 주문량이 많거나
             상품의 특성(주문 제작 등)에 따라 발송 기간이 다소 소요될 수 있습니다.
           </li>
-          <li>
-            커튼 주문제작의 경우 실측 출장 및 시공 일정 관련하여 기사님께서
-            해피콜 드릴 예정입니다.
-          </li>
         </ul>
       </section>
 
@@ -92,16 +88,6 @@ export default function ContractNoticeDocument({
         <p className="notice-text">
           울 러그를 제외한 모든 러그는 러그 전문 세탁 업체를 통해 [습식 세탁]을,
           울 러그는 [드라이클리닝]을 권장드립니다. (Tel : 010-5495-6706)
-        </p>
-      </section>
-
-      <section className="contract-doc__section">
-        <h2 className="contract-doc__section-title contract-doc__section-title--divider">
-          커튼 교환 및 반품 안내
-        </h2>
-        <p className="notice-text">
-          이씨라메종의 커튼은 실측한 사이즈를 기준으로 제작되는 주문제작
-          상품으로, 제작 진행 후에는 교환 및 반품이 불가합니다.
         </p>
       </section>
 

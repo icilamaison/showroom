@@ -1,6 +1,6 @@
 "use client";
 
-import { formatAmount, formatDigits, lineAmount } from "@/lib/contract-amount";
+import { formatDigits } from "@/lib/contract-amount";
 import { withSoldOutLabels, type SetComponent } from "@/lib/product-catalog";
 import {
   resolveComponentBaseSalePrice,
@@ -46,7 +46,6 @@ export default function SetProductComponents({
           component.soldOutSizes,
           baseSalePrice,
         );
-        const amount = lineAmount(selection);
 
         return (
           <tr
@@ -55,6 +54,7 @@ export default function SetProductComponents({
           >
             <td />
             <td className="contract-doc__set-component-name">{component.name}</td>
+            <td />
             <td>
               {colorOptions.length > 1 ? (
                 <ProductOptionSelect
@@ -92,11 +92,7 @@ export default function SetProductComponents({
                 {formatDigits(selection.unitPrice)}
               </span>
             </td>
-            <td>
-              <span className="contract-doc__set-component-value contract-doc__set-component-value--right">
-                {amount > 0 ? formatAmount(amount) : ""}
-              </span>
-            </td>
+            <td />
           </tr>
         );
       })}

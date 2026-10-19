@@ -78,20 +78,18 @@ export function isPurchaseContractPayload(
   );
 }
 
-function buildOptionName(product: ProductRow): string {
-  const color = product.color.trim();
+// 플레이오토 업로드용: 옵션명 칸은 비우고, 타입·컬러·사이즈를 상품명에 붙인다.
+function buildOnlineProductName(product: ProductRow): string {
+  const name = product.name.trim();
+  const type = (product.type ?? "").trim();
+  let color = product.color.trim();
   const size = product.size.trim();
 
   if (color.startsWith("COLOR=")) {
-    return color;
+    color = color.slice("COLOR=".length).trim();
   }
 
-  return [
-    color ? `COLOR=${color}` : "",
-    size ? `SIZE=${size}` : "",
-  ]
-    .filter(Boolean)
-    .join(", ");
+  return [name, type, color, size].filter(Boolean).join(" ");
 }
 
 function resolveRecipientName(payload: PurchaseContractPayload): string {
@@ -160,11 +158,11 @@ export function buildOrderExcelRows(
     .filter((product) => product.name.trim())
     .map((product) => ({
       ...sharedFields,
-      "온라인 상품명": product.name.trim(),
-      "옵션명": buildOptionName(product),
+      "온라인 상품명": buildOnlineProductName(product),
+      "옵션명": "",
       "주문수량": safeTrim(product.quantity),
       "금액": buildLineAmount(product),
-      "배송메세지": "",
+      "배송메세지": safeTrim(product.remarks ?? ""),
     }));
 }
 

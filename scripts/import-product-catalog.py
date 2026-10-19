@@ -63,6 +63,15 @@ def parse_sizes(option_input: str) -> list[str] | None:
     return sizes or None
 
 
+def parse_types(option_input: str) -> list[str] | None:
+    types = (
+        extract_braced("TYPE", option_input)
+        or extract_braced("타입", option_input)
+        or extract_braced("시리즈", option_input)
+    )
+    return types or None
+
+
 def to_int(value: str) -> int:
     return int(float(value or 0))
 
@@ -131,11 +140,14 @@ def csv_row_to_product(row: dict[str, str], category_map: dict[str, str]) -> dic
 
     colors = parse_colors(option_input, color_setting)
     sizes = parse_sizes(option_input)
+    types = parse_types(option_input)
 
     if colors:
         product["colors"] = colors
     if sizes:
         product["sizes"] = sizes
+    if types:
+        product["types"] = types
 
     return product
 

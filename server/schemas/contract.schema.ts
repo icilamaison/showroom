@@ -50,7 +50,8 @@ export function mapContractInput(
     ...data,
     products: data.products.map((product) => ({
       ...product,
-      remarks: "",
+      // 구 계약 payload에 type이 없을 수 있어 빈 문자열로 정규화
+      type: product.type ?? "",
     })),
     writtenDate,
     agreementDate,

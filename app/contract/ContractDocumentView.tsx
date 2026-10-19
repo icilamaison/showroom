@@ -20,7 +20,6 @@ import {
   contractTotal,
   formatAmount,
   formatDigits,
-  lineAmount,
 } from "@/lib/contract-amount";
 import "./contract.css";
 import { ContractConsentSection } from "./ContractConsentSection";
@@ -116,7 +115,6 @@ function SetProductDocumentComponents({
         };
         const colorOptions = component.colors ?? [];
         const sizeOptions = component.sizes ?? [];
-        const amount = lineAmount(selection);
 
         return (
           <tr
@@ -125,6 +123,7 @@ function SetProductDocumentComponents({
           >
             <td />
             <td className="contract-doc__set-component-name">{component.name}</td>
+            <td />
             <td>
               {colorOptions.length > 0 ? (
                 <span className="contract-doc__set-component-value">
@@ -149,11 +148,7 @@ function SetProductDocumentComponents({
                 {formatDigits(selection.unitPrice)}
               </span>
             </td>
-            <td>
-              <span className="contract-doc__set-component-value contract-doc__set-component-value--right">
-                {amount > 0 ? formatAmount(amount) : ""}
-              </span>
-            </td>
+            <td />
           </tr>
         );
       })}
@@ -336,11 +331,12 @@ export default function ContractDocumentView({
             <tr>
               <th>No</th>
               <th>제품명</th>
+              <th>타입</th>
               <th>컬러</th>
               <th>사이즈</th>
               <th>수량</th>
-              <th>단가</th>
               <th>금액</th>
+              <th>비고</th>
             </tr>
           </thead>
           <tbody>
@@ -355,6 +351,12 @@ export default function ContractDocumentView({
                     <td>
                       <ReadonlyValue
                         value={product.name}
+                        className="contract-doc__product-cell-text"
+                      />
+                    </td>
+                    <td>
+                      <ReadonlyValue
+                        value={product.type ?? ""}
                         className="contract-doc__product-cell-text"
                       />
                     </td>
@@ -388,13 +390,8 @@ export default function ContractDocumentView({
                     </td>
                     <td>
                       <ReadonlyValue
-                        value={
-                          lineAmount(product) > 0
-                            ? formatAmount(lineAmount(product))
-                            : ""
-                        }
-                        align="right"
-                        className="contract-doc__cell-input contract-doc__cell-input--numeric"
+                        value={product.remarks}
+                        className="contract-doc__product-cell-text"
                       />
                     </td>
                   </tr>
@@ -415,6 +412,7 @@ export default function ContractDocumentView({
               <td className="contract-doc__total-value">
                 {formatAmount(productsSubtotal)}
               </td>
+              <td />
             </tr>
             <tr className="contract-doc__total-row">
               <td colSpan={6} className="contract-doc__total-label">
@@ -428,6 +426,7 @@ export default function ContractDocumentView({
                   </span>
                 ) : null}
               </td>
+              <td />
             </tr>
             <tr className="contract-doc__total-row">
               <td colSpan={6} className="contract-doc__total-label">
@@ -436,6 +435,7 @@ export default function ContractDocumentView({
               <td className="contract-doc__total-value">
                 {formatAmount(finalTotal)}
               </td>
+              <td />
             </tr>
           </tbody>
         </table>

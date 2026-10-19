@@ -38,10 +38,13 @@ export type CatalogProduct = {
   colors?: Record<string, string>;
   // 사이즈 옵션 없이 색상만으로 갈리는 상품 중 일부는 색상별로 실제 판매가가 다름(예: 겨울용/봄가을용)
   colorPrices?: Record<string, number>;
+  // TYPE 축(라이트/오리지널, 매트리스 높이 등). 색·사이즈와 독립 선택.
+  types?: string[];
   sizes?: CatalogSizeOption[];
   components?: SetComponent[];
   soldOutColors?: string[];
   soldOutSizes?: string[];
+  soldOutTypes?: string[];
 };
 
 export function getSizeOptionName(option: CatalogSizeOption): string {

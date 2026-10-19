@@ -166,6 +166,7 @@ export default function ContractWritePage() {
           return {
             ...product,
             name: value,
+            type: "",
             color: "",
             size: "",
             remarks: "",
@@ -317,6 +318,7 @@ export default function ContractWritePage() {
           ? {
               ...row,
               name: product.productName,
+              type: "",
               color: isSet
                 ? formatSetOptionName(
                     product.components ?? [],
