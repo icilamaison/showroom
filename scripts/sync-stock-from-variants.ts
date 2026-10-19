@@ -8,17 +8,16 @@
  *   npx tsx scripts/sync-stock-from-variants.ts           # dry-run
  *   npx tsx scripts/sync-stock-from-variants.ts --write   # 반영
  *
- * .env.local 값은 sync-products-from-cafe24.ts와 같다(scope: mall.read_product).
- * refresh_token은 갱신 때마다 새로 발급되므로 성공하면 .env.local을 덮어쓴다.
+ * 토큰은 scripts/lib/cafe24-auth.ts (.cafe24-tokens.json) 를 쓴다.
  *
  * 세트(구성품) 상품은 variants가 구성품 재고를 반영하지 않아 제외한다.
  * 그쪽은 sync-stock-from-cafe24.ts의 set_option_data 경로를 그대로 쓴다.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { getAccessToken, loadCafe24Config } from "./lib/cafe24-auth";
 
-const ENV_PATH = path.join(process.cwd(), ".env.local");
 const JSON_PATH = path.join(process.cwd(), "product.json");
 const WRITE = process.argv.includes("--write");
 const PAGE_SIZE = 100;
@@ -51,40 +50,6 @@ type CatalogProduct = {
   [key: string]: unknown;
 };
 
-function readEnvFile(): Map<string, string> {
-  const map = new Map<string, string>();
-  if (!existsSync(ENV_PATH)) return map;
-
-  for (const line of readFileSync(ENV_PATH, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-
-    const index = trimmed.indexOf("=");
-    if (index === -1) continue;
-    map.set(trimmed.slice(0, index).trim(), trimmed.slice(index + 1).trim());
-  }
-
-  return map;
-}
-
-function updateEnvValue(key: string, value: string): void {
-  const original = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8") : "";
-  const pattern = new RegExp(`^${key}=.*$`, "m");
-  const next = pattern.test(original)
-    ? original.replace(pattern, `${key}=${value}`)
-    : `${original}${original.endsWith("\n") || !original ? "" : "\n"}${key}=${value}\n`;
-
-  writeFileSync(ENV_PATH, next, "utf8");
-}
-
-function requireEnv(env: Map<string, string>, key: string): string {
-  const value = process.env[key] ?? env.get(key);
-  if (!value) {
-    throw new Error(`${key}가 없습니다. .env.local에 추가해주세요. (파일: ${ENV_PATH})`);
-  }
-  return value;
-}
-
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -101,41 +66,6 @@ function hasNestedComponents(sizes: CatalogSizeOption[]): boolean {
       Array.isArray(option.components) &&
       option.components.length > 0,
   );
-}
-
-async function refreshAccessToken(
-  mallId: string,
-  clientId: string,
-  clientSecret: string,
-  refreshToken: string,
-): Promise<string> {
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-
-  const response = await fetch(`https://${mallId}.cafe24api.com/api/v2/oauth/token`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }),
-  });
-
-  const body = await response.text();
-
-  if (!response.ok) {
-    throw new Error(
-      `토큰 갱신 실패 (${response.status}). refresh_token이 만료됐다면 카페24에서 다시 발급해야 합니다.\n${body}`,
-    );
-  }
-
-  const data = JSON.parse(body) as { access_token: string; refresh_token: string };
-  updateEnvValue("CAFE24_REFRESH_TOKEN", data.refresh_token);
-  console.log("[token] 갱신 완료 (새 refresh_token을 .env.local에 저장했습니다)");
-
-  return data.access_token;
 }
 
 async function fetchAllProducts(mallId: string, accessToken: string): Promise<ApiProduct[]> {
@@ -215,14 +145,8 @@ function applyIfChanged(
 }
 
 async function main(): Promise<void> {
-  const env = readEnvFile();
-  const mallId = process.env.CAFE24_MALL_ID ?? env.get("CAFE24_MALL_ID") ?? "icilamaison";
-  const accessToken = await refreshAccessToken(
-    mallId,
-    requireEnv(env, "CAFE24_CLIENT_ID"),
-    requireEnv(env, "CAFE24_CLIENT_SECRET"),
-    requireEnv(env, "CAFE24_REFRESH_TOKEN"),
-  );
+  const { mallId } = loadCafe24Config();
+  const accessToken = await getAccessToken();
 
   const products = await fetchAllProducts(mallId, accessToken);
   const variantsByProductNo = new Map(

@@ -7,6 +7,12 @@
 #   CAFE24_CLIENT_SECRET
 #   CAFE24_REFRESH_TOKEN
 #   CAFE24_SYNC_PAT          # repo secrets 쓰기 권한 있는 PAT (refresh_token 갱신 저장용)
+#   CAFE24_REDIRECT_URI      # 선택 (auth/init 용, CI dump에는 불필요)
+#
+# 주의: skin31 등 같은 Cafe24 앱으로 로컬에서 refresh하면 Secret이 무효가 된다.
+#       그때는 로컬에서:
+#         npx tsx scripts/cafe24-auth.ts import /path/to/.cafe24-tokens.json
+#       (CAFE24_SYNC_PAT 있으면 Secret까지 맞춤)
 #   MAIL_USERNAME            # 발신 메일 (예: kimhi1105@icilamaison.com)
 #   MAIL_PASSWORD            # Google 앱 비밀번호 (일반 비밀번호 X)
 #   MAIL_SERVER              # 선택, 기본 smtp.gmail.com
@@ -70,29 +76,33 @@ jobs:
           } > .env.local
 
       - name: Run catalog sync report (dry-run)
+        env:
+          # dump 중 토큰 갱신되면 스크립트가 Secret까지 맞춘다 (값 자체는 로그에 안 남김)
+          CAFE24_SYNC_PAT: ${{ secrets.CAFE24_SYNC_PAT }}
         run: bash scripts/ci/catalog-sync-report.sh
 
       - name: Persist refreshed Cafe24 refresh_token
+        id: persist_token
         if: always()
         env:
-          GH_TOKEN: ${{ secrets.CAFE24_SYNC_PAT }}
+          CAFE24_SYNC_PAT: ${{ secrets.CAFE24_SYNC_PAT }}
         run: |
-          if [ -z "${GH_TOKEN}" ]; then
-            echo "CAFE24_SYNC_PAT이 없어 refresh_token을 Secrets에 저장하지 못했습니다."
-            echo "다음 실행 전에 CAFE24_REFRESH_TOKEN을 수동으로 갱신해야 할 수 있습니다."
-            exit 0
+          if [ -z "${CAFE24_SYNC_PAT}" ]; then
+            echo "CAFE24_SYNC_PAT이 없어 refresh_token을 Secrets에 저장하지 못했습니다." >&2
+            {
+              echo "## Token / Secret"
+              echo
+              echo "❌ CAFE24_SYNC_PAT 없음 — 다음 실행이 invalid_grant 날 수 있음"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 1
           fi
-          if [ ! -f .env.local ]; then
-            echo ".env.local 없음 — 토큰 저장 스킵"
-            exit 0
-          fi
-          NEW_TOKEN="$(grep -E '^CAFE24_REFRESH_TOKEN=' .env.local | cut -d= -f2- | tr -d '\r')"
-          if [ -z "$NEW_TOKEN" ]; then
-            echo "새 refresh_token을 찾지 못함"
-            exit 0
-          fi
-          echo "$NEW_TOKEN" | gh secret set CAFE24_REFRESH_TOKEN
-          echo "CAFE24_REFRESH_TOKEN secret 갱신 완료"
+          npx tsx scripts/cafe24-auth.ts push-secret
+          {
+            echo "## Token / Secret"
+            echo
+            echo "✅ CAFE24_REFRESH_TOKEN Secret 동기화 완료 (토큰 값은 로그에 없음)"
+            npx tsx scripts/cafe24-auth.ts status || true
+          } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload artifacts
         if: always()
@@ -123,6 +133,7 @@ jobs:
         id: mailbody
         if: always() && steps.mail.outputs.enabled == 'true'
         env:
+          # sync 본문 성공 여부 (메일 실패와 분리). persist 실패도 반영.
           JOB_STATUS: ${{ job.status }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
@@ -150,7 +161,9 @@ jobs:
             echo "MAIL_BODY_EOF"
           } >> "$GITHUB_OUTPUT"
 
+      # 메일 실패해도 catalog sync 성공을 Failure로 바꾸지 않는다.
       - name: Notify by email
+        continue-on-error: true
         if: always() && steps.mail.outputs.enabled == 'true'
         uses: dawidd6/action-send-mail@v4
         with:

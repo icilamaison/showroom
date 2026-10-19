@@ -24,6 +24,12 @@ fi
   echo "- 모드: dump → merge dry-run(--add-new) → stock variants dry-run"
   echo "- product.json 쓰기: **없음**"
   echo
+  echo "## Token status (값 없음)"
+  echo
+  echo '```'
+  npx tsx scripts/cafe24-auth.ts status 2>&1 || true
+  echo '```'
+  echo
 } > "$SUMMARY"
 
 echo "==> 1/3 dump"

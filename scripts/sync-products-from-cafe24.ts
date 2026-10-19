@@ -5,21 +5,14 @@
  *   npx tsx scripts/sync-products-from-cafe24.ts          # 요약만 출력
  *   npx tsx scripts/sync-products-from-cafe24.ts --dump   # 원본 JSON 파일로 저장
  *
- * 필요한 값은 .env.local에 둔다(커밋 금지):
- *   CAFE24_MALL_ID=icilamaison
- *   CAFE24_CLIENT_ID=...
- *   CAFE24_CLIENT_SECRET=...
- *   CAFE24_REFRESH_TOKEN=...
- *
- * access_token은 2시간, refresh_token은 2주마다 만료되고 갱신 시 refresh_token도 새로 발급된다.
- * 그래서 갱신에 성공하면 .env.local의 CAFE24_REFRESH_TOKEN을 새 값으로 덮어쓴다.
- * 이 파일을 안 갱신하면 다음 실행이 실패한다.
+ * 토큰: `.cafe24-tokens.json` (+ `.env.local`). 갱신·Secret 동기화는 cafe24-auth 참고.
+ *   npx tsx scripts/cafe24-auth.ts status
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import path from "node:path";
+import { getAccessToken, loadCafe24Config } from "./lib/cafe24-auth";
 
-const ENV_PATH = path.join(process.cwd(), ".env.local");
 const DUMP = process.argv.includes("--dump");
 const DUMP_PATH = path.join(process.cwd(), "cafe24-products.json");
 
@@ -64,100 +57,8 @@ type Cafe24BundleProduct = {
   bundle_product_components?: Cafe24BundleComponent[];
 };
 
-function readEnvFile(): Map<string, string> {
-  const map = new Map<string, string>();
-
-  if (!existsSync(ENV_PATH)) {
-    return map;
-  }
-
-  for (const line of readFileSync(ENV_PATH, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-
-    const index = trimmed.indexOf("=");
-    if (index === -1) continue;
-
-    map.set(trimmed.slice(0, index).trim(), trimmed.slice(index + 1).trim());
-  }
-
-  return map;
-}
-
-// 값 하나만 교체. 기존 줄 순서·주석을 보존하기 위해 파일 전체를 다시 쓰지 않는다.
-function updateEnvValue(key: string, value: string): void {
-  const original = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8") : "";
-  const pattern = new RegExp(`^${key}=.*$`, "m");
-  const next = pattern.test(original)
-    ? original.replace(pattern, `${key}=${value}`)
-    : `${original}${original.endsWith("\n") || !original ? "" : "\n"}${key}=${value}\n`;
-
-  writeFileSync(ENV_PATH, next, "utf8");
-}
-
-function requireEnv(env: Map<string, string>, key: string): string {
-  const value = process.env[key] ?? env.get(key);
-
-  if (!value) {
-    throw new Error(
-      `${key}가 없습니다. .env.local에 추가해주세요. (파일: ${ENV_PATH})`,
-    );
-  }
-
-  return value;
-}
-
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function refreshAccessToken(
-  mallId: string,
-  clientId: string,
-  clientSecret: string,
-  refreshToken: string,
-): Promise<string> {
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
-    "base64",
-  );
-
-  const response = await fetch(
-    `https://${mallId}.cafe24api.com/api/v2/oauth/token`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-      }),
-    },
-  );
-
-  const body = await response.text();
-
-  if (!response.ok) {
-    throw new Error(
-      `토큰 갱신 실패 (${response.status}). refresh_token이 만료됐다면 카페24에서 다시 발급해야 합니다.\n${body}`,
-    );
-  }
-
-  const data = JSON.parse(body) as {
-    access_token: string;
-    refresh_token: string;
-    expires_at?: string;
-  };
-
-  // refresh_token은 갱신 때마다 새 값이 나온다. 저장하지 않으면 다음 실행이 실패한다.
-  updateEnvValue("CAFE24_REFRESH_TOKEN", data.refresh_token);
-  console.log(
-    `[token] 갱신 완료 (access_token 만료: ${data.expires_at ?? "미표기"})`,
-  );
-  console.log("[token] 새 refresh_token을 .env.local에 저장했습니다.");
-
-  return data.access_token;
 }
 
 async function apiGet<T>(
@@ -258,18 +159,8 @@ async function fetchOptions(
 }
 
 async function main(): Promise<void> {
-  const env = readEnvFile();
-  const mallId = process.env.CAFE24_MALL_ID ?? env.get("CAFE24_MALL_ID") ?? "icilamaison";
-  const clientId = requireEnv(env, "CAFE24_CLIENT_ID");
-  const clientSecret = requireEnv(env, "CAFE24_CLIENT_SECRET");
-  const refreshToken = requireEnv(env, "CAFE24_REFRESH_TOKEN");
-
-  const accessToken = await refreshAccessToken(
-    mallId,
-    clientId,
-    clientSecret,
-    refreshToken,
-  );
+  const { mallId } = loadCafe24Config();
+  const accessToken = await getAccessToken();
 
   const products = await fetchAllProducts(mallId, accessToken);
   const bundles = await fetchAllBundleProducts(mallId, accessToken);

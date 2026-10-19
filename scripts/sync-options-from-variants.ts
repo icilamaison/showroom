@@ -13,10 +13,10 @@
  * sizes[]에 components가 들어 있는 세트형은 구성 조합이라 사이즈가 아니므로 건드리지 않는다.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { getAccessToken, loadCafe24Config } from "./lib/cafe24-auth";
 
-const ENV_PATH = path.join(process.cwd(), ".env.local");
 const JSON_PATH = path.join(process.cwd(), "product.json");
 const WRITE = process.argv.includes("--write");
 const PAGE_SIZE = 100;
@@ -46,37 +46,6 @@ type CatalogProduct = {
   [key: string]: unknown;
 };
 
-function readEnvFile(): Map<string, string> {
-  const map = new Map<string, string>();
-  if (!existsSync(ENV_PATH)) return map;
-
-  for (const line of readFileSync(ENV_PATH, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const index = trimmed.indexOf("=");
-    if (index === -1) continue;
-    map.set(trimmed.slice(0, index).trim(), trimmed.slice(index + 1).trim());
-  }
-
-  return map;
-}
-
-function updateEnvValue(key: string, value: string): void {
-  const original = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8") : "";
-  const pattern = new RegExp(`^${key}=.*$`, "m");
-  const next = pattern.test(original)
-    ? original.replace(pattern, `${key}=${value}`)
-    : `${original}${original.endsWith("\n") || !original ? "" : "\n"}${key}=${value}\n`;
-
-  writeFileSync(ENV_PATH, next, "utf8");
-}
-
-function requireEnv(env: Map<string, string>, key: string): string {
-  const value = process.env[key] ?? env.get(key);
-  if (!value) throw new Error(`${key}가 없습니다. .env.local에 추가해주세요.`);
-  return value;
-}
-
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -88,35 +57,6 @@ function normalizeSpace(value: string): string {
 
 function getSizeOptionName(option: CatalogSizeOption): string {
   return typeof option === "string" ? option : option.name;
-}
-
-async function refreshAccessToken(
-  mallId: string,
-  clientId: string,
-  clientSecret: string,
-  refreshToken: string,
-): Promise<string> {
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-
-  const response = await fetch(`https://${mallId}.cafe24api.com/api/v2/oauth/token`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken }),
-  });
-
-  const body = await response.text();
-  if (!response.ok) {
-    throw new Error(`토큰 갱신 실패 (${response.status})\n${body}`);
-  }
-
-  const data = JSON.parse(body) as { access_token: string; refresh_token: string };
-  updateEnvValue("CAFE24_REFRESH_TOKEN", data.refresh_token);
-  console.log("[token] 갱신 완료 (새 refresh_token을 .env.local에 저장했습니다)");
-
-  return data.access_token;
 }
 
 async function fetchAllProducts(mallId: string, accessToken: string): Promise<ApiProduct[]> {
@@ -180,14 +120,8 @@ function collectAxis(variants: Variant[], axis: "COLOR" | "SIZE"): AxisValues {
 }
 
 async function main(): Promise<void> {
-  const env = readEnvFile();
-  const mallId = process.env.CAFE24_MALL_ID ?? env.get("CAFE24_MALL_ID") ?? "icilamaison";
-  const accessToken = await refreshAccessToken(
-    mallId,
-    requireEnv(env, "CAFE24_CLIENT_ID"),
-    requireEnv(env, "CAFE24_CLIENT_SECRET"),
-    requireEnv(env, "CAFE24_REFRESH_TOKEN"),
-  );
+  const { mallId } = loadCafe24Config();
+  const accessToken = await getAccessToken();
 
   const variantsByProductNo = new Map(
     (await fetchAllProducts(mallId, accessToken)).map((product) => [

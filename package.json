@@ -18,6 +18,9 @@
     "db:seed:contracts:reset": "tsx server/db/seed-contracts.ts --reset",
     "products:sync-sizes": "tsx scripts/sync-product-sizes.ts",
     "catalog:report": "bash scripts/ci/catalog-sync-report.sh",
+    "cafe24:auth": "tsx scripts/cafe24-auth.ts auth",
+    "cafe24:status": "tsx scripts/cafe24-auth.ts status",
+    "cafe24:push-secret": "tsx scripts/cafe24-auth.ts push-secret",
     "lint": "next lint"
   },
   "dependencies": {

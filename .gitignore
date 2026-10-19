@@ -32,6 +32,7 @@ yarn-error.log*
 # env files
 .env
 .env*.local
+.cafe24-tokens.json
 
 # typescript
 *.tsbuildinfo
