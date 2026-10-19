@@ -187,14 +187,16 @@ export async function refreshAccessToken(): Promise<Cafe24Tokens> {
     console.log("[token] GitHub Secret CAFE24_REFRESH_TOKEN 동기화 완료");
   } else if (push === "skip") {
     console.log(
-      "[token] Secret 자동 동기화 스킵 (CAFE24_SYNC_PAT/GH_TOKEN 없음 또는 CAFE24_SKIP_SECRET_PUSH=1)",
+      "[token] Secret 동기화 스킵 (로컬 기본 / CI만 자동). 필요 시 CAFE24_PUSH_SECRET=1",
     );
   }
 
   return next;
 }
 
-export async function getAccessToken(): Promise<string> {
+export async function getAccessToken(options?: {
+  forceRefresh?: boolean;
+}): Promise<string> {
   const existing = readTokens() ?? bootstrapTokensFromEnv();
   if (!existing?.refresh_token) {
     throw new Error(
@@ -203,6 +205,7 @@ export async function getAccessToken(): Promise<string> {
   }
 
   if (
+    !options?.forceRefresh &&
     existing.access_token &&
     parseExpiry(existing.expires_at) - REFRESH_MARGIN_MS > Date.now()
   ) {
@@ -292,12 +295,21 @@ export function printTokenStatus(): void {
 
 /**
  * 현재 refresh_token을 repo Secret에 올린다.
- * CI Persist 스텝과 로컬 갱신 후 동기화에 쓴다. 토큰 값은 로그에 찍지 않는다.
+ * 기본은 CI(GITHUB_ACTIONS)에서만 올린다. 로컬이 Secret을 덮어쓰면 CI 토큰이 죽는다.
+ * 로컬에서 필요할 때만 CAFE24_PUSH_SECRET=1.
+ * 토큰 값은 로그에 찍지 않는다.
  */
 export async function pushRefreshSecret(options?: {
   quiet?: boolean;
 }): Promise<"ok" | "skip" | "fail"> {
   if (process.env.CAFE24_SKIP_SECRET_PUSH === "1") return "skip";
+  // 로컬 기본값: Secret 미동기화 (CI 전용 토큰과 분리)
+  if (
+    process.env.GITHUB_ACTIONS !== "true" &&
+    process.env.CAFE24_PUSH_SECRET !== "1"
+  ) {
+    return "skip";
+  }
 
   const tokens = readTokens() ?? bootstrapTokensFromEnv();
   const refresh = tokens?.refresh_token;
