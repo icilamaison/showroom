@@ -988,7 +988,7 @@ export default function ContractForm({
         disabled={isSubmitDisabled}
         className="contract-doc__submit"
       >
-        {isSubmitting ? "제출 중..." : "계약서 제출"}
+        {isSubmitting ? "제출 중..." : "다음"}
       </button>
       {isSignatureModalOpen ? (
         <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">

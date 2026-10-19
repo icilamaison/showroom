@@ -18,7 +18,10 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import "../../ui.css";
 import "../contract.css";
+import ContractCompanyFooter from "../ContractCompanyFooter";
+import ContractNoticeDocument from "../ContractNoticeDocument";
 import ContractForm, { createInitialContractFormValues } from "./ContractForm";
 
 export default function ContractWritePage() {
@@ -35,6 +38,9 @@ export default function ContractWritePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // 계약서 작성 → 배송·교환·반품 안내 동의 → 제출 순서
+  const [step, setStep] = useState<"form" | "notice">("form");
+  const [noticeAgreed, setNoticeAgreed] = useState(false);
 
   function clearFieldError(field: string) {
     if (!errors[field]) {
@@ -363,6 +369,18 @@ export default function ContractWritePage() {
     }
 
     setErrors({});
+    setStep("notice");
+    window.scrollTo(0, 0);
+  }
+
+  async function handleNoticeSubmit() {
+    const validation = validateContractForm(values);
+
+    if (!validation.valid) {
+      return;
+    }
+
+    setFormError("");
     setIsSubmitting(true);
 
     try {
@@ -388,11 +406,59 @@ export default function ContractWritePage() {
   return (
     <main className="app-page">
       <div className="app-container app-container--doc">
-        <Link href="/contract/notice" className="app-back-link">
-          ← 안내로 돌아가기
-        </Link>
+        {step === "form" ? (
+          <Link href="/" className="app-back-link">
+            ← 홈으로
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="app-back-link"
+            onClick={() => {
+              setStep("form");
+              window.scrollTo(0, 0);
+            }}
+          >
+            ← 계약서 작성으로 돌아가기
+          </button>
+        )}
 
-        <div className="contract-doc-flow">
+        {step === "notice" ? (
+          <div className="contract-doc-flow contract-doc-flow--attached">
+            {formError ? (
+              <p className="app-alert app-alert--error contract-doc-flow__alert">
+                {formError}
+              </p>
+            ) : null}
+
+            <ContractNoticeDocument className="contract-doc contract-doc--document contract-doc--sheet notice-document" />
+
+            <div className="contract-doc-flow__actions">
+              <label className="notice-agree">
+                <input
+                  type="checkbox"
+                  checked={noticeAgreed}
+                  onChange={(event) => setNoticeAgreed(event.target.checked)}
+                />
+                위 배송·교환·반품 등 안내사항을 모두 확인하였습니다.
+              </label>
+
+              <button
+                type="button"
+                className="app-button app-button--block"
+                disabled={!noticeAgreed || isSubmitting}
+                onClick={handleNoticeSubmit}
+              >
+                {isSubmitting ? "제출 중..." : "계약서 제출"}
+              </button>
+
+              <ContractCompanyFooter />
+            </div>
+          </div>
+        ) : null}
+
+        {/* 안내 단계에서도 언마운트하지 않아 입력값·서명 상태 유지 */}
+        <div className="contract-doc-flow" hidden={step !== "form"}>
           {formError ? (
             <p className="app-alert app-alert--error contract-doc-flow__alert">
               {formError}

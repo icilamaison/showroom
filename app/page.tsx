@@ -30,7 +30,7 @@ export default function HomePage() {
         </header>
 
         <nav className="app-menu">
-          <Link href="/contract/notice" className="app-menu__item">
+          <Link href="/contract/write" className="app-menu__item">
             러그 계약서 작성
           </Link>
           <Link href="/contract/curtain" className="app-menu__item">
