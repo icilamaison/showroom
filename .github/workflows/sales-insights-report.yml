@@ -1,0 +1,171 @@
+# 매일 카페24 판매수량 통계를 받아 잘 팔린 상품 인사이트를 마크다운으로 남긴다.
+# 저장소에는 커밋하지 않는다. Job Summary + artifact + 메일만.
+#
+# 필요 Secrets (catalog sync 와 동일)
+#   CAFE24_MALL_ID
+#   CAFE24_CLIENT_ID
+#   CAFE24_CLIENT_SECRET
+#   CAFE24_REFRESH_TOKEN
+#   CAFE24_SYNC_PAT
+#   MAIL_USERNAME / MAIL_PASSWORD / MAIL_SERVER(선택)
+#
+# 추가 권한: 앱에 mall.read_salesreport 가 있어야 한다.
+# 없으면 실패 메일이 오고, 재인증 방법이 Job Summary 에 적힌다.
+#
+# 카탈로그 리포트(09:00 KST)와 토큰이 겹치지 않게 30분 뒤에 돈다.
+# 수동 실행: Actions → Sales insights report → Run workflow
+
+name: Sales insights report
+
+on:
+  schedule:
+    # 매일 09:30 KST (00:30 UTC)
+    - cron: "30 0 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "조회 일수 (어제부터 역산, 1~90)"
+        required: false
+        default: "7"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cafe24-admin-api
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write Cafe24 .env.local
+        env:
+          CAFE24_MALL_ID: ${{ secrets.CAFE24_MALL_ID }}
+          CAFE24_CLIENT_ID: ${{ secrets.CAFE24_CLIENT_ID }}
+          CAFE24_CLIENT_SECRET: ${{ secrets.CAFE24_CLIENT_SECRET }}
+          CAFE24_REFRESH_TOKEN: ${{ secrets.CAFE24_REFRESH_TOKEN }}
+        run: |
+          for key in CAFE24_MALL_ID CAFE24_CLIENT_ID CAFE24_CLIENT_SECRET CAFE24_REFRESH_TOKEN; do
+            if [ -z "${!key}" ]; then
+              echo "Missing secret: $key" >&2
+              exit 1
+            fi
+          done
+          {
+            echo "CAFE24_MALL_ID=${CAFE24_MALL_ID}"
+            echo "CAFE24_CLIENT_ID=${CAFE24_CLIENT_ID}"
+            echo "CAFE24_CLIENT_SECRET=${CAFE24_CLIENT_SECRET}"
+            echo "CAFE24_REFRESH_TOKEN=${CAFE24_REFRESH_TOKEN}"
+          } > .env.local
+
+      - name: Run sales insights report
+        env:
+          CAFE24_SYNC_PAT: ${{ secrets.CAFE24_SYNC_PAT }}
+          SALES_DAYS: ${{ github.event.inputs.days || '7' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash scripts/ci/sales-insights-report.sh
+
+      - name: Persist refreshed Cafe24 refresh_token
+        id: persist_token
+        if: always()
+        env:
+          CAFE24_SYNC_PAT: ${{ secrets.CAFE24_SYNC_PAT }}
+        run: |
+          if [ -z "${CAFE24_SYNC_PAT}" ]; then
+            echo "CAFE24_SYNC_PAT이 없어 refresh_token을 Secrets에 저장하지 못했습니다." >&2
+            {
+              echo "## Token / Secret"
+              echo
+              echo "❌ CAFE24_SYNC_PAT 없음 — 다음 실행이 invalid_grant 날 수 있음"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 1
+          fi
+          npx tsx scripts/cafe24-auth.ts push-secret
+          {
+            echo "## Token / Secret"
+            echo
+            echo "✅ CAFE24_REFRESH_TOKEN Secret 동기화 완료 (토큰 값은 로그에 없음)"
+            npx tsx scripts/cafe24-auth.ts status || true
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sales-insights-report
+          path: artifacts/sales-insights/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Check mail secrets
+        id: mail
+        if: always()
+        env:
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+        run: |
+          if [ -n "$MAIL_USERNAME" ] && [ -n "$MAIL_PASSWORD" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "MAIL_USERNAME/MAIL_PASSWORD 없음 — 메일 알림 스킵"
+          fi
+
+      - name: Build mail body
+        id: mailbody
+        if: always() && steps.mail.outputs.enabled == 'true'
+        env:
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then
+            echo "subject=[showroom] 매출 인사이트" >> "$GITHUB_OUTPUT"
+          else
+            echo "subject=[showroom] 매출 인사이트 실패" >> "$GITHUB_OUTPUT"
+          fi
+
+          {
+            echo "body<<MAIL_BODY_EOF"
+            if [ -f artifacts/sales-insights/mail.txt ]; then
+              cat artifacts/sales-insights/mail.txt
+            else
+              echo "매출 인사이트: ${JOB_STATUS}"
+              echo
+              echo "실행 보기: ${RUN_URL}"
+              if [ -f artifacts/sales-insights/run.log ]; then
+                echo
+                tail -n 20 artifacts/sales-insights/run.log
+              fi
+            fi
+            echo "MAIL_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Notify by email
+        continue-on-error: true
+        if: always() && steps.mail.outputs.enabled == 'true'
+        uses: dawidd6/action-send-mail@v4
+        with:
+          server_address: ${{ secrets.MAIL_SERVER != '' && secrets.MAIL_SERVER || 'smtp.gmail.com' }}
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: ${{ steps.mailbody.outputs.subject }}
+          to: kimhi1105@icilamaison.com
+          from: Sales Insights <${{ secrets.MAIL_USERNAME }}>
+          body: ${{ steps.mailbody.outputs.body }}

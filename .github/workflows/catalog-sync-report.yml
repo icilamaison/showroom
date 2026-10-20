@@ -32,7 +32,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: catalog-sync-report
+  # 매출 리포트와 Cafe24 refresh_token 을 같이 쓴다. 동시에 돌리면 토큰이 죽는다.
+  group: cafe24-admin-api
   cancel-in-progress: false
 
 jobs:

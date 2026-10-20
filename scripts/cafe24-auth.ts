@@ -50,7 +50,7 @@ async function main(): Promise<void> {
       return;
     }
     if (result === "skip") {
-      console.log("스킵: 토큰 없거나 CAFE24_SYNC_PAT/GH_TOKEN 없음");
+      console.log("스킵: refresh_token이 없거나 로컬에서 CAFE24_PUSH_SECRET=1이 아닙니다");
     }
     process.exitCode = 1;
     return;

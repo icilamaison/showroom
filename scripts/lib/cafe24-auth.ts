@@ -84,6 +84,8 @@ function requireEnv(env: EnvMap, key: string): string {
 }
 
 export function loadCafe24Config(): Cafe24Config {
+  // 매출 인사이트는 mall.read_salesreport 가 추가로 필요하다.
+  // 기본값을 바꾸면 앱에 권한이 없을 때 auth URL 이 깨지므로 CAFE24_SCOPE 로만 덧붙인다.
   const env = readEnvFile();
   const mallId = envGet(env, "CAFE24_MALL_ID") ?? "icilamaison";
   const clientId = requireEnv(env, "CAFE24_CLIENT_ID");
@@ -313,16 +315,26 @@ export async function pushRefreshSecret(options?: {
 
   const tokens = readTokens() ?? bootstrapTokensFromEnv();
   const refresh = tokens?.refresh_token;
-  if (!refresh) return "skip";
+  if (!refresh) {
+    if (!options?.quiet) {
+      console.error("[token] refresh_token이 없어 Secret을 올리지 못했습니다.");
+    }
+    return "skip";
+  }
 
-  // GITHUB_TOKEN(기본 Actions 토큰)은 secrets:write가 없다. PAT만 쓴다.
+  // GITHUB_TOKEN(기본 Actions 토큰)은 secrets:write가 없다.
+  // CI는 CAFE24_SYNC_PAT, 로컬은 gh 로그인(keyring)으로도 된다.
   const pat = process.env.CAFE24_SYNC_PAT || process.env.GH_TOKEN;
-  if (!pat) return "skip";
+  const env = { ...process.env };
+  if (pat) {
+    env.GH_TOKEN = pat;
+    env.GITHUB_TOKEN = pat;
+  }
 
   try {
     execFileSync("gh", ["secret", "set", "CAFE24_REFRESH_TOKEN"], {
       input: refresh,
-      env: { ...process.env, GH_TOKEN: pat, GITHUB_TOKEN: pat },
+      env,
       stdio: ["pipe", "pipe", "pipe"],
     });
     return "ok";
@@ -330,6 +342,11 @@ export async function pushRefreshSecret(options?: {
     const message = error instanceof Error ? error.message : String(error);
     if (!options?.quiet) {
       console.error(`[token] Secret 동기화 실패: ${message}`);
+      if (!pat) {
+        console.error(
+          "[token] gh가 로그인돼 있는지 확인하거나, CAFE24_SYNC_PAT / GH_TOKEN 을 넣어주세요.",
+        );
+      }
     }
     return "fail";
   }
