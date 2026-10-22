@@ -116,25 +116,27 @@ describe("buildOrderExcelRows", () => {
     expect(formatShoppingMallOrderNumber("abc")).toBe("");
   });
 
-  it("splits combined color and size options", () => {
+  it("exports grouped selections as the real Cafe24 product and option", () => {
     const products = createEmptyProductRows();
-    products[0] = {
-      name: "뉴슬록 3colors",
-      type: "",
-      color: "아이보리 미니 100X150",
-      size: "",
-      quantity: "1",
-      unitPrice: "109120",
-      remarks: "",
-    };
+    const row = { quantity: "1", unitPrice: "1000", remarks: "" };
+    products[0] = { ...row, name: "슬록 8colors", type: "모노타입", color: "아이보리", size: "1호 160X240" };
+    products[1] = { ...row, name: "뉴슬록 3colors", type: "", color: "아이보리", size: "미니 100X150" };
+    products[2] = { ...row, name: "그레인 매트", type: "", color: "샌드브라운", size: "M 48X120" };
+    products[3] = { ...row, name: "플루아 블랭킷", type: "", color: "블랙", size: "L 100X150" };
+    products[4] = { ...row, name: "샤인 4colors", type: "", color: "브라운", size: "원형 200" };
 
     const rows = buildOrderExcelRows({
       ...basePayload,
       products,
     });
 
-    expect(rows[0]["온라인 상품명"]).toBe("뉴슬록 3colors");
-    expect(rows[0]["옵션명"]).toBe("COLOR=아이보리, SIZE=미니 100X150");
+    expect(rows.map((r) => [r["온라인 상품명"], r["옵션명"]])).toEqual([
+      ["슬록 1호 160X240", "TYPE=모노타입, COLOR=아이보리 1호 160X240"],
+      ["뉴슬록 3colors", "COLOR=아이보리 미니 100X150"],
+      ["그레인 매트 샌드브라운", "SIZE=M 48X120"],
+      ["플루아 블랭킷 블랙", "SIZE=블랙 L 100X150"],
+      ["샤인 원형 200", "COLOR=브라운"],
+    ]);
   });
 
   it("puts set component options into the option name", () => {

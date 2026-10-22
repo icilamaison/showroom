@@ -1,6 +1,6 @@
 import type { ProductRow, PurchaseContractPayload } from "./validation/contract";
 import { formatFullAddress } from "./address";
-import { splitColorSize } from "./product-catalog";
+import { resolveCafe24Variant } from "./product-catalog";
 import { formatSetOptionLabel } from "./set-product";
 
 export const ORDER_EXCEL_HEADERS = [
@@ -80,28 +80,35 @@ export function isPurchaseContractPayload(
   );
 }
 
-// 플레이오토 업로드용: 상품명과 옵션명을 나누고, 옵션명은 카페24 주문 옵션 형식으로 넣는다.
-// 예: "TYPE=라이트타입 1.5cm, COLOR=크림그레이, SIZE=2호 200X300"
-function buildOptionName(product: ProductRow): string {
+// 플레이오토 업로드용: 카페24 주문 목록과 같은 상품명·옵션명으로 내보낸다.
+// 예: "슬록 1호 160X240" / "TYPE=모노타입, COLOR=아이보리 1호 160X240"
+function buildCafe24ProductAndOption(product: ProductRow): {
+  productName: string;
+  optionName: string;
+} {
   const color = product.color.trim();
 
   // 세트는 구성품 옵션을 이어 붙인 값. 예전 " + " 형식도 ", "로 맞춘다
   if (color.startsWith("COLOR=")) {
-    return `COLOR=${formatSetOptionLabel(color)}`;
+    return {
+      productName: product.name.trim(),
+      optionName: `COLOR=${formatSetOptionLabel(color)}`,
+    };
   }
 
-  // "아이보리 미니 100X150"처럼 한 옵션에 붙은 컬러·사이즈는 계약서 화면과 같이 나눈다
-  const size = product.size.trim();
-  const combined = size ? null : splitColorSize(color);
+  const variant = resolveCafe24Variant(product.name, color, product.size.trim());
   const type = (product.type ?? "").trim();
 
-  return [
-    type ? `TYPE=${type}` : "",
-    combined || color ? `COLOR=${combined?.color ?? color}` : "",
-    combined || size ? `SIZE=${combined?.size ?? size}` : "",
-  ]
-    .filter(Boolean)
-    .join(", ");
+  return {
+    productName: variant.productName,
+    optionName: [
+      type ? `TYPE=${type}` : "",
+      variant.color ? `COLOR=${variant.color}` : "",
+      variant.size ? `SIZE=${variant.size}` : "",
+    ]
+      .filter(Boolean)
+      .join(", "),
+  };
 }
 
 function resolveRecipientName(payload: PurchaseContractPayload): string {
@@ -168,14 +175,17 @@ export function buildOrderExcelRows(
 
   return payload.products
     .filter((product) => product.name.trim())
-    .map((product) => ({
-      ...sharedFields,
-      "온라인 상품명": product.name.trim(),
-      "옵션명": buildOptionName(product),
-      "주문수량": safeTrim(product.quantity),
-      "금액": buildLineAmount(product),
-      "배송메세지": safeTrim(product.remarks ?? ""),
-    }));
+    .map((product) => {
+      const { productName, optionName } = buildCafe24ProductAndOption(product);
+      return {
+        ...sharedFields,
+        "온라인 상품명": productName,
+        "옵션명": optionName,
+        "주문수량": safeTrim(product.quantity),
+        "금액": buildLineAmount(product),
+        "배송메세지": safeTrim(product.remarks ?? ""),
+      };
+    });
 }
 
 export function findMissingOrderExcelRequiredFields(

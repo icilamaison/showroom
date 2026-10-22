@@ -458,6 +458,53 @@ const colorGroupProducts = COLOR_GROUP_NAMES.flatMap((groupName) => {
   return [buildColorGroupProduct(groupName, members)];
 });
 
+// 엑셀(플레이오토)용: 계약서에서 묶어 고른 값을 실제 카페24 상품명과 원래 옵션값으로 되돌린다.
+// 예: 슬록 8colors / 아이보리 / 1호 160X240 → 슬록 1호 160X240 / COLOR=아이보리 1호 160X240
+//     그레인 매트 / 샌드브라운 / M 48X120 → 그레인 매트 샌드브라운 / SIZE=M 48X120
+// 카탈로그에서 못 찾는 값(직접 입력 등)은 고른 값 그대로 둔다.
+export function resolveCafe24Variant(
+  name: string,
+  color: string,
+  size: string,
+): { productName: string; color: string; size: string } {
+  const productName = name.trim();
+
+  if (COLOR_GROUP_NAMES.includes(productName)) {
+    const member = catalog.find(
+      (product) =>
+        groupedColorProducts.has(product) &&
+        product.productName === `${productName} ${color}`,
+    );
+    if (member) {
+      // 플루아 블랭킷처럼 원래 사이즈 옵션에 컬러가 붙은 상품은 원래 값으로 되돌린다
+      const rawSize =
+        (member.sizes ?? [])
+          .map(getSizeOptionName)
+          .find((option) => option === size || option === `${color} ${size}`) ?? size;
+      return { productName: member.productName, color: "", size: rawSize };
+    }
+  }
+
+  const product = findCatalogProductByName(productName);
+  const baseName = product ? getSizeBaseName(product) : null;
+  if (product && baseName && size) {
+    const member = [product, ...getSizeSiblings(product)].find((candidate) =>
+      candidate === product
+        ? getSingleCombinedSize(product) === size
+        : getSiblingSize(candidate, baseName) === size,
+    );
+    if (member) {
+      const rawColor =
+        Object.keys(member.colors ?? {}).find(
+          (option) => (splitColorSize(option)?.color ?? option) === color,
+        ) ?? color;
+      return { productName: member.productName, color: rawColor, size: "" };
+    }
+  }
+
+  return { productName, color, size };
+}
+
 export function findCatalogProductByCode(code: string): CatalogProduct | null {
   const normalized = code.trim();
 
