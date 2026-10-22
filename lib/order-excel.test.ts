@@ -72,16 +72,16 @@ describe("buildOrderExcelRows", () => {
       "수령자휴대폰번호": "010-9999-8888",
       "우편번호": "06234",
       "주소": "서울시 강남구 테헤란로 1 101동 1001호",
-      "온라인 상품명": "테스트 상품 라이트타입 1.5cm 블랙 L",
-      "옵션명": "",
+      "온라인 상품명": "테스트 상품",
+      "옵션명": "TYPE=라이트타입 1.5cm, COLOR=블랙, SIZE=L",
       "주문수량": "2",
       "금액": "50000",
       "배송메세지": "문 앞에 놔주세요",
       "주문일": "2026-07-01",
       "국가코드": "KR",
     });
-    expect(rows[1]["온라인 상품명"]).toBe("추가 상품 화이트");
-    expect(rows[1]["옵션명"]).toBe("");
+    expect(rows[1]["온라인 상품명"]).toBe("추가 상품");
+    expect(rows[1]["옵션명"]).toBe("COLOR=화이트");
     expect(rows[1]["금액"]).toBe("30000");
     expect(rows[1]["배송메세지"]).toBe("");
   });
@@ -116,7 +116,28 @@ describe("buildOrderExcelRows", () => {
     expect(formatShoppingMallOrderNumber("abc")).toBe("");
   });
 
-  it("folds set product options into the online product name", () => {
+  it("splits combined color and size options", () => {
+    const products = createEmptyProductRows();
+    products[0] = {
+      name: "뉴슬록 3colors",
+      type: "",
+      color: "아이보리 미니 100X150",
+      size: "",
+      quantity: "1",
+      unitPrice: "109120",
+      remarks: "",
+    };
+
+    const rows = buildOrderExcelRows({
+      ...basePayload,
+      products,
+    });
+
+    expect(rows[0]["온라인 상품명"]).toBe("뉴슬록 3colors");
+    expect(rows[0]["옵션명"]).toBe("COLOR=아이보리, SIZE=미니 100X150");
+  });
+
+  it("puts set component options into the option name", () => {
     const products = createEmptyProductRows();
     products[0] = {
       name: "쿨포터 세트",
@@ -133,10 +154,10 @@ describe("buildOrderExcelRows", () => {
       products,
     });
 
-    expect(rows[0]["온라인 상품명"]).toBe(
-      "쿨포터 세트 화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
+    expect(rows[0]["온라인 상품명"]).toBe("쿨포터 세트");
+    expect(rows[0]["옵션명"]).toBe(
+      "COLOR=화이트 K 180X205, 화이트 QK겸용 200X210, 50X70",
     );
-    expect(rows[0]["옵션명"]).toBe("");
     expect(rows[0]["배송메세지"]).toBe("문 앞에 놔주세요");
   });
 

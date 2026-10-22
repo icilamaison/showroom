@@ -1,7 +1,7 @@
 "use client";
 
 import { ApiClientError, submitContract } from "@/lib/api-client";
-import { getSizeSalePrice, getVariantComponents, isSetProduct, type CatalogProduct } from "@/lib/product-catalog";
+import { getSizeSalePrice, getVariantComponents, isSetProduct, withSizeSiblings, type CatalogProduct } from "@/lib/product-catalog";
 import {
   createSetComponentSelections,
   formatSetOptionName,
@@ -175,8 +175,14 @@ export default function ContractWritePage() {
 
         if (field === "color") {
           const selected = productSelections[index];
+          // 사이즈·컬러 형제를 묶은 상품은 색상과 사이즈가 독립이라, 색상을 바꿔도 고른 사이즈·가격을 유지한다
+          const keepSize = Boolean(
+            (selected?.soldOutColorsBySize || selected?.soldOutSizesByColor) &&
+              product.size,
+          );
           const salePrice = selected
-            ? getSizeSalePrice(selected, value) ?? selected.salePrice
+            ? getSizeSalePrice(selected, keepSize ? product.size : value) ??
+              selected.salePrice
             : null;
           const components = selected ? getVariantComponents(selected, value) : [];
 
@@ -200,7 +206,7 @@ export default function ContractWritePage() {
           return {
             ...product,
             color: value,
-            size: "",
+            size: keepSize ? product.size : "",
             ...(salePrice != null ? { unitPrice: String(salePrice) } : {}),
           };
         }
@@ -286,7 +292,7 @@ export default function ContractWritePage() {
   function handleProductSelect(index: number, product: CatalogProduct) {
     setProductSelections((current) => ({
       ...current,
-      [index]: product,
+      [index]: withSizeSiblings(product),
     }));
 
     const isSet = isSetProduct(product);

@@ -14,6 +14,7 @@ import {
 } from "@/lib/constants/contract-status";
 import { formatFullAddress } from "@/lib/address";
 import { findCatalogProductByName } from "@/lib/product-catalog";
+import { formatSetOptionLabel } from "@/lib/set-product";
 import type { PurchaseContractPayload } from "@/lib/validation/contract";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -87,7 +88,7 @@ function ProductTable({
                 <td>{findCatalogProductByName(product.name)?.productNo ?? "-"}</td>
                 <td>{product.name}</td>
                 <td>{product.type?.trim() ? product.type : "-"}</td>
-                <td>{product.color || "-"}</td>
+                <td>{formatSetOptionLabel(product.color) || "-"}</td>
                 <td>{product.size || "-"}</td>
                 <td>{product.quantity}</td>
                 <td>

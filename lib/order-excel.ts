@@ -1,5 +1,7 @@
 import type { ProductRow, PurchaseContractPayload } from "./validation/contract";
 import { formatFullAddress } from "./address";
+import { splitColorSize } from "./product-catalog";
+import { formatSetOptionLabel } from "./set-product";
 
 export const ORDER_EXCEL_HEADERS = [
   "쇼핑몰주문번호",
@@ -78,18 +80,28 @@ export function isPurchaseContractPayload(
   );
 }
 
-// 플레이오토 업로드용: 옵션명 칸은 비우고, 타입·컬러·사이즈를 상품명에 붙인다.
-function buildOnlineProductName(product: ProductRow): string {
-  const name = product.name.trim();
-  const type = (product.type ?? "").trim();
-  let color = product.color.trim();
-  const size = product.size.trim();
+// 플레이오토 업로드용: 상품명과 옵션명을 나누고, 옵션명은 카페24 주문 옵션 형식으로 넣는다.
+// 예: "TYPE=라이트타입 1.5cm, COLOR=크림그레이, SIZE=2호 200X300"
+function buildOptionName(product: ProductRow): string {
+  const color = product.color.trim();
 
+  // 세트는 구성품 옵션을 이어 붙인 값. 예전 " + " 형식도 ", "로 맞춘다
   if (color.startsWith("COLOR=")) {
-    color = color.slice("COLOR=".length).trim();
+    return `COLOR=${formatSetOptionLabel(color)}`;
   }
 
-  return [name, type, color, size].filter(Boolean).join(" ");
+  // "아이보리 미니 100X150"처럼 한 옵션에 붙은 컬러·사이즈는 계약서 화면과 같이 나눈다
+  const size = product.size.trim();
+  const combined = size ? null : splitColorSize(color);
+  const type = (product.type ?? "").trim();
+
+  return [
+    type ? `TYPE=${type}` : "",
+    combined || color ? `COLOR=${combined?.color ?? color}` : "",
+    combined || size ? `SIZE=${combined?.size ?? size}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 function resolveRecipientName(payload: PurchaseContractPayload): string {
@@ -158,8 +170,8 @@ export function buildOrderExcelRows(
     .filter((product) => product.name.trim())
     .map((product) => ({
       ...sharedFields,
-      "온라인 상품명": buildOnlineProductName(product),
-      "옵션명": "",
+      "온라인 상품명": product.name.trim(),
+      "옵션명": buildOptionName(product),
       "주문수량": safeTrim(product.quantity),
       "금액": buildLineAmount(product),
       "배송메세지": safeTrim(product.remarks ?? ""),

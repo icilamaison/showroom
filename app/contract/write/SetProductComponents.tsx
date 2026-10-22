@@ -1,7 +1,12 @@
 "use client";
 
 import { formatDigits } from "@/lib/contract-amount";
-import { withSoldOutLabels, type SetComponent } from "@/lib/product-catalog";
+import {
+  splitColorSize,
+  withColorOnlyLabels,
+  withSoldOutLabels,
+  type SetComponent,
+} from "@/lib/product-catalog";
 import {
   resolveComponentBaseSalePrice,
   resolveComponentColorOptions,
@@ -37,15 +42,24 @@ export default function SetProductComponents({
           unitPrice: "",
         };
         const baseSalePrice = resolveComponentBaseSalePrice(component);
-        const colorOptions = withSoldOutLabels(
-          resolveComponentColorOptions(component),
-          component.soldOutColors,
+        const colorOptions = withColorOnlyLabels(
+          withSoldOutLabels(
+            resolveComponentColorOptions(component),
+            component.soldOutColors,
+          ),
         );
         const sizeOptions = withSoldOutLabels(
           resolveComponentSizeOptions(component),
           component.soldOutSizes,
           baseSalePrice,
         );
+        // 구성품도 "베이지 SS 160X210"처럼 색상·사이즈가 한 옵션이면 사이즈는 사이즈 칸에 따로 보여준다
+        const selectedColor =
+          selection.color ||
+          (colorOptions.length === 1 ? colorOptions[0].value : "");
+        const combinedSize = sizeOptions.length
+          ? ""
+          : splitColorSize(selectedColor)?.size ?? "";
 
         return (
           <tr
@@ -79,6 +93,10 @@ export default function SetProductComponents({
               ) : sizeOptions.length === 1 ? (
                 <span className="contract-doc__set-component-value">
                   {sizeOptions[0].label}
+                </span>
+              ) : combinedSize ? (
+                <span className="contract-doc__set-component-value">
+                  {combinedSize}
                 </span>
               ) : null}
             </td>

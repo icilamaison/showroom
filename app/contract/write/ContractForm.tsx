@@ -11,8 +11,10 @@ import {
 import {
   getSizeOptionName,
   getVariantComponents,
+  splitColorSize,
   type CatalogProduct,
   type CatalogSizeOption,
+  withColorOnlyLabels,
   withSoldOutLabels,
 } from "@/lib/product-catalog";
 import {
@@ -23,7 +25,10 @@ import {
   toDigits,
 } from "@/lib/contract-amount";
 import type { SetComponentSelection } from "@/lib/set-product";
-import { createSetComponentSelections } from "@/lib/set-product";
+import {
+  createSetComponentSelections,
+  formatSetOptionLabel,
+} from "@/lib/set-product";
 import AddressSearchFields from "./AddressSearchFields";
 import ProductNameAutocomplete from "./ProductNameAutocomplete";
 import ProductOptionSelect from "./ProductOptionSelect";
@@ -546,16 +551,20 @@ export default function ContractForm({
                 index < CATALOG_DROPDOWN_ROW_LIMIT && hasProductName && !isSet;
               const colorOptions =
                 selectedProduct?.colors && !isSet
-                  ? withSoldOutLabels(
+                  ? withColorOnlyLabels(withSoldOutLabels(
                       Object.keys(selectedProduct.colors).map((name) => {
                         const salePrice = selectedProduct.colorPrices?.[name];
                         return salePrice != null ? { name, salePrice } : name;
                       }),
-                      selectedProduct.soldOutColors,
+                      selectedProduct.soldOutColorsBySize?.[product.size] ??
+                        selectedProduct.soldOutColors,
                       selectedProduct.salePrice,
-                    )
+                    ))
                   : [];
               const hasColorVariants = colorOptions.length > 0;
+              const combinedSize = isSet || product.size
+                ? ""
+                : splitColorSize(product.color)?.size ?? "";
               const typeOptions = isSet
                 ? []
                 : withSoldOutLabels(
@@ -567,7 +576,8 @@ export default function ContractForm({
                 ? []
                 : withSoldOutLabels(
                     selectedProduct?.sizes,
-                    selectedProduct?.soldOutSizes,
+                    selectedProduct?.soldOutSizesByColor?.[product.color] ??
+                      selectedProduct?.soldOutSizes,
                     selectedProduct?.salePrice,
                   );
 
@@ -604,7 +614,7 @@ export default function ContractForm({
                 <td className="contract-doc__product-color-cell">
                   {isSet && isLegacySetColor ? (
                     <span className="contract-doc__product-cell-text">
-                      {product.color || "구성 선택"}
+                      {formatSetOptionLabel(product.color) || "구성 선택"}
                     </span>
                   ) : useCatalogDropdowns && hasColorVariants ? (
                     <div className="contract-doc__variant-picker">
@@ -619,7 +629,7 @@ export default function ContractForm({
                     </div>
                   ) : isSet ? (
                     <span className="contract-doc__product-cell-text">
-                      {product.color || "구성 선택"}
+                      {formatSetOptionLabel(product.color) || "구성 선택"}
                     </span>
                   ) : useCatalogDropdowns && colorOptions.length > 0 ? (
                     <ProductOptionSelect
@@ -640,7 +650,11 @@ export default function ContractForm({
                   )}
                 </td>
                 <td>
-                  {isSet ? null : useCatalogDropdowns && sizeOptions.length > 0 ? (
+                  {isSet ? null : combinedSize ? (
+                    <span className="contract-doc__product-cell-text">
+                      {combinedSize}
+                    </span>
+                  ) : useCatalogDropdowns && sizeOptions.length > 0 ? (
                     <ProductOptionSelect
                       value={product.size}
                       options={sizeOptions}

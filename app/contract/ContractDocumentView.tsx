@@ -7,11 +7,13 @@ import {
   findCatalogProductByName,
   getVariantComponents,
   isSetProduct,
+  splitColorSize,
   type CatalogProduct,
 } from "@/lib/product-catalog";
 import {
   buildSetSelectionsFromColor,
   createSetComponentSelections,
+  formatSetOptionLabel,
   type SetComponentSelection,
 } from "@/lib/set-product";
 import type { ContractFormValues, ProductRow } from "@/lib/validation/contract";
@@ -115,6 +117,9 @@ function SetProductDocumentComponents({
         };
         const colorOptions = component.colors ?? [];
         const sizeOptions = component.sizes ?? [];
+        const colorValue = selection.color || colorOptions[0] || "";
+        // 저장 값은 "베이지 SS 160X210" 그대로. 보기 화면에서만 색상·사이즈로 나눈다.
+        const combined = sizeOptions.length ? null : splitColorSize(colorValue);
 
         return (
           <tr
@@ -127,7 +132,7 @@ function SetProductDocumentComponents({
             <td>
               {colorOptions.length > 0 ? (
                 <span className="contract-doc__set-component-value">
-                  {selection.color || colorOptions[0]}
+                  {combined?.color ?? colorValue}
                 </span>
               ) : null}
             </td>
@@ -135,6 +140,10 @@ function SetProductDocumentComponents({
               {sizeOptions.length > 0 ? (
                 <span className="contract-doc__set-component-value">
                   {selection.size || sizeOptions[0]}
+                </span>
+              ) : combined ? (
+                <span className="contract-doc__set-component-value">
+                  {combined.size}
                 </span>
               ) : null}
             </td>
@@ -343,6 +352,9 @@ export default function ContractDocumentView({
             {values.products.map((product, index) => {
               const { catalogProduct, isSet, activeComponents, setSelections } =
                 resolveProductRow(product);
+              // 저장 값은 "아이보리 미니 100X150" 그대로. 보기 화면에서만 색상·사이즈로 나눈다.
+              const combined =
+                isSet || product.size ? null : splitColorSize(product.color);
 
               return (
                 <Fragment key={index}>
@@ -362,14 +374,14 @@ export default function ContractDocumentView({
                     </td>
                     <td>
                       <ReadonlyValue
-                        value={product.color}
+                        value={combined?.color ?? formatSetOptionLabel(product.color)}
                         className="contract-doc__product-cell-text"
                       />
                     </td>
                     <td>
                       {isSet ? null : (
                         <ReadonlyValue
-                          value={product.size}
+                          value={combined?.size ?? product.size}
                           className="contract-doc__product-cell-text"
                         />
                       )}

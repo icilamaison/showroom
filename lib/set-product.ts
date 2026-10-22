@@ -129,7 +129,15 @@ export function formatSetOptionName(
     return "";
   }
 
-  return `COLOR=${options.join(" + ")}`;
+  return `COLOR=${options.join(", ")}`;
+}
+
+// 저장 값의 "COLOR=" 접두어는 세트 옵션을 알아보고 복원하는 표식이라 남겨 두고, 화면에서만 뗀다.
+// 예전 " + " 형식으로 저장된 계약서도 ", "로 맞춰 보여준다.
+export function formatSetOptionLabel(color: string): string {
+  return color.trim().startsWith("COLOR=")
+    ? parseSetColorOptions(color).join(", ")
+    : color;
 }
 
 export function parseSetColorOptions(color: string): string[] {
@@ -137,10 +145,10 @@ export function parseSetColorOptions(color: string): string[] {
     return [];
   }
 
-  return color
-    .trim()
-    .slice(6)
-    .split(" + ")
+  // 구분자는 ", "(카페24 주문 옵션 형식). 이전에 저장된 계약서는 " + "로 묶여 있어 둘 다 읽는다.
+  const options = color.trim().slice(6);
+  return options
+    .split(options.includes(", ") ? ", " : " + ")
     .map((option) => option.trim())
     .filter(Boolean);
 }

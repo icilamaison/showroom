@@ -62,13 +62,21 @@ describe("formatSetOptionName", () => {
     );
 
     expect(optionName).toBe(
-      "COLOR=화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
+      "COLOR=화이트 K 180X205, 화이트 QK겸용 200X210, 50X70",
     );
   });
 });
 
 describe("parseSetColorOptions", () => {
   it("parses COLOR= joined options", () => {
+    expect(
+      parseSetColorOptions(
+        "COLOR=화이트 K 180X205, 화이트 QK겸용 200X210, 50X70",
+      ),
+    ).toEqual(["화이트 K 180X205", "화이트 QK겸용 200X210", "50X70"]);
+  });
+
+  it("parses legacy + joined options", () => {
     expect(
       parseSetColorOptions(
         "COLOR=화이트 K 180X205 + 화이트 QK겸용 200X210 + 50X70",
