@@ -103,6 +103,8 @@ export function withSoldOutLabels(
 // 저장 값은 품절·가격 매칭 키라 그대로 두고, 계약서 화면에서만 나눠 보여준다.
 const COMBINED_SIZE_PATTERN =
   /^(.+?)\s+((?:미니|반호|\d+(?:\.\d+)?호|SS|S|Q|K|패밀리)?\s*\d+\s*[Xx×]\s*\d+.*|원형\s*\d+.*)$/;
+// 컬러 뒤에 붙어 온 사이즈 표기. "베이지 Q/K 200X220" → 컬러 "베이지", 사이즈 "Q/K 200X220"
+const SIZE_WORDS_IN_COLOR = /\s+(QK겸용|QK|Q\/K)$/;
 
 export function splitColorSize(
   name: string,
@@ -113,7 +115,14 @@ export function splitColorSize(
   }
 
   const match = name.trim().match(COMBINED_SIZE_PATTERN);
-  return match ? { color: match[1], size: match[2] } : null;
+  if (!match) {
+    return null;
+  }
+
+  const sizeWords = match[1].match(SIZE_WORDS_IN_COLOR)?.[1];
+  return sizeWords
+    ? { color: match[1].replace(SIZE_WORDS_IN_COLOR, ""), size: `${sizeWords} ${match[2]}` }
+    : { color: match[1], size: match[2] };
 }
 
 // "아이보리 미니 100X150" → "아이보리"로 보여주고 사이즈는 사이즈 칸에 따로 표시한다(일반 상품·세트 구성품 공통).
@@ -498,8 +507,6 @@ const SIZE_GROUP_NAMES = [
   "블록 워셔블",
 ];
 const SIZE_GROUP_EXCLUDED_PRODUCT_NOS = [846]; // 쿨포터 냉감 패드 Q: 상품명 150X205, 옵션 155X205
-// 컬러 뒤에 붙어 온 사이즈 표기. "크림화이트 QK겸용" → 컬러 "크림화이트", 사이즈 앞에 "QK겸용"
-const SIZE_WORDS_IN_COLOR = /\s+(QK겸용|QK|Q\/K)$/;
 const BOX_SIZE_PATTERN = /\d+\s*[Xx×]\s*\d+/;
 
 type SizeGroupOption = {
@@ -564,14 +571,10 @@ function getSizeGroupOptions(groupName: string): SizeGroupOption[] {
         continue;
       }
 
-      const colorWords = split.color.match(SIZE_WORDS_IN_COLOR);
       // 인견 패드 "베이지 Q 155X210 (밴드탈부착형)"의 괄호는 사이즈가 아니라 제품 형태라 컬러 쪽에 붙인다
       const note = split.size.match(/\s*(\([^)]*\))$/)?.[1];
-      const color = [split.color.replace(SIZE_WORDS_IN_COLOR, ""), note]
-        .filter(Boolean)
-        .join(" ");
-      const sizeWithoutNote = note ? split.size.slice(0, -note.length).trim() : split.size;
-      const optionSize = colorWords ? `${colorWords[1]} ${sizeWithoutNote}` : sizeWithoutNote;
+      const color = [split.color, note].filter(Boolean).join(" ");
+      const optionSize = note ? split.size.slice(0, -note.length).trim() : split.size;
       // 상품명에 치수가 있으면 상품명을 따른다. 러프 3호처럼 옵션값이 "다이아 2호 200X290"으로 잘못 들어간 상품이 있다
       const size = BOX_SIZE_PATTERN.test(rest) ? rest : optionSize;
       options.push({ member, field, raw: name, color, size, salePrice });
