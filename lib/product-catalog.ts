@@ -381,6 +381,8 @@ const COLOR_GROUP_NAMES = [
   "웨이 터프팅 매트",
   "떼르 매트",
   "플루아 블랭킷",
+  // 지금은 블랙만 진열 중이지만 매트·컬러를 나눠 고르도록 묶는다(로지브릭·프렌치블루 재진열 시 자동 포함)
+  "플루아 매트",
 ];
 
 function getColorGroupMembers(groupName: string): CatalogProduct[] {
@@ -450,7 +452,8 @@ function buildColorGroupProduct(
 const groupedColorProducts = new Set<CatalogProduct>();
 const colorGroupProducts = COLOR_GROUP_NAMES.flatMap((groupName) => {
   const members = getColorGroupMembers(groupName);
-  if (members.length < 2) {
+  // 목록에 직접 적은 그룹이라 컬러가 하나뿐이어도 묶는다(플루아 매트)
+  if (!members.length) {
     return [];
   }
 
