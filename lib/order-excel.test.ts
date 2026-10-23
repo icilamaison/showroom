@@ -163,6 +163,33 @@ describe("buildOrderExcelRows", () => {
     expect(rows[0]["배송메세지"]).toBe("문 앞에 놔주세요");
   });
 
+  it("writes catalog set options per component like the Cafe24 order list", () => {
+    const products = createEmptyProductRows();
+    products[0] = {
+      name: "[SET] 퍼즈필+비건구스필+본느윗 베딩 6colors",
+      type: "",
+      color:
+        "COLOR=화이트 SS 160X210, 50X70, 세레니티 SS 160X210, 세레니티 / 50X70, 크림화이트 SS 110X210",
+      size: "",
+      quantity: "1",
+      unitPrice: "392490",
+      remarks: "",
+    };
+
+    const rows = buildOrderExcelRows({
+      ...basePayload,
+      products,
+    });
+
+    expect(rows[0]["옵션명"]).toBe(
+      "퍼즈필 독일 이불솜(1개) - COLOR=화이트 SS 160X210" +
+        "비건구스필 베개솜(1개) - SIZE=50X70" +
+        "본느윗 이불커버 6colors(1개) - COLOR=세레니티 SS 160X210" +
+        "본느윗 베개커버 6colors(1개) - COLOR=세레니티 - SIZE=50X70" +
+        "본느윗 패드 6colors(1개) - COLOR=크림화이트 SS 110X210",
+    );
+  });
+
   it("uses buyer info when recipient is the same as buyer", () => {
     const products = createEmptyProductRows();
     products[0] = {

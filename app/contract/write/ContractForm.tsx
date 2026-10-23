@@ -37,8 +37,6 @@ import { ContractConsentSection } from "../ContractConsentSection";
 import { ContractCompanyFooterContent } from "../ContractCompanyFooter";
 import "./../contract.css";
 
-const CATALOG_DROPDOWN_ROW_LIMIT = 5;
-
 export const emptyContractFormValues: ContractFormValues = {
   managerName: "",
   writtenDateYear: "",
@@ -548,7 +546,7 @@ export default function ContractForm({
               const isLegacySetColor = product.color.trim().startsWith("COLOR=");
               const isSet = activeComponents.length > 0;
               const useCatalogDropdowns =
-                index < CATALOG_DROPDOWN_ROW_LIMIT && hasProductName && !isSet;
+                hasProductName && !isSet;
               const colorOptions =
                 selectedProduct?.colors && !isSet
                   ? withColorOnlyLabels(withSoldOutLabels(

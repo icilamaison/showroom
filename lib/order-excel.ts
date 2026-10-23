@@ -1,7 +1,7 @@
 import type { ProductRow, PurchaseContractPayload } from "./validation/contract";
 import { formatFullAddress } from "./address";
-import { resolveCafe24Variant } from "./product-catalog";
-import { formatSetOptionLabel } from "./set-product";
+import { findCatalogProductByName, resolveCafe24Variant } from "./product-catalog";
+import { formatCafe24SetOptionName, formatSetOptionLabel } from "./set-product";
 
 export const ORDER_EXCEL_HEADERS = [
   "쇼핑몰주문번호",
@@ -88,11 +88,14 @@ function buildCafe24ProductAndOption(product: ProductRow): {
 } {
   const color = product.color.trim();
 
-  // 세트는 구성품 옵션을 이어 붙인 값. 예전 " + " 형식도 ", "로 맞춘다
+  // 세트는 구성품 옵션을 이어 붙인 값. 카탈로그에서 구성품을 못 찾으면 저장 값 그대로(예전 " + " 형식도 ", "로 맞춘다)
   if (color.startsWith("COLOR=")) {
+    const components = findCatalogProductByName(product.name)?.components;
     return {
       productName: product.name.trim(),
-      optionName: `COLOR=${formatSetOptionLabel(color)}`,
+      optionName: components?.length
+        ? formatCafe24SetOptionName(components, color)
+        : `COLOR=${formatSetOptionLabel(color)}`,
     };
   }
 

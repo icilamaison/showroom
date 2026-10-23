@@ -121,6 +121,10 @@ export function formatSetOptionName(
   const options = components
     .map((_, index) => {
       const selection = selections[index];
+      // 컬러·사이즈를 둘 다 고르는 구성품(본느윗 베개커버)은 사이즈가 빠지지 않게 " / "로 함께 저장한다
+      if (selection?.color && selection.size) {
+        return `${selection.color} / ${selection.size}`;
+      }
       return selection?.color || selection?.size || "";
     })
     .filter(Boolean);
@@ -162,14 +166,16 @@ export function buildSetSelectionsFromColor(
   return components.map((component, index) => {
     const option = options[index] ?? "";
     const catalogProduct = resolveComponentCatalogProduct(component);
-    const size = component.colors?.length ? "" : option;
+    // "세레니티 / 50X70" = 컬러 / 사이즈. "Q/K 200X220"처럼 공백 없는 "/"는 컬러 값의 일부라 나누지 않는다
+    const [colorOption, sizeOption = ""] = option.split(" / ");
+    const size = component.colors?.length ? sizeOption : option;
     const defaults = {
       quantity: String(component.quantity ?? 1),
       unitPrice: resolveComponentUnitPrice(component, catalogProduct, size),
     };
 
     if (component.colors?.length) {
-      return { color: option, size: "", ...defaults };
+      return { color: colorOption, size, ...defaults };
     }
 
     if (component.sizes?.length) {
@@ -178,4 +184,25 @@ export function buildSetSelectionsFromColor(
 
     return { color: option, size: "", ...defaults };
   });
+}
+
+// 엑셀(플레이오토)용: 카페24 주문 목록처럼 구성품마다 이름·수량·옵션을 붙인다.
+// 예: 아카네 차렵이불 Q/K 200X220(1개) - COLOR=브릭 Q/K 200X220아카네 베개커버 3colors(2개) - COLOR=브릭 50X70
+// 카페24도 구성품 사이에 구분자 없이 이어 붙인다.
+export function formatCafe24SetOptionName(
+  components: SetComponent[],
+  color: string,
+): string {
+  return buildSetSelectionsFromColor(components, color)
+    .map((selection, index) => {
+      const component = components[index];
+      return [
+        `${component.name}(${component.quantity ?? 1}개)`,
+        selection.color ? `COLOR=${selection.color}` : "",
+        selection.size ? `SIZE=${selection.size}` : "",
+      ]
+        .filter(Boolean)
+        .join(" - ");
+    })
+    .join("");
 }

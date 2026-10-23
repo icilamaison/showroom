@@ -67,6 +67,23 @@ describe("formatSetOptionName", () => {
   });
 });
 
+describe("formatSetOptionName with color and size", () => {
+  it("keeps both color and size for a component", () => {
+    const components = [
+      { name: "본느윗 베개커버 6colors", colors: ["세레니티"], sizes: ["50X70"] },
+    ];
+    const optionName = formatSetOptionName(components, [
+      { color: "세레니티", size: "50X70", quantity: "1", unitPrice: "100" },
+    ]);
+
+    expect(optionName).toBe("COLOR=세레니티 / 50X70");
+    expect(buildSetSelectionsFromColor(components, optionName)[0]).toMatchObject({
+      color: "세레니티",
+      size: "50X70",
+    });
+  });
+});
+
 describe("parseSetColorOptions", () => {
   it("parses COLOR= joined options", () => {
     expect(
