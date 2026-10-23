@@ -182,11 +182,12 @@ export function searchProducts(query: string, limit = 8): CatalogProduct[] {
     return [];
   }
 
-  return [...colorGroupProducts, ...catalog]
+  return [...colorGroupProducts, ...sizeGroupProducts, ...catalog]
     .filter((product) => {
       if (
         groupedSizeProducts.has(product) ||
         groupedColorProducts.has(product) ||
+        sizeGroupMembers.has(product) ||
         HIDDEN_FROM_SEARCH_PATTERN.test(product.productName)
       ) {
         return false;
@@ -461,6 +462,182 @@ const colorGroupProducts = COLOR_GROUP_NAMES.flatMap((groupName) => {
   return [buildColorGroupProduct(groupName, members)];
 });
 
+/* ---------- 목록으로 묶는 사이즈 그룹 ---------- */
+// 대표 상품명에 "Ncolors"가 없거나(마레 / 마레 2호 200X290 ...), 형제 상품 옵션 표기가 달라
+// 자동으로 안 묶이는 상품(나이트템프 차렵이불 2colors / Q/K "크림화이트 QK겸용 200X230")을 그룹명으로 묶는다.
+// 클린트(같은 이름 상품 2개), 쿨포터 냉감 패드 Q(상품명·옵션 사이즈 불일치), 이불솜류는 일부러 뺐다.
+const SIZE_GROUP_NAMES = [
+  "마레",
+  "러프 스퀘어",
+  "러프 다이아",
+  "사하라",
+  "프레임",
+  "샌드",
+  "몬타",
+  "코티지",
+  "노블",
+  "베이",
+  "유닛 아이보리",
+  "유닛 베이지",
+  "스트라이프",
+  "드로잉 라인",
+  "드로잉 그리드",
+  "르네 워셔블",
+  "우디 대자리",
+  "쿨포터 냉감 홑이불",
+  "쿨포터 냉감 패드",
+  "부클",
+  "나이트템프 차렵이불",
+  "본느윗프레임 차렵이불",
+  "아카네 차렵이불",
+  "본느윗 차렵이불",
+  "오브 차렵이불",
+  "인견 이불",
+  "인견 패드",
+  "본느윗 매트리스커버",
+  "블록 워셔블",
+];
+const SIZE_GROUP_EXCLUDED_PRODUCT_NOS = [846]; // 쿨포터 냉감 패드 Q: 상품명 150X205, 옵션 155X205
+// 컬러 뒤에 붙어 온 사이즈 표기. "크림화이트 QK겸용" → 컬러 "크림화이트", 사이즈 앞에 "QK겸용"
+const SIZE_WORDS_IN_COLOR = /\s+(QK겸용|QK|Q\/K)$/;
+const BOX_SIZE_PATTERN = /\d+\s*[Xx×]\s*\d+/;
+
+type SizeGroupOption = {
+  member: CatalogProduct;
+  field: "COLOR" | "SIZE";
+  raw: string;
+  color: string;
+  size: string;
+  salePrice: number;
+};
+
+// 멤버 상품의 상품명 뒷부분(사이즈). 없으면 대표 상품이라 "".
+function getSizeGroupRest(member: CatalogProduct, groupName: string): string | null {
+  if (member.productName === groupName) {
+    return "";
+  }
+
+  const rest = member.productName
+    .slice(groupName.length + 1)
+    .replace(/\s*ORDER-MADE$/, "")
+    .trim();
+  if (/^\d+colors$/.test(rest)) {
+    return "";
+  }
+
+  // "2호 200X290" / "Q" / "Q/K 200X220"처럼 사이즈로만 된 뒷부분만 멤버로 본다(스트라이프 매트 올리브 제외)
+  return rest &&
+    (splitColorSize(`_ ${rest}`)?.size === rest ||
+      /^(SS|Q|K|Q\/K)(\s+\d+\s*[Xx×]\s*\d+)?$/.test(rest))
+    ? rest
+    : null;
+}
+
+function getSizeGroupOptions(groupName: string): SizeGroupOption[] {
+  const options: SizeGroupOption[] = [];
+
+  for (const member of catalog) {
+    const isMember =
+      (member.productName === groupName || member.productName.startsWith(`${groupName} `)) &&
+      !member.components?.length &&
+      !SIZE_GROUP_EXCLUDED_PRODUCT_NOS.includes(member.productNo) &&
+      !HIDDEN_FROM_SEARCH_PATTERN.test(member.productName);
+    const rest = isMember ? getSizeGroupRest(member, groupName) : null;
+    if (rest == null) {
+      continue;
+    }
+
+    // 블록 워셔블·샌드처럼 컬러가 SIZE 옵션에 붙어 오는 상품도 있다
+    const colorNames = Object.keys(member.colors ?? {});
+    const field = colorNames.length ? "COLOR" : "SIZE";
+    const rawOptions = colorNames.length
+      ? colorNames.map((name) => ({ name, salePrice: member.salePrice }))
+      : (member.sizes ?? []).map((option) => ({
+          name: getSizeOptionName(option),
+          salePrice:
+            (typeof option === "object" ? option.salePrice : undefined) ?? member.salePrice,
+        }));
+
+    for (const { name, salePrice } of rawOptions) {
+      const split = splitColorSize(name);
+      if (!split) {
+        continue;
+      }
+
+      const colorWords = split.color.match(SIZE_WORDS_IN_COLOR);
+      // 인견 패드 "베이지 Q 155X210 (밴드탈부착형)"의 괄호는 사이즈가 아니라 제품 형태라 컬러 쪽에 붙인다
+      const note = split.size.match(/\s*(\([^)]*\))$/)?.[1];
+      const color = [split.color.replace(SIZE_WORDS_IN_COLOR, ""), note]
+        .filter(Boolean)
+        .join(" ");
+      const sizeWithoutNote = note ? split.size.slice(0, -note.length).trim() : split.size;
+      const optionSize = colorWords ? `${colorWords[1]} ${sizeWithoutNote}` : sizeWithoutNote;
+      // 상품명에 치수가 있으면 상품명을 따른다. 러프 3호처럼 옵션값이 "다이아 2호 200X290"으로 잘못 들어간 상품이 있다
+      const size = BOX_SIZE_PATTERN.test(rest) ? rest : optionSize;
+      options.push({ member, field, raw: name, color, size, salePrice });
+    }
+  }
+
+  return options;
+}
+
+const sizeGroupMembers = new Set<CatalogProduct>();
+const sizeGroupOptionsByName = new Map<string, SizeGroupOption[]>();
+const sizeGroupProducts = SIZE_GROUP_NAMES.flatMap((groupName) => {
+  const options = getSizeGroupOptions(groupName);
+  const members = [...new Set(options.map((option) => option.member))];
+  if (members.length < 2) {
+    return [];
+  }
+
+  members.forEach((member) => sizeGroupMembers.add(member));
+  sizeGroupOptionsByName.set(groupName, options);
+
+  const colors = Object.fromEntries(
+    options.map((option) => [option.color, option.member.colors?.[option.raw] ?? ""]),
+  );
+  const sizes = [...new Set(options.map((option) => option.size))]
+    .sort((a, b) => getSizeArea(a) - getSizeArea(b))
+    .map((size) => ({
+      name: size,
+      salePrice: options.find((option) => option.size === size)?.salePrice,
+    }));
+
+  // 품절은 사이즈별. 해당 사이즈에 없는 컬러도 고르지 못하게 품절로 표시한다
+  const soldOutColorsBySize = Object.fromEntries(
+    sizes.map(({ name }) => [
+      name,
+      Object.keys(colors).filter((color) => {
+        const option = options.find((item) => item.size === name && item.color === color);
+        return (
+          !option ||
+          [...(option.member.soldOutColors ?? []), ...(option.member.soldOutSizes ?? [])].includes(
+            option.raw,
+          )
+        );
+      }),
+    ]),
+  );
+  const colorCount = Object.keys(colors).length;
+  const base = members.find((member) => member.productName === groupName) ?? members[0];
+
+  return [
+    {
+      ...base,
+      productName: groupName,
+      salePrice: sizes[0]?.salePrice ?? base.salePrice,
+      colors,
+      colorPrices: undefined,
+      sizes,
+      soldOutColors: [],
+      soldOutSizes: sizes
+        .filter(({ name }) => soldOutColorsBySize[name].length === colorCount)
+        .map(({ name }) => name),
+      soldOutColorsBySize,
+    } as CatalogProduct,
+  ];
+});
+
 // 엑셀(플레이오토)용: 계약서에서 묶어 고른 값을 실제 카페24 상품명과 원래 옵션값으로 되돌린다.
 // 예: 슬록 8colors / 아이보리 / 1호 160X240 → 슬록 1호 160X240 / COLOR=아이보리 1호 160X240
 //     그레인 매트 / 샌드브라운 / M 48X120 → 그레인 매트 샌드브라운 / SIZE=M 48X120
@@ -471,6 +648,17 @@ export function resolveCafe24Variant(
   size: string,
 ): { productName: string; color: string; size: string } {
   const productName = name.trim();
+
+  const sizeGroupOption = sizeGroupOptionsByName
+    .get(productName)
+    ?.find((option) => option.color === color && option.size === size);
+  if (sizeGroupOption) {
+    return {
+      productName: sizeGroupOption.member.productName,
+      color: sizeGroupOption.field === "COLOR" ? sizeGroupOption.raw : "",
+      size: sizeGroupOption.field === "SIZE" ? sizeGroupOption.raw : "",
+    };
+  }
 
   if (COLOR_GROUP_NAMES.includes(productName)) {
     const member = catalog.find(
