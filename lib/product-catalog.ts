@@ -539,7 +539,7 @@ const SIZE_GROUP_NAMES = [
   "쿨포터 냉감 홑이불",
   "쿨포터 냉감 패드",
   "부클",
-  "나이트템프 차렵이불",
+  "나이트템프 모달 차렵이불",
   "본느윗프레임 차렵이불",
   "아카네 차렵이불",
   "본느윗 차렵이불",
@@ -664,7 +664,14 @@ const sizeGroupProducts = SIZE_GROUP_NAMES.flatMap((groupName) => {
   }
 
   members.forEach((member) => sizeGroupMembers.add(member));
-  const productName = SIZE_GROUP_DISPLAY_NAMES[groupName] ?? groupName;
+  // 대표 상품("본느윗프레임 차렵이불 4colors")이 있으면 그 이름으로 보여준다. ORDER-MADE가 없는 쪽을 우선한다
+  const representative = members
+    .filter((member) => member.productName !== groupName && getSizeGroupRest(member, groupName) === "")
+    .sort((a, b) => Number(/ORDER-MADE/.test(a.productName)) - Number(/ORDER-MADE/.test(b.productName)))[0];
+  const productName =
+    SIZE_GROUP_DISPLAY_NAMES[groupName] ?? representative?.productName ?? groupName;
+  // 이전에 그룹명으로 저장된 계약서도 엑셀에서 원래 상품으로 되돌릴 수 있게 둘 다 등록한다
+  sizeGroupOptionsByName.set(groupName, options);
   sizeGroupOptionsByName.set(productName, options);
 
   const colors = Object.fromEntries(
