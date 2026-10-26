@@ -186,15 +186,14 @@ export function buildSetSelectionsFromColor(
   });
 }
 
-// 엑셀(플레이오토)용: 카페24 주문 목록의 세트 옵션명과 같은 형식으로 만든다.
-// 예: [세트][SET] 아카네 차렵 3colors아카네 차렵이불 3colors(1개) - COLOR=브릭 SS 160X210아카네 베개커버 3colors(1개) - COLOR=브릭 50X70
-// 카페24도 구성품 사이에 구분자 없이 이어 붙인다.
+// 엑셀(플레이오토)용: 카페24 주문 목록의 구성품 표기(구성품명(N개) - COLOR=… - SIZE=…)를 따른다.
+// 카페24는 구성품을 구분자 없이 이어 붙이지만, 읽기 쉽게 " / "로 나눈다.
+// 예: 아카네 차렵이불 3colors(1개) - COLOR=브릭 SS 160X210 / 아카네 베개커버 3colors(1개) - COLOR=브릭 50X70
 export function formatCafe24SetOptionName(
-  setName: string,
   components: SetComponent[],
   color: string,
 ): string {
-  const options = buildSetSelectionsFromColor(components, color)
+  return buildSetSelectionsFromColor(components, color)
     .map((selection, index) => {
       const component = components[index];
       return [
@@ -205,7 +204,5 @@ export function formatCafe24SetOptionName(
         .filter(Boolean)
         .join(" - ");
     })
-    .join("");
-
-  return `[세트]${setName}${options}`;
+    .join(" / ");
 }
