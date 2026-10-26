@@ -342,9 +342,12 @@ function getSizeSiblings(product: CatalogProduct): CatalogProduct[] {
     return [];
   }
 
+  // 목록 그룹(SIZE_GROUP_NAMES)에 따로 묶인 상품은 빼낸다(본느윗 패드 6colors ↔ 본느윗 패드 패밀리 ORDER-MADE)
   return catalog.filter(
     (candidate) =>
-      candidate !== product && getSiblingSize(candidate, baseName) != null,
+      candidate !== product &&
+      !sizeGroupMembers.has(candidate) &&
+      getSiblingSize(candidate, baseName) != null,
   );
 }
 
@@ -406,11 +409,6 @@ export function withSizeSiblings(product: CatalogProduct): CatalogProduct {
     soldOutColorsBySize,
   };
 }
-
-// 대표 상품에 묶인 사이즈 상품은 검색에서 뺀다.
-// 같은 상품을 두 경로로 고르면 저장 값이 "오트밀" / "오트밀 2호 200X300"으로 갈리기 때문.
-// 데이터는 그대로라 이름 조회(findCatalogProductByName)는 영향 없다.
-const groupedSizeProducts = new Set(catalog.flatMap(getSizeSiblings));
 
 // 공동구매 전용·테스트·사은품 상품은 쇼룸 계약서에서 고를 일이 없어 검색에서 뺀다.
 const HIDDEN_FROM_SEARCH_PATTERN = /공동구매|테스트|test|사은품/i;
@@ -555,6 +553,8 @@ const SIZE_GROUP_NAMES = [
   "브리즈 리버서블 이불",
   "본느윗 매트리스커버 하이탑",
   "쿠션솜",
+  // 패밀리 사이즈는 ORDER-MADE라 본느윗 패드 6colors와 따로 고른다
+  "본느윗 패드 패밀리",
 ];
 const SIZE_GROUP_EXCLUDED_PRODUCT_NOS = [846]; // 쿨포터 냉감 패드 Q: 상품명 150X205, 옵션 155X205
 const BOX_SIZE_PATTERN = /\d+\s*[Xx×]\s*\d+/;
@@ -578,7 +578,8 @@ function getSizeGroupRest(member: CatalogProduct, groupName: string): string | n
     .slice(groupName.length + 1)
     .replace(/\s*ORDER-MADE$/, "")
     .trim();
-  if (/^\d+colors$/.test(rest)) {
+  // 카페24 상품명 오타("6colos")도 대표 상품으로 본다
+  if (/^\d+colou?r?s$/.test(rest)) {
     return "";
   }
 
@@ -639,7 +640,9 @@ function getSizeGroupOptions(groupName: string): SizeGroupOption[] {
         ? `${split.color} ${season.replace(/가을$/, "가을용")}`
         : [split.color, note].filter(Boolean).join(" ");
       // 상품명에 치수가 있으면 상품명을 따른다. 러프 3호처럼 옵션값이 "다이아 2호 200X290"으로 잘못 들어간 상품이 있다
-      const size = BOX_SIZE_PATTERN.test(rest) ? rest : optionSize;
+      // 옵션값이 같은 치수로 끝나면("패밀리 260X210") 옵션값이 더 자세하므로 그대로 쓴다
+      const size =
+        BOX_SIZE_PATTERN.test(rest) && !optionSize.endsWith(rest) ? rest : optionSize;
       options.push({ member, field, raw: name, color, size, salePrice });
     }
   }
@@ -723,6 +726,12 @@ const sizeGroupProducts = SIZE_GROUP_NAMES.flatMap((groupName) => {
     } as CatalogProduct,
   ];
 });
+
+// 대표 상품에 묶인 사이즈 상품은 검색에서 뺀다.
+// 같은 상품을 두 경로로 고르면 저장 값이 "오트밀" / "오트밀 2호 200X300"으로 갈리기 때문.
+// 데이터는 그대로라 이름 조회(findCatalogProductByName)는 영향 없다.
+// 목록 그룹 멤버(sizeGroupMembers)를 빼야 해서 사이즈 그룹을 만든 뒤에 계산한다.
+const groupedSizeProducts = new Set(catalog.flatMap(getSizeSiblings));
 
 // 엑셀(플레이오토)용: 계약서에서 묶어 고른 값을 실제 카페24 상품명과 원래 옵션값으로 되돌린다.
 // 예: 슬록 8colors / 아이보리 / 1호 160X240 → 슬록 1호 160X240 / COLOR=아이보리 1호 160X240
