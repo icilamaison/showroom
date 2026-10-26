@@ -466,16 +466,9 @@ export default function AdminContractDetailPage() {
                   />
                   {purchasePayload ? (
                     <div className="admin-detail-actions admin-detail-actions--start">
-                      {/* 승인번호 저장(PlayAuto 업로드) 후에는 주문과 어긋나므로 수정할 수 없다 */}
                       <button
                         type="button"
                         className="app-button app-button--secondary"
-                        disabled={Boolean(savedApprovalNumber)}
-                        title={
-                          savedApprovalNumber
-                            ? "승인번호가 저장된 계약서는 수정할 수 없습니다."
-                            : undefined
-                        }
                         onClick={() => router.push(`/contract/write?edit=${contract.id}`)}
                       >
                         계약서 수정

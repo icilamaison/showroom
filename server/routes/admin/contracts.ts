@@ -170,10 +170,6 @@ contractsRouter.put("/:id", async (req, res) => {
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
 
-    if (result === "locked") {
-      return sendError(res, "승인번호가 저장된 계약서는 수정할 수 없습니다.", 409);
-    }
-
     return sendSuccess(res, { id });
   } catch (error) {
     console.error("[admin/contracts] Failed to update contract:", error);

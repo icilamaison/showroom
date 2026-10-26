@@ -86,10 +86,9 @@ export async function createContract(
   }
 }
 
-export type UpdateContractResult = "updated" | "not_found" | "locked";
+export type UpdateContractResult = "updated" | "not_found";
 
-// 작성 후 오타 수정. 승인번호를 저장한(PlayAuto에 올린) 계약서는 주문과 어긋나므로 막는다.
-// 고객 서명은 그대로 두고 수정 전후 내용을 contract_edits에 남긴다.
+// 작성 후 오타 수정. 고객 서명은 그대로 두고 수정 전후 내용을 contract_edits에 남긴다.
 export async function updateContract(
   id: number,
   input: ContractInput,
@@ -101,19 +100,14 @@ export async function updateContract(
   try {
     await client.query("BEGIN");
 
-    const current = await client.query<{ payload: unknown; approval_number: string | null }>(
-      "SELECT payload, approval_number FROM contracts WHERE id = $1 FOR UPDATE",
+    const current = await client.query<{ payload: unknown }>(
+      "SELECT payload FROM contracts WHERE id = $1 FOR UPDATE",
       [id],
     );
 
     if (!current.rowCount) {
       await client.query("ROLLBACK");
       return "not_found";
-    }
-
-    if (current.rows[0].approval_number) {
-      await client.query("ROLLBACK");
-      return "locked";
     }
 
     const payload = buildPayload(input, rawPayload);

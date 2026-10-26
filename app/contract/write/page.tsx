@@ -63,12 +63,6 @@ export default function ContractWritePage() {
 
     fetchAdminContractById(id)
       .then((contract) => {
-        if (contract.approvalNumber) {
-          window.alert("승인번호가 저장된 계약서는 수정할 수 없습니다.");
-          router.replace(`/admin/contracts/${id}`);
-          return;
-        }
-
         const payload = contract.payload as Partial<ContractFormValues>;
         const products = [...(payload.products ?? [])];
         while (products.length < PRODUCT_ROW_COUNT) {
