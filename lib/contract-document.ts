@@ -32,6 +32,8 @@ export function purchasePayloadToFormValues(
     signatureDataUrl: payload.signatureDataUrl,
     termsAgreed: payload.termsAgreed,
     marketingConsentAgreed: payload.marketingConsentAgreed ?? false,
+    // 스키마에 없는 값이라 원본 payload에서 그대로 꺼낸다
+    noticeAnnotationImage: (payload as { noticeAnnotationImage?: string }).noticeAnnotationImage,
   };
 }
 

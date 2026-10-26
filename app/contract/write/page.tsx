@@ -27,11 +27,11 @@ import {
 } from "@/lib/validation/contract";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../../ui.css";
 import "../contract.css";
 import ContractCompanyFooter from "../ContractCompanyFooter";
-import ContractNoticeDocument from "../ContractNoticeDocument";
+import NoticeAnnotator, { type NoticeAnnotatorHandle } from "../NoticeAnnotator";
 import ContractForm, { createInitialContractFormValues } from "./ContractForm";
 
 export default function ContractWritePage() {
@@ -51,6 +51,7 @@ export default function ContractWritePage() {
   // 계약서 작성 → 배송·교환·반품 안내 동의 → 제출 순서
   const [step, setStep] = useState<"form" | "notice">("form");
   const [noticeAgreed, setNoticeAgreed] = useState(false);
+  const noticeAnnotatorRef = useRef<NoticeAnnotatorHandle>(null);
   // 관리자 상세의 "수정"으로 들어오면(?edit=계약서ID) 저장된 내용을 채우고, 저장 시 같은 계약서를 고친다
   const [editId, setEditId] = useState<number | null>(null);
   const [editContractNumber, setEditContractNumber] = useState("");
@@ -530,7 +531,11 @@ export default function ContractWritePage() {
     setIsSubmitting(true);
 
     try {
-      const result = await submitContract(validation.data);
+      const noticeAnnotationImage = await noticeAnnotatorRef.current?.capture();
+      const result = await submitContract({
+        ...validation.data,
+        ...(noticeAnnotationImage ? { noticeAnnotationImage } : {}),
+      });
       router.push(
         `/contract/complete?contractNumber=${encodeURIComponent(result.contractNumber)}&viewToken=${encodeURIComponent(result.viewToken)}`,
       );
@@ -583,7 +588,7 @@ export default function ContractWritePage() {
               </p>
             ) : null}
 
-            <ContractNoticeDocument className="contract-doc contract-doc--document contract-doc--sheet notice-document" />
+            <NoticeAnnotator ref={noticeAnnotatorRef} />
 
             <div className="contract-doc-flow__actions">
               <label className="notice-agree">

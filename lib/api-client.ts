@@ -40,7 +40,7 @@ async function parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
 }
 
 export async function submitContract(
-  payload: ValidatedContractFormValues,
+  payload: ValidatedContractFormValues & { noticeAnnotationImage?: string },
 ): Promise<SubmitContractResult> {
   const response = await fetch("/api/contracts", {
     method: "POST",

@@ -17,7 +17,8 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.use(express.json());
+  // 서명·안내문 필기 이미지(data URL)가 들어가 기본 100kb를 넘는다
+  app.use(express.json({ limit: "10mb" }));
   app.use(cookieParser());
 
   app.use("/api", apiRouter);

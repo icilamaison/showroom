@@ -110,7 +110,12 @@ export async function updateContract(
       return "not_found";
     }
 
-    const payload = buildPayload(input, rawPayload);
+    // 수정 화면은 안내문 단계를 거치지 않으므로 작성 때 저장한 필기 이미지를 그대로 이어받는다
+    const previous = (current.rows[0].payload ?? {}) as { noticeAnnotationImage?: string };
+    const payload = buildPayload(input, {
+      noticeAnnotationImage: previous.noticeAnnotationImage,
+      ...(typeof rawPayload === "object" && rawPayload !== null ? rawPayload : {}),
+    });
 
     await client.query(
       `UPDATE contracts SET
