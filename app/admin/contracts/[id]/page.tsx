@@ -259,6 +259,8 @@ export default function AdminContractDetailPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [approvalNumber, setApprovalNumber] = useState("");
+  // 서버에 저장된 승인번호. 입력값과 같을 때만 주문 엑셀을 받을 수 있다
+  const [savedApprovalNumber, setSavedApprovalNumber] = useState("");
   const [isSavingApprovalNumber, setIsSavingApprovalNumber] = useState(false);
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
@@ -278,6 +280,7 @@ export default function AdminContractDetailPage() {
         setContract(result);
         setSelectedStatus(result.status);
         setApprovalNumber(result.approvalNumber ?? "");
+        setSavedApprovalNumber(result.approvalNumber ?? "");
       } catch (loadError) {
         if (loadError instanceof ApiClientError) {
           if (loadError.status === 401) {
@@ -342,6 +345,7 @@ export default function AdminContractDetailPage() {
 
     try {
       await updateAdminContractApprovalNumber(contract.id, approvalNumber);
+      setSavedApprovalNumber(approvalNumber);
       window.alert("저장되었습니다.");
     } catch (saveError) {
       if (saveError instanceof ApiClientError) {
@@ -358,6 +362,10 @@ export default function AdminContractDetailPage() {
       setIsSavingApprovalNumber(false);
     }
   }
+
+  // 저장 후 입력값을 다시 바꾸면 저장 전까지 다운로드를 막는다
+  const isApprovalNumberSaved =
+    approvalNumber.trim() !== "" && approvalNumber === savedApprovalNumber;
 
   const purchasePayload = isPurchaseContractPayload(contract?.payload)
     ? contract.payload
@@ -596,14 +604,10 @@ export default function AdminContractDetailPage() {
                       <button
                         type="button"
                         className="app-button"
-                        disabled={isDownloading}
+                        disabled={isDownloading || !isApprovalNumberSaved}
+                        title={isApprovalNumberSaved ? undefined : "승인번호를 저장해야 다운로드할 수 있습니다."}
                         onClick={() => {
-                          if (!contract) {
-                            return;
-                          }
-
-                          if (!approvalNumber.trim()) {
-                            window.alert("승인번호를 입력해주세요.");
+                          if (!contract || !isApprovalNumberSaved) {
                             return;
                           }
 
