@@ -17,6 +17,28 @@ const TEMPLATE_PATH = path.join(
   "manual-order-template.xlsx",
 );
 
+const MAX_COLUMN_WIDTH = 255; // 엑셀 열 너비 상한
+
+// 엑셀 열 너비 단위는 영문 한 글자 기준이라 한글 등 전각 문자는 2칸으로 센다
+function getTextWidth(value: string): number {
+  let width = 0;
+  for (const char of value) {
+    width += /[ᄀ-ᇿ　-鿿가-힯＀-￯]/.test(char) ? 2 : 1;
+  }
+  return width;
+}
+
+// 열마다 가장 긴 값(머리글 포함)에 맞춰 너비를 넓힌다
+function fitColumnWidths(sheet: ExcelJS.Worksheet): void {
+  sheet.columns.forEach((column) => {
+    let maxWidth = 0;
+    column.eachCell?.({ includeEmpty: false }, (cell) => {
+      maxWidth = Math.max(maxWidth, getTextWidth(String(cell.value ?? "")));
+    });
+    column.width = Math.min(maxWidth + 2, MAX_COLUMN_WIDTH);
+  });
+}
+
 export class OrderExcelGenerationError extends Error {
   constructor(message: string) {
     super(message);
@@ -46,6 +68,8 @@ async function createOrderExcelWorkbook(
       ORDER_EXCEL_HEADERS.map((header) => row[header] ?? ""),
     );
   }
+
+  fitColumnWidths(outputUploadSheet);
 
   if (countrySheet) {
     const outputCountrySheet = workbook.addWorksheet("국가코드표");
