@@ -33,9 +33,11 @@ export default function HomePage() {
           <Link href="/contract/write" className="app-menu__item">
             러그 계약서 작성
           </Link>
+          {/* 커튼 주문서는 준비 중이라 메뉴에서 가린다. 페이지(/contract/curtain)는 그대로 둔다
           <Link href="/contract/curtain" className="app-menu__item">
             커튼 주문서 작성(테스트)
           </Link>
+          */}
           <Link href="/admin/contracts" className="app-menu__item">
             계약서 조회
           </Link>
