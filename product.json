@@ -761,7 +761,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1132,
-        "productName": "[SET] 나이트템프 커버 K",
+        "productName": "[SET] 나이트템프 모달 커버 K",
         "consumerPrice": 0,
         "supplyPrice": 0,
         "productPrice": 211591,
@@ -795,7 +795,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1131,
-        "productName": "[SET] 나이트템프 커버 Q",
+        "productName": "[SET] 나이트템프 모달 커버 Q",
         "consumerPrice": 0,
         "supplyPrice": 0,
         "productPrice": 176527,
@@ -829,7 +829,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1130,
-        "productName": "[SET] 나이트템프 커버 2colors",
+        "productName": "[SET] 나이트템프 모달 커버 2colors",
         "consumerPrice": 0,
         "supplyPrice": 0,
         "productPrice": 133000,
@@ -862,7 +862,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1129,
-        "productName": "[SET] 나이트템프 차렵 K",
+        "productName": "[SET] 나이트템프 모달 차렵 K",
         "consumerPrice": 0,
         "supplyPrice": 0,
         "productPrice": 302273,
@@ -904,11 +904,11 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1128,
-        "productName": "[SET] 나이트템프 차렵 Q",
+        "productName": "[SET] 나이트템프 모달 차렵 Q",
         "consumerPrice": 0,
         "supplyPrice": 0,
-        "productPrice": 178336,
-        "salePrice": 196170,
+        "productPrice": 287155,
+        "salePrice": 315870,
         "setDiscountRate": 5,
         "promotions": [
             "bedding"
@@ -938,11 +938,11 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1126,
-        "productName": "[SET] 나이트템프 차렵 2colors",
+        "productName": "[SET] 나이트템프 모달 차렵 2colors",
         "consumerPrice": 0,
         "supplyPrice": 0,
-        "productPrice": 128764,
-        "salePrice": 141640,
+        "productPrice": 220655,
+        "salePrice": 242720,
         "setDiscountRate": 5,
         "promotions": [
             "bedding"
@@ -971,7 +971,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1125,
-        "productName": "나이트템프 베개커버 2colors",
+        "productName": "나이트템프 모달 베개커버 2colors",
         "consumerPrice": 35000,
         "supplyPrice": 0,
         "productPrice": 22273,
@@ -986,7 +986,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1123,
-        "productName": "나이트템프 패드 K",
+        "productName": "나이트템프 모달 패드 K",
         "consumerPrice": 205000,
         "supplyPrice": 0,
         "productPrice": 130455,
@@ -1001,7 +1001,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1122,
-        "productName": "나이트템프 패드 Q",
+        "productName": "나이트템프 모달 패드 Q",
         "consumerPrice": 180000,
         "supplyPrice": 0,
         "productPrice": 114545,
@@ -1016,7 +1016,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1121,
-        "productName": "나이트템프 패드 2colors",
+        "productName": "나이트템프 모달 패드 2colors",
         "consumerPrice": 152000,
         "supplyPrice": 0,
         "productPrice": 96727,
@@ -1031,7 +1031,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1120,
-        "productName": "나이트템프 누빔이불커버 K",
+        "productName": "나이트템프 모달 누빔이불커버 K",
         "consumerPrice": 280000,
         "supplyPrice": 0,
         "productPrice": 178182,
@@ -1046,7 +1046,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1119,
-        "productName": "나이트템프 누빔이불커버 Q",
+        "productName": "나이트템프 모달 누빔이불커버 Q",
         "consumerPrice": 222000,
         "supplyPrice": 0,
         "productPrice": 141273,
@@ -1061,7 +1061,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1118,
-        "productName": "나이트템프 누빔이불커버 2colors",
+        "productName": "나이트템프 모달 누빔이불커버 2colors",
         "consumerPrice": 185000,
         "supplyPrice": 0,
         "productPrice": 117727,
@@ -1076,7 +1076,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1117,
-        "productName": "나이트템프 차렵이불 Q/K",
+        "productName": "나이트템프 모달 차렵이불 Q/K",
         "consumerPrice": 225000,
         "supplyPrice": 0,
         "productPrice": 143182,
@@ -1091,7 +1091,7 @@
         "internalCode": "나이트템프",
         "category": "침구",
         "productNo": 1116,
-        "productName": "나이트템프 차렵이불 2colors",
+        "productName": "나이트템프 모달 차렵이불 2colors",
         "consumerPrice": 178000,
         "supplyPrice": 0,
         "productPrice": 113273,
@@ -2585,9 +2585,6 @@
                 "name": "50X120",
                 "salePrice": 76800
             }
-        ],
-        "soldOutSizes": [
-            "40X60"
         ]
     },
     {
@@ -3242,7 +3239,10 @@
             "세레니티 Q 150X200X35": "#A0A8C0",
             "미드나잇 Q 150X200X35": "#22222B",
             "에스프레소 Q 150X200X35": "#3C2E2A"
-        }
+        },
+        "soldOutColors": [
+            "에스프레소 Q 150X200X35"
+        ]
     },
     {
         "productCode": "P0000BHS",
@@ -4881,8 +4881,7 @@
             "옐로우": "#fcc351"
         },
         "soldOutColors": [
-            "딥블루",
-            "옐로우"
+            "딥블루"
         ]
     },
     {
@@ -5232,10 +5231,7 @@
             "밀크화이트 SS 160X210": "#ffffff",
             "페일블루 SS 160X210": "#cde0e6",
             "바닐라무스 SS 160X210": "#fffbcf"
-        },
-        "soldOutColors": [
-            "페일블루 SS 160X210"
-        ]
+        }
     },
     {
         "productCode": "P0000BED",
@@ -6310,6 +6306,9 @@
                 "name": "L 48X180",
                 "salePrice": 100800
             }
+        ],
+        "soldOutSizes": [
+            "L 48X180"
         ]
     },
     {
@@ -8782,18 +8781,18 @@
         "internalCode": "",
         "category": "",
         "productNo": 1257,
-        "productName": "본느윗 매트리스커버 6colos ORDER-MADE",
+        "productName": "본느윗 매트리스커버 6colors ORDER-MADE",
         "consumerPrice": 164000,
         "supplyPrice": 0,
         "productPrice": 96909,
         "salePrice": 106600,
         "colors": {
-            "세레니티 EK 195X200X35": "",
-            "미드나잇 EK 195X200X35": "",
-            "에스프레소 EK 195X200X35": "",
-            "크림화이트 EK 195X200X35": "",
-            "누디베이지 EK 195X200X35": "",
-            "소프트블랙 EK 195X200X35": ""
+            "크림화이트 EK 195X200X35": "#ffffff",
+            "누디베이지 EK 195X200X35": "#d1bfa3",
+            "소프트블랙 EK 195X200X35": "#000000",
+            "세레니티 EK 195X200X35": "#A0A8C0",
+            "미드나잇 EK 195X200X35": "#22222B",
+            "에스프레소 EK 195X200X35": "#3C2E2A"
         }
     },
     {
@@ -8999,11 +8998,11 @@
         "productPrice": 480000,
         "salePrice": 528000,
         "colors": {
-            "크림화이트 200X250": "",
-            "라탄 200X250": "",
-            "코코브라운 200X250": "",
-            "실버그레이 200X250": "",
-            "어반블랙 200X250": ""
+            "크림화이트 200X250": "#f7f6ef",
+            "라탄 200X250": "#d1b386",
+            "코코브라운 200X250": "#755e36",
+            "실버그레이 200X250": "#e6e6e6",
+            "어반블랙 200X250": "#404040"
         },
         "soldOutColors": [
             "어반블랙 200X250"
@@ -9129,6 +9128,231 @@
         "supplyPrice": 0,
         "productPrice": 96000,
         "salePrice": 105600,
-        "colors": {}
+        "colors": {},
+        "types": [
+            "라이트타입 1.1cm"
+        ]
+    },
+    {
+        "productCode": "P0000CBI",
+        "internalCode": "",
+        "category": "",
+        "productNo": 1386,
+        "productName": "옴브라 암막 커튼",
+        "consumerPrice": 142500,
+        "supplyPrice": 0,
+        "productPrice": 103636,
+        "salePrice": 114000,
+        "sizes": [
+            "100X250 이하",
+            "200X250 이하",
+            "300X250 이하",
+            "400X250 이하",
+            "500X250 이하",
+            "600X250 이하",
+            "700X250 이하"
+        ],
+        "soldOutSizes": [
+            "100X250 이하",
+            "200X250 이하",
+            "300X250 이하",
+            "400X250 이하",
+            "500X250 이하",
+            "600X250 이하",
+            "700X250 이하"
+        ]
+    },
+    {
+        "productCode": "P0000CBH",
+        "internalCode": "",
+        "category": "",
+        "productNo": 1385,
+        "productName": "베로 린넨 커튼",
+        "consumerPrice": 150000,
+        "supplyPrice": 0,
+        "productPrice": 109091,
+        "salePrice": 120000,
+        "sizes": [
+            "100X250 이하",
+            "200X250 이하",
+            "300X250 이하",
+            "400X250 이하",
+            "500X250 이하",
+            "600X250 이하",
+            "700X250 이하"
+        ]
+    },
+    {
+        "productCode": "P0000CBG",
+        "internalCode": "",
+        "category": "",
+        "productNo": 1384,
+        "productName": "리노 쉬폰 커튼",
+        "consumerPrice": 87500,
+        "supplyPrice": 0,
+        "productPrice": 63636,
+        "salePrice": 70000,
+        "sizes": [
+            "100X250 이하",
+            "200X250 이하",
+            "300X250 이하",
+            "400X250 이하",
+            "500X250 이하",
+            "600X250 이하",
+            "700X250 이하"
+        ]
+    },
+    {
+        "productCode": "P0000CBF",
+        "internalCode": "",
+        "category": "",
+        "productNo": 1383,
+        "productName": "루마 쉬폰 커튼",
+        "consumerPrice": 87500,
+        "supplyPrice": 0,
+        "productPrice": 63636,
+        "salePrice": 70000,
+        "sizes": [
+            "100X250 이하",
+            "200X250 이하",
+            "300X250 이하",
+            "400X250 이하",
+            "500X250 이하",
+            "600X250 이하",
+            "700X250 이하"
+        ]
+    },
+    {
+        "productCode": "P0000CBE",
+        "internalCode": "",
+        "category": "",
+        "productNo": 1382,
+        "productName": "브리사 쉬폰 커튼",
+        "consumerPrice": 67500,
+        "supplyPrice": 0,
+        "productPrice": 49091,
+        "salePrice": 54000,
+        "sizes": [
+            "100X250 이하",
+            "200X250 이하",
+            "300X250 이하",
+            "400X250 이하",
+            "500X250 이하",
+            "600X250 이하",
+            "700X250 이하"
+        ]
+    },
+    {
+        "productCode": "P0000CBC",
+        "internalCode": "",
+        "category": "",
+        "productNo": 1380,
+        "productName": "[SET] 나이트템프 모달 차렵 2colors_Test",
+        "consumerPrice": 0,
+        "supplyPrice": 0,
+        "productPrice": 220655,
+        "salePrice": 242720,
+        "components": [
+            {
+                "productCode": "P0000BQY",
+                "name": "나이트템프 모달 차렵이불 2colors",
+                "colors": [
+                    "크림화이트 SS 160X210",
+                    "내추럴 SS 160X210"
+                ]
+            },
+            {
+                "productCode": "P0000BRH",
+                "name": "나이트템프 모달 베개커버 2colors",
+                "colors": [
+                    "크림화이트 50X70",
+                    "내추럴 50X70"
+                ]
+            },
+            {
+                "productCode": "P0000BRD",
+                "name": "나이트템프 모달 패드 2colors",
+                "colors": [
+                    "크림화이트 SS 110X205",
+                    "내추럴 SS 110X205"
+                ]
+            }
+        ]
+    },
+    {
+        "productCode": "P0000CBB",
+        "internalCode": "",
+        "category": "",
+        "productNo": 1379,
+        "productName": "[SET] 나이트템프 모달 차렵 K_TEST",
+        "consumerPrice": 0,
+        "supplyPrice": 0,
+        "productPrice": 302273,
+        "salePrice": 332500,
+        "components": [
+            {
+                "productCode": "P0000BQZ",
+                "name": "나이트템프 모달 차렵이불 Q/K",
+                "colors": [
+                    "크림화이트 QK겸용 200X230",
+                    "내추럴 QK겸용 200X230"
+                ]
+            },
+            {
+                "productCode": "P0000BRH",
+                "name": "나이트템프 모달 베개커버 2colors",
+                "quantity": 2,
+                "colors": [
+                    "크림화이트 50X70",
+                    "내추럴 50X70"
+                ]
+            },
+            {
+                "productCode": "P0000BRF",
+                "name": "나이트템프 모달 패드 K",
+                "colors": [
+                    "크림화이트 K 180X205",
+                    "내추럴 K 180X205"
+                ]
+            }
+        ]
+    },
+    {
+        "productCode": "P0000CBA",
+        "internalCode": "",
+        "category": "",
+        "productNo": 1378,
+        "productName": "[SET] 나이트템프 모달 차렵 Q_TEST",
+        "consumerPrice": 0,
+        "supplyPrice": 0,
+        "productPrice": 287155,
+        "salePrice": 315870,
+        "components": [
+            {
+                "productCode": "P0000BQZ",
+                "name": "나이트템프 모달 차렵이불 Q/K",
+                "colors": [
+                    "크림화이트 QK겸용 200X230",
+                    "내추럴 QK겸용 200X230"
+                ]
+            },
+            {
+                "productCode": "P0000BRH",
+                "name": "나이트템프 모달 베개커버 2colors",
+                "quantity": 2,
+                "colors": [
+                    "크림화이트 50X70",
+                    "내추럴 50X70"
+                ]
+            },
+            {
+                "productCode": "P0000BRE",
+                "name": "나이트템프 모달 패드 Q",
+                "colors": [
+                    "크림화이트 Q 150X205",
+                    "내추럴 Q 150X205"
+                ]
+            }
+        ]
     }
 ]
