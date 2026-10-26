@@ -109,7 +109,7 @@ export function withSoldOutLabels(
 // 카페24에 "아이보리 미니 100X150"처럼 색상·사이즈를 한 옵션으로 등록한 상품이 많다.
 // 저장 값은 품절·가격 매칭 키라 그대로 두고, 계약서 화면에서만 나눠 보여준다.
 const COMBINED_SIZE_PATTERN =
-  /^(.+?)\s+((?:미니|반호|\d+(?:\.\d+)?호|SS|S|Q|K|패밀리)?\s*\d+\s*[Xx×]\s*\d+.*|원형\s*\d+.*)$/;
+  /^(.+?)\s+((?:미니|반호|\d+(?:\.\d+)?호|SS|S|Q|K|EK|패밀리)?\s*\d+\s*[Xx×]\s*\d+.*|원형\s*\d+.*)$/;
 // 컬러 뒤에 붙어 온 사이즈 표기. "베이지 Q/K 200X220" → 컬러 "베이지", 사이즈 "Q/K 200X220"
 const SIZE_WORDS_IN_COLOR = /\s+(QK겸용|QK|Q\/K)$/;
 
@@ -621,14 +621,9 @@ function getSizeGroupOptions(groupName: string): SizeGroupOption[] {
       if (season) {
         optionSize = optionSize.slice(0, -season.length).trim();
       }
-      let color = season
+      const color = season
         ? `${split.color} ${season.replace(/가을$/, "가을용")}`
         : [split.color, note].filter(Boolean).join(" ");
-      // 하이탑 EK "크림화이트 하이탑 EK 195X200X60"처럼 사이즈 표기가 컬러 끝에 붙어 오면 사이즈로 옮긴다
-      if (!BOX_SIZE_PATTERN.test(rest) && rest && color.endsWith(` ${rest}`)) {
-        color = color.slice(0, -rest.length - 1);
-        optionSize = `${rest} ${optionSize}`;
-      }
       // 상품명에 치수가 있으면 상품명을 따른다. 러프 3호처럼 옵션값이 "다이아 2호 200X290"으로 잘못 들어간 상품이 있다
       const size = BOX_SIZE_PATTERN.test(rest) ? rest : optionSize;
       options.push({ member, field, raw: name, color, size, salePrice });
