@@ -94,7 +94,7 @@ function buildCafe24ProductAndOption(product: ProductRow): {
     return {
       productName: product.name.trim(),
       optionName: components?.length
-        ? formatCafe24SetOptionName(components, color)
+        ? formatCafe24SetOptionName(product.name.trim(), components, color)
         : `COLOR=${formatSetOptionLabel(color)}`,
     };
   }
