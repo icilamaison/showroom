@@ -182,7 +182,7 @@ export default function ContractWritePage() {
           );
           const salePrice = selected
             ? getTypeSalePrice(selected, keepSize ? product.size : "", product.type) ??
-              getSizeSalePrice(selected, keepSize ? product.size : value) ??
+              getSizeSalePrice(selected, keepSize ? product.size : value, value) ??
               selected.salePrice
             : null;
           const components = selected ? getVariantComponents(selected, value) : [];
@@ -216,7 +216,7 @@ export default function ContractWritePage() {
           const selected = productSelections[index];
           const salePrice = selected
             ? getTypeSalePrice(selected, value, product.type) ??
-              getSizeSalePrice(selected, value) ??
+              getSizeSalePrice(selected, value, product.color) ??
               selected.salePrice
             : null;
           const components = selected ? getVariantComponents(selected, value) : [];
@@ -244,7 +244,7 @@ export default function ContractWritePage() {
 
           const salePrice =
             getTypeSalePrice(selected, product.size, value) ??
-            getSizeSalePrice(selected, product.size || product.color) ??
+            getSizeSalePrice(selected, product.size || product.color, product.color) ??
             selected.salePrice;
 
           return { ...product, type: value, unitPrice: String(salePrice) };

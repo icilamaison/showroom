@@ -7,6 +7,8 @@ export type CatalogSizeOption =
       consumerPrice?: number;
       salePrice?: number;
       typePrices?: Record<string, number>;
+      // 사이즈 그룹에서 같은 사이즈라도 컬러(이불솜 계절)마다 가격이 다를 때
+      colorPrices?: Record<string, number>;
       components?: SetComponent[];
     };
 
@@ -147,14 +149,16 @@ export function withColorOnlyLabels(
 export function getSizeSalePrice(
   product: CatalogProduct,
   sizeName: string,
+  colorName = "",
 ): number | null {
   for (const option of product.sizes ?? []) {
     if (typeof option === "string" || option.name !== sizeName) {
       continue;
     }
 
-    if (option.salePrice != null) {
-      return option.salePrice;
+    const salePrice = option.colorPrices?.[colorName] ?? option.salePrice;
+    if (salePrice != null) {
+      return salePrice;
     }
   }
 
@@ -499,7 +503,7 @@ const colorGroupProducts = COLOR_GROUP_NAMES.flatMap((groupName) => {
 /* ---------- 목록으로 묶는 사이즈 그룹 ---------- */
 // 대표 상품명에 "Ncolors"가 없거나(마레 / 마레 2호 200X290 ...), 형제 상품 옵션 표기가 달라
 // 자동으로 안 묶이는 상품(나이트템프 차렵이불 2colors / Q/K "크림화이트 QK겸용 200X230")을 그룹명으로 묶는다.
-// 클린트(같은 이름 상품 2개), 쿨포터 냉감 패드 Q(상품명·옵션 사이즈 불일치), 이불솜류는 일부러 뺐다.
+// 클린트(같은 이름 상품 2개), 쿨포터 냉감 패드 Q(상품명·옵션 사이즈 불일치)는 일부러 뺐다.
 const SIZE_GROUP_NAMES = [
   "마레",
   "러프 스퀘어",
@@ -530,6 +534,11 @@ const SIZE_GROUP_NAMES = [
   "인견 패드",
   "본느윗 매트리스커버",
   "블록 워셔블",
+  "폴란드 마더구스 이불솜",
+  "퍼즈필 독일 이불솜",
+  "브리즈 리버서블 이불",
+  "본느윗 매트리스커버 하이탑",
+  "쿠션솜",
 ];
 const SIZE_GROUP_EXCLUDED_PRODUCT_NOS = [846]; // 쿨포터 냉감 패드 Q: 상품명 150X205, 옵션 155X205
 const BOX_SIZE_PATTERN = /\d+\s*[Xx×]\s*\d+/;
@@ -560,7 +569,7 @@ function getSizeGroupRest(member: CatalogProduct, groupName: string): string | n
   // "2호 200X290" / "Q" / "Q/K 200X220"처럼 사이즈로만 된 뒷부분만 멤버로 본다(스트라이프 매트 올리브 제외)
   return rest &&
     (splitColorSize(`_ ${rest}`)?.size === rest ||
-      /^(SS|Q|K|Q\/K)(\s+\d+\s*[Xx×]\s*\d+)?$/.test(rest))
+      /^(SS|Q|K|EK|Q\/K|MINI)(\s+\d+\s*[Xx×]\s*\d+)?$/.test(rest))
     ? rest
     : null;
 }
@@ -583,7 +592,10 @@ function getSizeGroupOptions(groupName: string): SizeGroupOption[] {
     const colorNames = Object.keys(member.colors ?? {});
     const field = colorNames.length ? "COLOR" : "SIZE";
     const rawOptions = colorNames.length
-      ? colorNames.map((name) => ({ name, salePrice: member.salePrice }))
+      ? colorNames.map((name) => ({
+          name,
+          salePrice: member.colorPrices?.[name] ?? member.salePrice,
+        }))
       : (member.sizes ?? []).map((option) => ({
           name: getSizeOptionName(option),
           salePrice:
@@ -591,15 +603,30 @@ function getSizeGroupOptions(groupName: string): SizeGroupOption[] {
         }));
 
     for (const { name, salePrice } of rawOptions) {
-      const split = splitColorSize(name);
+      // 쿠션솜처럼 컬러 없이 치수만 있는 상품은 컬러 ""로 둔다
+      const split =
+        splitColorSize(name) ??
+        (!colorNames.length && /^\d+\s*[Xx×]\s*\d+$/.test(name) ? { color: "", size: name } : null);
       if (!split) {
         continue;
       }
 
       // 인견 패드 "베이지 Q 155X210 (밴드탈부착형)"의 괄호는 사이즈가 아니라 제품 형태라 컬러 쪽에 붙인다
       const note = split.size.match(/\s*(\([^)]*\))$/)?.[1];
-      const color = [split.color, note].filter(Boolean).join(" ");
-      const optionSize = note ? split.size.slice(0, -note.length).trim() : split.size;
+      let optionSize = note ? split.size.slice(0, -note.length).trim() : split.size;
+      // 이불솜 "SS 160X210 겨울용 (중량 800g)"의 계절은 컬러로 나눈다. 중량은 사이즈마다 달라 라벨에서 뺀다
+      const season = optionSize.match(/\s(겨울용|봄\/가을용?)$/)?.[1];
+      if (season) {
+        optionSize = optionSize.slice(0, -season.length).trim();
+      }
+      let color = season
+        ? `${split.color} ${season.replace(/가을$/, "가을용")}`
+        : [split.color, note].filter(Boolean).join(" ");
+      // 하이탑 EK "크림화이트 하이탑 EK 195X200X60"처럼 사이즈 표기가 컬러 끝에 붙어 오면 사이즈로 옮긴다
+      if (!BOX_SIZE_PATTERN.test(rest) && rest && color.endsWith(` ${rest}`)) {
+        color = color.slice(0, -rest.length - 1);
+        optionSize = `${rest} ${optionSize}`;
+      }
       // 상품명에 치수가 있으면 상품명을 따른다. 러프 3호처럼 옵션값이 "다이아 2호 200X290"으로 잘못 들어간 상품이 있다
       const size = BOX_SIZE_PATTERN.test(rest) ? rest : optionSize;
       options.push({ member, field, raw: name, color, size, salePrice });
@@ -622,14 +649,25 @@ const sizeGroupProducts = SIZE_GROUP_NAMES.flatMap((groupName) => {
   sizeGroupOptionsByName.set(groupName, options);
 
   const colors = Object.fromEntries(
-    options.map((option) => [option.color, option.member.colors?.[option.raw] ?? ""]),
+    options
+      .filter((option) => option.color)
+      .map((option) => [option.color, option.member.colors?.[option.raw] ?? ""]),
   );
+  // 마더구스처럼 같은 사이즈에서 컬러(계절)마다 가격이 다르면 최저가를 사이즈 가격, 나머지는 colorPrices로 둔다
   const sizes = [...new Set(options.map((option) => option.size))]
     .sort((a, b) => getSizeArea(a) - getSizeArea(b))
-    .map((size) => ({
-      name: size,
-      salePrice: options.find((option) => option.size === size)?.salePrice,
-    }));
+    .map((size) => {
+      const sizeOptions = options.filter((option) => option.size === size);
+      const salePrice = Math.min(...sizeOptions.map((option) => option.salePrice));
+      const colorPrices = Object.fromEntries(
+        sizeOptions
+          .filter((option) => option.salePrice !== salePrice)
+          .map((option) => [option.color, option.salePrice]),
+      );
+      return Object.keys(colorPrices).length
+        ? { name: size, salePrice, colorPrices }
+        : { name: size, salePrice };
+    });
 
   // 품절은 사이즈별. 해당 사이즈에 없는 컬러도 고르지 못하게 품절로 표시한다
   const soldOutColorsBySize = Object.fromEntries(
@@ -659,7 +697,15 @@ const sizeGroupProducts = SIZE_GROUP_NAMES.flatMap((groupName) => {
       sizes,
       soldOutColors: [],
       soldOutSizes: sizes
-        .filter(({ name }) => soldOutColorsBySize[name].length === colorCount)
+        .filter(({ name }) =>
+          colorCount
+            ? soldOutColorsBySize[name].length === colorCount
+            : // 쿠션솜처럼 컬러가 없으면 멤버의 사이즈 품절을 그대로 쓴다
+              options.every(
+                (option) =>
+                  option.size !== name || (option.member.soldOutSizes ?? []).includes(option.raw),
+              ),
+        )
         .map(({ name }) => name),
       soldOutColorsBySize,
     } as CatalogProduct,
