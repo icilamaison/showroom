@@ -416,6 +416,8 @@ const COLOR_GROUP_NAMES = [
   "플루아 블랭킷",
   // 지금은 블랙만 진열 중이지만 매트·컬러를 나눠 고르도록 묶는다(로지브릭·프렌치블루 재진열 시 자동 포함)
   "플루아 매트",
+  // 프렌치블루만 진열 중. 블랙·소프트브라운 재진열 시 자동 포함
+  "노트 매트",
 ];
 
 function getColorGroupMembers(groupName: string): CatalogProduct[] {
