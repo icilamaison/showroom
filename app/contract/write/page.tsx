@@ -588,9 +588,8 @@ export default function ContractWritePage() {
               </p>
             ) : null}
 
-            <NoticeAnnotator ref={noticeAnnotatorRef} />
-
-            <div className="contract-doc-flow__actions">
+            {/* 동의 문구에도 펜으로 표시할 수 있게 필기 영역 안에 둔다 */}
+            <NoticeAnnotator ref={noticeAnnotatorRef}>
               <label className="notice-agree">
                 <input
                   type="checkbox"
@@ -599,6 +598,9 @@ export default function ContractWritePage() {
                 />
                 위 배송·교환·반품 등 안내사항을 모두 확인하였습니다.
               </label>
+            </NoticeAnnotator>
+
+            <div className="contract-doc-flow__actions">
 
               <button
                 type="button"

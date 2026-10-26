@@ -18,17 +18,28 @@ const TOOL_STYLES: Record<Tool, { color: string; width: number }> = {
 
 const SNAPSHOT_SCALE = 1.5; // 글씨가 읽히는 최소 배율. 키우면 저장 용량이 커진다
 const SNAPSHOT_QUALITY = 0.8;
+const TAP_MAX_DISTANCE = 6; // 이보다 짧게 움직이면 필기가 아니라 탭(체크박스 클릭 등)으로 본다
 
 export type NoticeAnnotatorHandle = {
   // 필기가 없으면 null(안내문 원본을 그대로 보여주면 된다)
   capture: () => Promise<string | null>;
 };
 
-const NoticeAnnotator = forwardRef<NoticeAnnotatorHandle>(function NoticeAnnotator(_props, ref) {
+type NoticeAnnotatorProps = {
+  // 안내문 아래에 함께 필기할 영역(동의 체크 등). 필기 이미지에도 같이 찍힌다
+  children?: React.ReactNode;
+};
+
+const NoticeAnnotator = forwardRef<NoticeAnnotatorHandle, NoticeAnnotatorProps>(function NoticeAnnotator(
+  { children },
+  ref,
+) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const strokesRef = useRef<Stroke[]>([]);
   const drawingRef = useRef<Stroke | null>(null);
+  // 방금 필기를 끝냈으면 뒤따르는 click을 아래 요소로 넘기지 않는다
+  const justDrewRef = useRef(false);
   const [tool, setTool] = useState<Tool>("pen");
   const [strokeCount, setStrokeCount] = useState(0);
 
@@ -147,14 +158,39 @@ const NoticeAnnotator = forwardRef<NoticeAnnotatorHandle>(function NoticeAnnotat
   }
 
   function handlePointerUp() {
-    if (!drawingRef.current) {
+    const stroke = drawingRef.current;
+    if (!stroke) {
       return;
     }
 
-    strokesRef.current = [...strokesRef.current, drawingRef.current];
     drawingRef.current = null;
-    setStrokeCount(strokesRef.current.length);
+    const [startX, startY] = stroke.points[0];
+    const isStroke = stroke.points.some(
+      ([x, y]) => Math.hypot(x - startX, y - startY) > TAP_MAX_DISTANCE,
+    );
+
+    if (isStroke) {
+      strokesRef.current = [...strokesRef.current, stroke];
+      setStrokeCount(strokesRef.current.length);
+      justDrewRef.current = true;
+    }
     redraw();
+  }
+
+  // 캔버스가 위를 덮고 있어 체크박스를 누를 수 없으므로, 탭(손가락·펜·마우스)은 아래 요소로 넘긴다
+  function handleClick(event: React.MouseEvent<HTMLCanvasElement>) {
+    if (justDrewRef.current) {
+      justDrewRef.current = false;
+      return;
+    }
+
+    const canvas = event.currentTarget;
+    canvas.style.pointerEvents = "none";
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    canvas.style.pointerEvents = "";
+    if (target instanceof HTMLElement) {
+      target.click();
+    }
   }
 
   function handleUndo() {
@@ -207,6 +243,7 @@ const NoticeAnnotator = forwardRef<NoticeAnnotatorHandle>(function NoticeAnnotat
 
       <div ref={wrapRef} className="notice-annotator__paper">
         <ContractNoticeDocument className="contract-doc contract-doc--document contract-doc--sheet notice-document" />
+        {children ? <div className="notice-annotator__extra">{children}</div> : null}
         <canvas
           ref={canvasRef}
           className="notice-annotator__canvas"
@@ -214,6 +251,7 @@ const NoticeAnnotator = forwardRef<NoticeAnnotatorHandle>(function NoticeAnnotat
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
+          onClick={handleClick}
         />
       </div>
     </div>

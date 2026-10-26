@@ -1107,6 +1107,12 @@
 
 .notice-annotator__paper {
   position: relative;
+  background: var(--color-surface);
+}
+
+/* 안내문 아래 동의 체크 영역. 필기 이미지에 같이 찍힌다 */
+.notice-annotator__extra {
+  padding: 1.5rem var(--doc-padding-x) var(--doc-padding-y);
 }
 
 /* 손가락 스크롤은 그대로 두고 펜만 그린다(touch-action 기본값 유지) */
