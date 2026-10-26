@@ -13,7 +13,7 @@ import {
   getContractStatusLabel,
 } from "@/lib/constants/contract-status";
 import { formatFullAddress } from "@/lib/address";
-import { findCatalogProductByName } from "@/lib/product-catalog";
+import { findCatalogProductByName, resolveCafe24Variant } from "@/lib/product-catalog";
 import { formatSetOptionLabel } from "@/lib/set-product";
 import type { PurchaseContractPayload } from "@/lib/validation/contract";
 import Link from "next/link";
@@ -85,7 +85,12 @@ function ProductTable({
           <tbody>
             {filledProducts.map((product, index) => (
               <tr key={`${product.name}-${index}`}>
-                <td>{findCatalogProductByName(product.name)?.productNo ?? "-"}</td>
+                {/* 묶어 고른 상품(포그 매트 / 스톤블랙)은 실제 카페24 상품(포그 매트 스톤블랙)으로 되돌려 번호를 찾는다 */}
+                <td>
+                  {findCatalogProductByName(
+                    resolveCafe24Variant(product.name, product.color, product.size).productName,
+                  )?.productNo ?? "-"}
+                </td>
                 <td>{product.name}</td>
                 <td>{product.type?.trim() ? product.type : "-"}</td>
                 <td>{formatSetOptionLabel(product.color) || "-"}</td>
