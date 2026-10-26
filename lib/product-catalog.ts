@@ -557,6 +557,10 @@ const SIZE_GROUP_NAMES = [
   "본느윗 패드 패밀리",
 ];
 const SIZE_GROUP_EXCLUDED_PRODUCT_NOS = [846]; // 쿨포터 냉감 패드 Q: 상품명 150X205, 옵션 155X205
+// 그룹명과 다르게 보여줄 상품명. 그룹명은 멤버를 찾는 접두어라 바꿀 수 없다
+const SIZE_GROUP_DISPLAY_NAMES: Record<string, string> = {
+  "본느윗 패드 패밀리": "본느윗 패드 패밀리 6colors ORDER-MADE",
+};
 const BOX_SIZE_PATTERN = /\d+\s*[Xx×]\s*\d+/;
 
 type SizeGroupOption = {
@@ -660,7 +664,8 @@ const sizeGroupProducts = SIZE_GROUP_NAMES.flatMap((groupName) => {
   }
 
   members.forEach((member) => sizeGroupMembers.add(member));
-  sizeGroupOptionsByName.set(groupName, options);
+  const productName = SIZE_GROUP_DISPLAY_NAMES[groupName] ?? groupName;
+  sizeGroupOptionsByName.set(productName, options);
 
   const colors = Object.fromEntries(
     options
@@ -704,7 +709,7 @@ const sizeGroupProducts = SIZE_GROUP_NAMES.flatMap((groupName) => {
   return [
     {
       ...base,
-      productName: groupName,
+      productName,
       hidden: members.every((member) => member.hidden) || undefined,
       salePrice: sizes[0]?.salePrice ?? base.salePrice,
       colors,
