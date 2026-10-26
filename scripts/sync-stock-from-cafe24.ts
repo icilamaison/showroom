@@ -59,6 +59,8 @@ type StockEntry = {
   option_value_orginal?: string[];
   is_display: string;
   is_selling: string;
+  use_soldout?: string;
+  stock_number?: number | string | null;
 };
 
 type SetOptionEntry = {
@@ -138,8 +140,10 @@ function findSoldOutNames(
     }
 
     // 재고를 쓰는 옵션이라도 수량이 충분하면 카페24가 stock_number를 아예 안 내려준다.
-    // 그 값으로 판단하면 정상 판매 옵션이 전부 품절로 찍힌다. 노출·판매 플래그만 본다.
-    const inStock = entry.is_display === "T" && entry.is_selling === "T";
+    // 없을 때는 판매중으로 보고, 0 이하로 내려왔고 품절 표시를 쓰는 옵션만 품절로 본다(제타 오트밀 stock_number: 0).
+    const stock = entry.stock_number == null ? null : Number(entry.stock_number);
+    const isSoldOutByStock = entry.use_soldout === "T" && stock != null && stock <= 0;
+    const inStock = entry.is_display === "T" && entry.is_selling === "T" && !isSoldOutByStock;
 
     hasStockByName.set(name, (hasStockByName.get(name) ?? false) || inStock);
   }
