@@ -158,6 +158,11 @@ jobs:
             if [ -f artifacts/catalog-sync/stock-variants-dry-run.log ]; then
               echo "[stock]"
               grep -E '\(dry-run\)' artifacts/catalog-sync/stock-variants-dry-run.log | tail -n 3 || true
+              echo
+            fi
+            if [ -f artifacts/catalog-sync/options-dry-run.log ]; then
+              echo "[option prices]"
+              grep -E '^●|→|\(dry-run\)' artifacts/catalog-sync/options-dry-run.log | tail -n 40 || true
             fi
             echo "MAIL_BODY_EOF"
           } >> "$GITHUB_OUTPUT"

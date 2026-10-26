@@ -11,6 +11,7 @@ SUMMARY="${GITHUB_STEP_SUMMARY:-artifacts/catalog-sync/summary.md}"
 DUMP_LOG="artifacts/catalog-sync/dump.log"
 MERGE_LOG="artifacts/catalog-sync/merge-dry-run.log"
 STOCK_LOG="artifacts/catalog-sync/stock-variants-dry-run.log"
+OPTIONS_LOG="artifacts/catalog-sync/options-dry-run.log"
 
 if [[ ! -f .env.local ]]; then
   echo ".env.local이 없습니다. CI에서 시크릿으로 먼저 만들어주세요." >&2
@@ -21,7 +22,7 @@ fi
   echo "# Catalog sync report (dry-run)"
   echo
   echo "- 시각: $(date -u +"%Y-%m-%d %H:%M:%SZ")"
-  echo "- 모드: dump → merge dry-run(--add-new) → stock variants dry-run"
+  echo "- 모드: dump → merge dry-run(--add-new) → stock variants dry-run → option prices dry-run"
   echo "- product.json 쓰기: **없음**"
   echo
   echo "## Token status (값 없음)"
@@ -32,7 +33,7 @@ fi
   echo
 } > "$SUMMARY"
 
-echo "==> 1/3 dump"
+echo "==> 1/4 dump"
 set +e
 npx tsx scripts/sync-products-from-cafe24.ts --dump 2>&1 | tee "$DUMP_LOG"
 DUMP_EXIT=${PIPESTATUS[0]}
@@ -57,7 +58,7 @@ if [[ "$DUMP_EXIT" -ne 0 ]]; then
   exit "$DUMP_EXIT"
 fi
 
-echo "==> 2/3 merge dry-run (+ 신규 후보)"
+echo "==> 2/4 merge dry-run (+ 신규 후보)"
 set +e
 npx tsx scripts/merge-cafe24-dump.ts --add-new 2>&1 | tee "$MERGE_LOG"
 MERGE_EXIT=${PIPESTATUS[0]}
@@ -84,7 +85,7 @@ set -e
   echo
 } >> "$SUMMARY"
 
-echo "==> 3/3 stock variants dry-run"
+echo "==> 3/4 stock variants dry-run"
 set +e
 npx tsx scripts/sync-stock-from-variants.ts 2>&1 | tee "$STOCK_LOG"
 STOCK_EXIT=${PIPESTATUS[0]}
@@ -105,6 +106,30 @@ set -e
   tail -n 50 "$STOCK_LOG"
   echo '```'
   echo
+} >> "$SUMMARY"
+
+echo "==> 4/4 option prices dry-run"
+set +e
+npx tsx scripts/sync-options-from-variants.ts 2>&1 | tee "$OPTIONS_LOG"
+OPTIONS_EXIT=${PIPESTATUS[0]}
+set -e
+
+{
+  echo "## 4. Option prices dry-run (사이즈·TYPE 추가금)"
+  echo
+  if [[ "$OPTIONS_EXIT" -eq 0 ]]; then
+    echo "✅ 성공 (파일 미반영)"
+  else
+    echo "❌ 실패 (exit $OPTIONS_EXIT)"
+  fi
+  echo
+  echo "> 덤프에는 옵션 추가금이 비어 있어서 merge(2단계)에는 안 나오는 사이즈별·TYPE별 판매가 차이입니다."
+  echo
+  echo '```'
+  # 상품 수집 진행 로그는 빼고 변경 내역만 남긴다
+  grep -v '^\[products\]' "$OPTIONS_LOG" | tail -n 120
+  echo '```'
+  echo
   echo "## 다음 단계 (로컬에서 전체 반영)"
   echo
   echo "CI는 dry-run만 한다. product.json에 쓰려면 로컬에서 아래 순서로 실행한다."
@@ -123,6 +148,9 @@ set -e
   echo
   echo '# 4) 품절 (세트 구성품)'
   echo 'npx tsx scripts/sync-stock-from-cafe24.ts --write'
+  echo
+  echo '# 5) 사이즈·TYPE 가격 (옵션 추가금)'
+  echo 'npx tsx scripts/sync-options-from-variants.ts --write'
   echo '```'
   echo
   echo "- 신규 상품은 \`internalCode\` / \`category\`가 비어 있을 수 있으니 확인한다."
@@ -130,7 +158,7 @@ set -e
   echo "- 반영 후 product.json을 커밋한다."
 } >> "$SUMMARY"
 
-# dump 외 merge/stock 실패도 job 실패로 보이게 한다.
-if [[ "$MERGE_EXIT" -ne 0 || "$STOCK_EXIT" -ne 0 ]]; then
+# dump 외 merge/stock/options 실패도 job 실패로 보이게 한다.
+if [[ "$MERGE_EXIT" -ne 0 || "$STOCK_EXIT" -ne 0 || "$OPTIONS_EXIT" -ne 0 ]]; then
   exit 1
 fi
