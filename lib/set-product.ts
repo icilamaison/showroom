@@ -186,9 +186,9 @@ export function buildSetSelectionsFromColor(
   });
 }
 
-// 엑셀(플레이오토)용: 카페24 주문 목록처럼 구성품마다 이름·수량·옵션을 붙인다.
-// 예: 아카네 차렵이불 Q/K 200X220(1개) - COLOR=브릭 Q/K 200X220아카네 베개커버 3colors(2개) - COLOR=브릭 50X70
-// 카페24도 구성품 사이에 구분자 없이 이어 붙인다.
+// 엑셀(플레이오토)용: 구성품마다 이름·수량·옵션을 붙여 사람이 읽기 쉽게 나열한다.
+// 예: 아카네 차렵이불 Q/K 200X220 - 베이지 Q/K 200X220 (1개), 아카네 베개커버 3colors - 브릭 50X70 (2개)
+// 컬러·사이즈를 둘 다 고르는 구성품은 "세레니티/50X70"
 export function formatCafe24SetOptionName(
   components: SetComponent[],
   color: string,
@@ -196,13 +196,11 @@ export function formatCafe24SetOptionName(
   return buildSetSelectionsFromColor(components, color)
     .map((selection, index) => {
       const component = components[index];
-      return [
-        `${component.name}(${component.quantity ?? 1}개)`,
-        selection.color ? `COLOR=${selection.color}` : "",
-        selection.size ? `SIZE=${selection.size}` : "",
-      ]
-        .filter(Boolean)
-        .join(" - ");
+      const option = [selection.color, selection.size].filter(Boolean).join("/");
+      const quantity = `(${component.quantity ?? 1}개)`;
+      return option
+        ? `${component.name} - ${option} ${quantity}`
+        : `${component.name} ${quantity}`;
     })
-    .join("");
+    .join(", ");
 }
