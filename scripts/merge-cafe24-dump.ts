@@ -1,6 +1,6 @@
 /**
  * sync-products-from-cafe24.ts --dump이 만든 cafe24-products.json을 product.json에 머지한다.
- * API가 주는 값만 덮어쓴다: 상품명, 가격 4종, 색상·타입 옵션 키.
+ * API가 주는 값만 덮어쓴다: 상품명, 가격 4종, 색상·타입 옵션 키, 미진열·판매 안 함(hidden).
  * 세트는 bundleComponents → components로 넣고, 구성품 색/사이즈는
  * 덤프 options → 없으면 product.json 단독 상품에서 가져온다.
  *
@@ -76,6 +76,7 @@ type CatalogProduct = {
   types?: string[];
   sizes?: (string | { name: string })[];
   colors?: Record<string, string>;
+  hidden?: boolean;
 };
 
 function normalizeSpace(value: string): string {
@@ -256,6 +257,17 @@ function main(): void {
       if (value === undefined || value === product[key]) continue;
       changes.push(`${label} ${product[key] ?? "-"} → ${value}`);
       (product[key] as number) = value;
+    }
+
+    // 미진열·판매 안 함 상품은 계약서 검색에서 뺀다. 컬러·사이즈 그룹 안에서는 품절로 보인다(product-catalog.ts)
+    const hidden = source.display !== "T" || source.selling !== "T";
+    if (hidden !== Boolean(product.hidden)) {
+      changes.push(hidden ? "미진열·판매 안 함" : "진열·판매 재개");
+      if (hidden) {
+        product.hidden = true;
+      } else {
+        delete product.hidden;
+      }
     }
 
     // 세트: bundleproducts 구성품을 components에 넣고, 색/사이즈는 구성품 단독 상품에서 보강.

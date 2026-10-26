@@ -8,17 +8,22 @@ import {
 
 describe("searchProducts", () => {
   it("finds products by name", () => {
-    const results = searchProducts("쿨포터");
+    const results = searchProducts("오슬로");
 
     expect(results.length).toBeGreaterThan(0);
-    expect(results[0]?.productName).toContain("쿨포터");
+    expect(results[0]?.productName).toContain("오슬로");
   });
 
   it("finds products by product code", () => {
-    const results = searchProducts("P0000BVP");
+    const results = searchProducts("P0000BVU");
 
     expect(results).toHaveLength(1);
-    expect(results[0]?.productCode).toBe("P0000BVP");
+    expect(results[0]?.productCode).toBe("P0000BVU");
+  });
+
+  it("excludes hidden (미진열·판매 안 함) products", () => {
+    // [SET] 쿨포터 냉감 베딩: 카페24 미진열
+    expect(searchProducts("P0000BVP")).toEqual([]);
   });
 
   it("returns empty list for blank query", () => {

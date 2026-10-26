@@ -56,6 +56,8 @@ export type CatalogProduct = {
   soldOutColorsBySize?: Record<string, string[]>;
   // 컬러 그룹(COLOR_GROUP_NAMES)으로 묶은 가상 상품에만 채워진다.
   soldOutSizesByColor?: Record<string, string[]>;
+  // 카페24 미진열 또는 판매 안 함(merge-cafe24-dump.ts가 채운다)
+  hidden?: boolean;
 };
 
 export function getSizeOptionName(option: CatalogSizeOption): string {
@@ -210,7 +212,16 @@ export function getVariantComponents(
   return product.components ?? [];
 }
 
-const catalog = catalogData as CatalogProduct[];
+// 미진열·판매 안 함(hidden) 상품은 검색에서 빼고, 컬러·사이즈 그룹에 묶이면 전 옵션 품절로 보이게 한다
+const catalog = (catalogData as CatalogProduct[]).map((product) =>
+  product.hidden
+    ? {
+        ...product,
+        soldOutColors: Object.keys(product.colors ?? {}),
+        soldOutSizes: (product.sizes ?? []).map(getSizeOptionName),
+      }
+    : product,
+);
 
 export function searchProducts(query: string, limit = 8): CatalogProduct[] {
   const normalized = query.trim().toLowerCase();
@@ -222,6 +233,7 @@ export function searchProducts(query: string, limit = 8): CatalogProduct[] {
   return [...colorGroupProducts, ...sizeGroupProducts, ...catalog]
     .filter((product) => {
       if (
+        product.hidden ||
         groupedSizeProducts.has(product) ||
         groupedColorProducts.has(product) ||
         sizeGroupMembers.has(product) ||
@@ -480,6 +492,8 @@ function buildColorGroupProduct(
   return {
     ...members[0],
     productName: groupName,
+    // 멤버가 전부 미진열일 때만 그룹도 검색에서 뺀다
+    hidden: members.every((member) => member.hidden) || undefined,
     colors: Object.fromEntries(Object.keys(sizesByColor).map((color) => [color, ""])),
     sizes,
     soldOutColors: Object.keys(sizesByColor).filter(
@@ -688,6 +702,7 @@ const sizeGroupProducts = SIZE_GROUP_NAMES.flatMap((groupName) => {
     {
       ...base,
       productName: groupName,
+      hidden: members.every((member) => member.hidden) || undefined,
       salePrice: sizes[0]?.salePrice ?? base.salePrice,
       colors,
       colorPrices: undefined,
