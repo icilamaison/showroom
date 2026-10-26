@@ -34,6 +34,8 @@ type Variant = {
 type ApiProduct = {
   product_no: number;
   product_name: string;
+  selling?: string;
+  sold_out?: string;
   variants?: Variant[];
 };
 
@@ -166,6 +168,12 @@ async function main(): Promise<void> {
   const variantsByProductNo = new Map(
     products.map((product) => [product.product_no, product.variants ?? []]),
   );
+  // 상품 단위로 판매 안 함·품절이면 옵션 재고가 남아 있어도 살 수 없다(쁘띠폰토 쿠션커버 블랙)
+  const stoppedProductNos = new Set(
+    products
+      .filter((product) => product.selling !== "T" || product.sold_out === "T")
+      .map((product) => product.product_no),
+  );
 
   const catalog = JSON.parse(readFileSync(JSON_PATH, "utf8")) as CatalogProduct[];
   let updated = 0;
@@ -197,11 +205,12 @@ async function main(): Promise<void> {
     if (colorNames.length === 0 && sizeNames.length === 0) continue;
 
     const label = `${product.productName} (${product.productNo})`;
+    const isStopped = stoppedProductNos.has(product.productNo);
     let changed = false;
 
     if (colorNames.length > 0) {
       const before = product.soldOutColors ?? [];
-      const soldOut = findSoldOutNames(variants, "COLOR", colorNames);
+      const soldOut = isStopped ? colorNames : findSoldOutNames(variants, "COLOR", colorNames);
       if (applyIfChanged(product, "soldOutColors", soldOut)) {
         collectStockChanges(label, before, soldOut, newlySoldOut, restocked);
         changed = true;
@@ -210,7 +219,7 @@ async function main(): Promise<void> {
 
     if (sizeNames.length > 0) {
       const before = product.soldOutSizes ?? [];
-      const soldOut = findSoldOutNames(variants, "SIZE", sizeNames);
+      const soldOut = isStopped ? sizeNames : findSoldOutNames(variants, "SIZE", sizeNames);
       if (applyIfChanged(product, "soldOutSizes", soldOut)) {
         collectStockChanges(label, before, soldOut, newlySoldOut, restocked);
         changed = true;

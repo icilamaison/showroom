@@ -168,13 +168,18 @@ function applyIfChanged<T extends Record<string, unknown>>(
   return before !== after;
 }
 
-async function fetchDetailHtml(productNo: number): Promise<string> {
+// 미진열 상품은 상세페이지 대신 메인으로 이동한다. 그때는 null을 돌려 실패와 구분한다.
+async function fetchDetailHtml(productNo: number): Promise<string | null> {
   const res = await fetch(`${BASE_URL}${productNo}`, {
     headers: { "User-Agent": "Mozilla/5.0" },
   });
 
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}`);
+  }
+
+  if (!res.url.includes(`product_no=${productNo}`)) {
+    return null;
   }
 
   return res.text();
@@ -186,6 +191,8 @@ async function main() {
 
   let updated = 0;
   let failed = 0;
+  let hidden = 0;
+  let checked = 0;
 
   for (const product of catalog) {
     const colorNames = product.colors ? Object.keys(product.colors) : [];
@@ -199,7 +206,7 @@ async function main() {
       continue;
     }
 
-    let html: string;
+    let html: string | null;
     try {
       html = await fetchDetailHtml(product.productNo);
     } catch (error) {
@@ -207,6 +214,13 @@ async function main() {
       console.error(`✗ ${product.productName} (${product.productNo}): ${(error as Error).message}`);
       continue;
     }
+
+    if (html == null) {
+      hidden += 1;
+      console.log(`- 미진열 (상세페이지 없음): ${product.productName} (${product.productNo}) — 품절은 API(sync-stock-from-variants) 기준 유지`);
+      continue;
+    }
+    checked += 1;
 
     let changed = false;
 
@@ -217,9 +231,13 @@ async function main() {
         console.error(`✗ ${product.productName} (${product.productNo}): option_stock_data를 찾지 못함`);
       } else {
         const entries = Object.values(stockData);
+        // 상품 전체가 판매 안 함·품절이면(부클) 옵션 재고가 남아 있어도 전부 품절이다
+        const isProductSoldOut = /var is_soldout_icon = 'T'/.test(html);
 
         if (colorNames.length > 0) {
-          const soldOutColors = findSoldOutNames(entries, "COLOR", colorNames);
+          const soldOutColors = isProductSoldOut
+            ? colorNames
+            : findSoldOutNames(entries, "COLOR", colorNames);
           if (applyIfChanged(product, "soldOutColors", soldOutColors)) {
             changed = true;
             console.log(`● ${product.productName} (${product.productNo}): soldOutColors → ${JSON.stringify(soldOutColors)}`);
@@ -227,7 +245,9 @@ async function main() {
         }
 
         if (sizeNames.length > 0) {
-          const soldOutSizes = findSoldOutNames(entries, "SIZE", sizeNames);
+          const soldOutSizes = isProductSoldOut
+            ? sizeNames
+            : findSoldOutNames(entries, "SIZE", sizeNames);
           if (applyIfChanged(product, "soldOutSizes", soldOutSizes)) {
             changed = true;
             console.log(`● ${product.productName} (${product.productNo}): soldOutSizes → ${JSON.stringify(soldOutSizes)}`);
@@ -287,9 +307,9 @@ async function main() {
 
   if (WRITE) {
     writeFileSync(jsonPath, `${JSON.stringify(catalog, null, 4)}\n`, "utf8");
-    console.log(`\n✓ product.json 반영 완료 (변경 ${updated}건, 실패 ${failed}건)`);
+    console.log(`\n✓ product.json 반영 완료 (확인 ${checked}건, 변경 ${updated}건, 미진열 ${hidden}건, 실패 ${failed}건)`);
   } else {
-    console.log(`\n(dry-run) 변경 ${updated}건, 실패 ${failed}건 — 반영하려면 --write 옵션으로 실행`);
+    console.log(`\n(dry-run) 확인 ${checked}건, 변경 ${updated}건, 미진열 ${hidden}건, 실패 ${failed}건 — 반영하려면 --write 옵션으로 실행`);
   }
 }
 
