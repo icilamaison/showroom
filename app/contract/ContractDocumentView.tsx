@@ -205,11 +205,14 @@ function resolveProductRow(product: ProductRow): {
 type ContractDocumentViewProps = {
   values: ContractFormValues;
   className?: string;
+  // PDF: 빈 상품 줄을 빼서 계약서가 A4 한 장에 들어가게 한다
+  hideEmptyRows?: boolean;
 };
 
 export default function ContractDocumentView({
   values,
   className = "",
+  hideEmptyRows = false,
 }: ContractDocumentViewProps) {
   const displayedRecipientName = values.recipientSameAsBuyer
     ? values.buyerName
@@ -226,7 +229,7 @@ export default function ContractDocumentView({
         <div className="contract-doc__brand">
           <img
             className="contract-doc__brand-name"
-            src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
+            src="/logo_black.svg"
             alt="이씨라메종"
           />
           <span className="contract-doc__brand-contact">
@@ -350,6 +353,10 @@ export default function ContractDocumentView({
           </thead>
           <tbody>
             {values.products.map((product, index) => {
+              if (hideEmptyRows && !product.name.trim()) {
+                return null;
+              }
+
               const { catalogProduct, isSet, activeComponents, setSelections } =
                 resolveProductRow(product);
               // 저장 값은 "아이보리 미니 100X150" 그대로. 보기 화면에서만 색상·사이즈로 나눈다.

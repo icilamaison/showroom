@@ -16,7 +16,7 @@ export default function ContractPdfDocument({ values }: ContractPdfDocumentProps
         />
       </div>
       <div className="contract-doc__pdf-contract-section">
-        <ContractDocumentView values={values} />
+        <ContractDocumentView values={values} hideEmptyRows />
       </div>
     </div>
   );
