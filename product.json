@@ -766,6 +766,7 @@
         "supplyPrice": 0,
         "productPrice": 211591,
         "salePrice": 232750,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -799,6 +800,7 @@
         "supplyPrice": 0,
         "productPrice": 176527,
         "salePrice": 194180,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -832,6 +834,7 @@
         "supplyPrice": 0,
         "productPrice": 133000,
         "salePrice": 146300,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -864,6 +867,7 @@
         "supplyPrice": 0,
         "productPrice": 302273,
         "salePrice": 332500,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -905,6 +909,7 @@
         "supplyPrice": 0,
         "productPrice": 178336,
         "salePrice": 196170,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -938,6 +943,7 @@
         "supplyPrice": 0,
         "productPrice": 128764,
         "salePrice": 141640,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -1439,6 +1445,7 @@
         "supplyPrice": 0,
         "productPrice": 571509,
         "salePrice": 628660,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -1518,6 +1525,7 @@
         "supplyPrice": 0,
         "productPrice": 502636,
         "salePrice": 552900,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -1597,6 +1605,7 @@
         "supplyPrice": 0,
         "productPrice": 356809,
         "salePrice": 392490,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -1688,6 +1697,7 @@
         "supplyPrice": 0,
         "productPrice": 194227,
         "salePrice": 213650,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -1732,6 +1742,7 @@
         "supplyPrice": 0,
         "productPrice": 165600,
         "salePrice": 182160,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -1776,6 +1787,7 @@
         "supplyPrice": 0,
         "productPrice": 125182,
         "salePrice": 137700,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -1819,6 +1831,7 @@
         "supplyPrice": 0,
         "productPrice": 145955,
         "salePrice": 160550,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -1865,6 +1878,7 @@
         "supplyPrice": 0,
         "productPrice": 107218,
         "salePrice": 117940,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -3491,6 +3505,7 @@
         "supplyPrice": 0,
         "productPrice": 186927,
         "salePrice": 205620,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -3539,6 +3554,7 @@
         "supplyPrice": 0,
         "productPrice": 159982,
         "salePrice": 175980,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -3587,6 +3603,7 @@
         "supplyPrice": 0,
         "productPrice": 117318,
         "salePrice": 129050,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -3634,6 +3651,7 @@
         "supplyPrice": 0,
         "productPrice": 549745,
         "salePrice": 604720,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -3713,6 +3731,7 @@
         "supplyPrice": 0,
         "productPrice": 480873,
         "salePrice": 528960,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -3792,6 +3811,7 @@
         "supplyPrice": 0,
         "productPrice": 345927,
         "salePrice": 380520,
+        "setDiscountRate": 5,
         "promotions": [
             "bedding"
         ],
@@ -3907,6 +3927,7 @@
         "supplyPrice": 0,
         "productPrice": 238364,
         "salePrice": 262200,
+        "setDiscountRate": 5,
         "components": [
             {
                 "productCode": "P0000BGT",
@@ -3959,6 +3980,7 @@
         "supplyPrice": 0,
         "productPrice": 213491,
         "salePrice": 234840,
+        "setDiscountRate": 5,
         "components": [
             {
                 "productCode": "P0000BGS",
@@ -4012,6 +4034,7 @@
         "supplyPrice": 0,
         "productPrice": 201818,
         "salePrice": 222000,
+        "setDiscountRate": 0,
         "promotions": [
             "bedding"
         ],
@@ -4054,6 +4077,7 @@
         "supplyPrice": 0,
         "productPrice": 132955,
         "salePrice": 146250,
+        "setDiscountRate": 0,
         "promotions": [
             "bedding"
         ],
@@ -4352,6 +4376,7 @@
         "supplyPrice": 0,
         "productPrice": 88636,
         "salePrice": 97500,
+        "setDiscountRate": 0,
         "promotions": [
             "bedding"
         ],
@@ -4486,6 +4511,7 @@
         "supplyPrice": 0,
         "productPrice": 172036,
         "salePrice": 189240,
+        "setDiscountRate": 5,
         "components": [
             {
                 "productCode": "P0000BAS",
@@ -8139,6 +8165,7 @@
         "supplyPrice": 0,
         "productPrice": 186200,
         "salePrice": 204820,
+        "setDiscountRate": 5,
         "components": [
             {
                 "productCode": "P0000BZE",
@@ -8171,6 +8198,7 @@
         "supplyPrice": 0,
         "productPrice": 134809,
         "salePrice": 148290,
+        "setDiscountRate": 5,
         "components": [
             {
                 "productCode": "P0000BZD",
@@ -8250,6 +8278,7 @@
         "supplyPrice": 0,
         "productPrice": 174018,
         "salePrice": 191420,
+        "setDiscountRate": 5,
         "components": [
             {
                 "productCode": "P0000BWF",
@@ -8295,6 +8324,7 @@
         "supplyPrice": 0,
         "productPrice": 130236,
         "salePrice": 143260,
+        "setDiscountRate": 5,
         "components": [
             {
                 "productCode": "P0000BWE",

@@ -47,6 +47,8 @@ export type CatalogProduct = {
   typePrices?: Record<string, number>;
   sizes?: CatalogSizeOption[];
   components?: SetComponent[];
+  // 세트 판매가 = 고른 구성품 가격 합계 × (100 - 할인율)%, 10원 미만 절사(카페24 세트 설정). 없으면 salePrice 고정
+  setDiscountRate?: number;
   soldOutColors?: string[];
   soldOutSizes?: string[];
   soldOutTypes?: string[];

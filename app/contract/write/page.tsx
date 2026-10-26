@@ -292,6 +292,23 @@ export default function ContractWritePage() {
       [index]: nextSelections,
     }));
 
+    // 구성품 옵션 가격이 다르면(인견 패드 베이지 -10,240원) 카페24처럼 세트가도 다시 계산한다
+    const discountRate = selectedProduct?.setDiscountRate;
+    const canRecalculate =
+      discountRate != null && nextSelections.every((selection) => selection.unitPrice);
+    const setPrice = canRecalculate
+      ? Math.floor(
+          (nextSelections.reduce(
+            (sum, selection) =>
+              sum + Number(selection.unitPrice) * Number(selection.quantity || 1),
+            0,
+          ) *
+            (100 - discountRate)) /
+            100 /
+            10,
+        ) * 10
+      : null;
+
     setValues((current) => ({
       ...current,
       products: current.products.map((row, productIndex) =>
@@ -301,6 +318,7 @@ export default function ContractWritePage() {
               color: selectedProduct?.components?.length
                 ? formatSetOptionName(components, nextSelections)
                 : row.color,
+              ...(setPrice != null ? { unitPrice: String(setPrice) } : {}),
             }
           : row,
       ),
