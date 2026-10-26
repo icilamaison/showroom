@@ -2626,35 +2626,59 @@
             "100X150 이하",
             {
                 "name": "150X200 이하",
-                "salePrice": 314650
+                "salePrice": 290500,
+                "typePrices": {
+                    "오리지널타입 1.85cm": 314650
+                }
             },
             {
                 "name": "160X240 이하",
-                "salePrice": 406000
+                "salePrice": 377300,
+                "typePrices": {
+                    "오리지널타입 1.85cm": 406000
+                }
             },
             {
                 "name": "200X300 이하",
-                "salePrice": 629300
+                "salePrice": 581000,
+                "typePrices": {
+                    "오리지널타입 1.85cm": 629300
+                }
             },
             {
                 "name": "240X320 이하",
-                "salePrice": 896000
+                "salePrice": 835800,
+                "typePrices": {
+                    "오리지널타입 1.85cm": 896000
+                }
             },
             {
                 "name": "300X400 이하",
-                "salePrice": 1264200
+                "salePrice": 1166200,
+                "typePrices": {
+                    "오리지널타입 1.85cm": 1264200
+                }
             },
             {
                 "name": "원형 150 이하",
-                "salePrice": 287000
+                "salePrice": 252000,
+                "typePrices": {
+                    "오리지널타입 1.85cm": 287000
+                }
             },
             {
                 "name": "원형 200 이하",
-                "salePrice": 497000
+                "salePrice": 448000,
+                "typePrices": {
+                    "오리지널타입 1.85cm": 497000
+                }
             },
             {
                 "name": "원형 300 이하",
-                "salePrice": 1120000
+                "salePrice": 987000,
+                "typePrices": {
+                    "오리지널타입 1.85cm": 1120000
+                }
             }
         ],
         "soldOutSizes": [
@@ -3264,22 +3288,40 @@
             "브라운샌드": "#ffffff"
         },
         "sizes": [
-            "100X150 이하",
+            {
+                "name": "100X150 이하",
+                "salePrice": 104000,
+                "typePrices": {
+                    "오리지널": 99200
+                }
+            },
             {
                 "name": "160X240 이하",
-                "salePrice": 224000
+                "salePrice": 235200,
+                "typePrices": {
+                    "오리지널": 224000
+                }
             },
             {
                 "name": "200X300 이하",
-                "salePrice": 352000
+                "salePrice": 369600,
+                "typePrices": {
+                    "오리지널": 352000
+                }
             },
             {
                 "name": "240X340 이하",
-                "salePrice": 584000
+                "salePrice": 612800,
+                "typePrices": {
+                    "오리지널": 584000
+                }
             },
             {
                 "name": "300X400 이하",
-                "salePrice": 920000
+                "salePrice": 965600,
+                "typePrices": {
+                    "오리지널": 920000
+                }
             }
         ],
         "types": [
@@ -4429,7 +4471,10 @@
         "types": [
             "라이트타입 1.5cm",
             "오리지널타입 1.85cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.85cm": 161700
+        }
     },
     {
         "productCode": "P0000BFR",
@@ -6259,7 +6304,10 @@
         "types": [
             "라이트타입 1.1cm",
             "오리지널타입 1.4cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.4cm": 155400
+        }
     },
     {
         "productCode": "P0000BBD",
@@ -6279,7 +6327,10 @@
         "types": [
             "라이트타입 1.1cm",
             "오리지널타입 1.4cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.4cm": 434000
+        }
     },
     {
         "productCode": "P0000BBC",
@@ -6299,7 +6350,10 @@
         "types": [
             "라이트타입 1.1cm",
             "오리지널타입 1.4cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.4cm": 343000
+        }
     },
     {
         "productCode": "P0000BBB",
@@ -6319,7 +6373,10 @@
         "types": [
             "라이트타입 1.1cm",
             "오리지널타입 1.4cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.4cm": 224000
+        }
     },
     {
         "productCode": "P0000BBA",
@@ -7414,7 +7471,10 @@
         "types": [
             "라이트타입 1.5cm",
             "오리지널타입 1.85cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.85cm": 314650
+        }
     },
     {
         "productCode": "P00000YI",
@@ -7439,7 +7499,10 @@
         "types": [
             "라이트타입 1.5cm",
             "오리지널타입 1.85cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.85cm": 1264200
+        }
     },
     {
         "productCode": "P00000YH",
@@ -7461,7 +7524,10 @@
         "types": [
             "라이트타입 1.5cm",
             "오리지널타입 1.85cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.85cm": 896000
+        }
     },
     {
         "productCode": "P00000YG",
@@ -7483,7 +7549,10 @@
         "types": [
             "라이트타입 1.5cm",
             "오리지널타입 1.85cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.85cm": 629300
+        }
     },
     {
         "productCode": "P00000YF",
@@ -7505,7 +7574,10 @@
         "types": [
             "라이트타입 1.5cm",
             "오리지널타입 1.85cm"
-        ]
+        ],
+        "typePrices": {
+            "오리지널타입 1.85cm": 406000
+        }
     },
     {
         "productCode": "P00000YC",
@@ -7533,7 +7605,10 @@
         "types": [
             "모노타입",
             "오리지널"
-        ]
+        ],
+        "typePrices": {
+            "모노타입": 104000
+        }
     },
     {
         "productCode": "P00000YB",
@@ -7557,7 +7632,10 @@
         "types": [
             "모노타입",
             "오리지널"
-        ]
+        ],
+        "typePrices": {
+            "모노타입": 965600
+        }
     },
     {
         "productCode": "P00000YA",
@@ -7581,7 +7659,10 @@
         "types": [
             "모노타입",
             "오리지널"
-        ]
+        ],
+        "typePrices": {
+            "모노타입": 612800
+        }
     },
     {
         "productCode": "P00000XZ",
@@ -7609,7 +7690,10 @@
         "types": [
             "모노타입",
             "오리지널"
-        ]
+        ],
+        "typePrices": {
+            "모노타입": 369600
+        }
     },
     {
         "productCode": "P00000XY",
@@ -7638,7 +7722,10 @@
         "types": [
             "모노타입",
             "오리지널"
-        ]
+        ],
+        "typePrices": {
+            "모노타입": 235200
+        }
     },
     {
         "productCode": "P0000CAF",

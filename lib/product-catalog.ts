@@ -6,6 +6,7 @@ export type CatalogSizeOption =
       name: string;
       consumerPrice?: number;
       salePrice?: number;
+      typePrices?: Record<string, number>;
       components?: SetComponent[];
     };
 
@@ -40,6 +41,8 @@ export type CatalogProduct = {
   colorPrices?: Record<string, number>;
   // TYPE 축(라이트/오리지널, 매트리스 높이 등). 색·사이즈와 독립 선택.
   types?: string[];
+  // TYPE마다 판매가가 다른 상품(비벤디 라이트/오리지널). 없는 TYPE은 기본 판매가.
+  typePrices?: Record<string, number>;
   sizes?: CatalogSizeOption[];
   components?: SetComponent[];
   soldOutColors?: string[];
@@ -157,6 +160,25 @@ export function getSizeSalePrice(
 
   // 컬러 선택 시에도 이 함수로 가격을 조회하므로(ContractForm) colorPrices도 확인
   return product.colorPrices?.[sizeName] ?? null;
+}
+
+// 사이즈 형제를 묶은 상품은 사이즈마다 TYPE 가격이 다르므로 사이즈 옵션 값을 먼저 본다.
+export function getTypeSalePrice(
+  product: CatalogProduct,
+  sizeName: string,
+  typeName: string,
+): number | null {
+  if (!typeName) {
+    return null;
+  }
+
+  for (const option of product.sizes ?? []) {
+    if (typeof option !== "string" && option.name === sizeName) {
+      return option.typePrices?.[typeName] ?? null;
+    }
+  }
+
+  return product.typePrices?.[typeName] ?? null;
 }
 
 export function getVariantComponents(
@@ -350,6 +372,7 @@ export function withSizeSiblings(product: CatalogProduct): CatalogProduct {
       name: size,
       consumerPrice: member.consumerPrice,
       salePrice: member.salePrice,
+      typePrices: member.typePrices,
     };
   });
 

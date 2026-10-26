@@ -1,7 +1,7 @@
 "use client";
 
 import { ApiClientError, submitContract } from "@/lib/api-client";
-import { getSizeSalePrice, getVariantComponents, isSetProduct, withSizeSiblings, type CatalogProduct } from "@/lib/product-catalog";
+import { getSizeSalePrice, getTypeSalePrice, getVariantComponents, isSetProduct, withSizeSiblings, type CatalogProduct } from "@/lib/product-catalog";
 import {
   createSetComponentSelections,
   formatSetOptionName,
@@ -181,7 +181,8 @@ export default function ContractWritePage() {
               product.size,
           );
           const salePrice = selected
-            ? getSizeSalePrice(selected, keepSize ? product.size : value) ??
+            ? getTypeSalePrice(selected, keepSize ? product.size : "", product.type) ??
+              getSizeSalePrice(selected, keepSize ? product.size : value) ??
               selected.salePrice
             : null;
           const components = selected ? getVariantComponents(selected, value) : [];
@@ -214,7 +215,9 @@ export default function ContractWritePage() {
         if (field === "size") {
           const selected = productSelections[index];
           const salePrice = selected
-            ? getSizeSalePrice(selected, value) ?? selected.salePrice
+            ? getTypeSalePrice(selected, value, product.type) ??
+              getSizeSalePrice(selected, value) ??
+              selected.salePrice
             : null;
           const components = selected ? getVariantComponents(selected, value) : [];
 
@@ -230,6 +233,21 @@ export default function ContractWritePage() {
             size: value,
             ...(salePrice != null ? { unitPrice: String(salePrice) } : {}),
           };
+        }
+
+        if (field === "type") {
+          const selected = productSelections[index];
+          // TYPE 가격이 없는 상품은 기존 단가(수기 입력 포함)를 건드리지 않는다
+          if (!selected?.typePrices && !selected?.sizes?.some((size) => typeof size !== "string" && size.typePrices)) {
+            return { ...product, type: value };
+          }
+
+          const salePrice =
+            getTypeSalePrice(selected, product.size, value) ??
+            getSizeSalePrice(selected, product.size || product.color) ??
+            selected.salePrice;
+
+          return { ...product, type: value, unitPrice: String(salePrice) };
         }
 
         return { ...product, [field]: value };

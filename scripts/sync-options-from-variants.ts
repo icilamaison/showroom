@@ -8,6 +8,10 @@
  * 사이즈 판매가 = 상품 판매가(price) + 해당 사이즈 variant의 additional_amount.
  * 추가금은 음수일 수도 있다(기본가보다 싼 사이즈). 0일 때만 문자열로 둔다.
  *
+ * TYPE(라이트/오리지널 등) 판매가 = 상품 판매가 + 해당 TYPE variant의 additional_amount.
+ * 기본가와 다른 TYPE만 typePrices에 넣는다. SIZE가 같이 있으면 추가금이 SIZE+TYPE 합산이라
+ * 사이즈 가격은 첫 TYPE(카페24 기본 선택) 기준으로 잡고, 나머지 TYPE은 사이즈 옵션의 typePrices에 둔다.
+ *
  * 색상 hex는 API의 option_color가 비어 있으면 기존 값을 유지한다.
  * 카페24 관리자에 색상칩을 지정하지 않은 옵션이 많아서, 덮어쓰면 수기 값이 전부 날아간다.
  * sizes[]에 components가 들어 있는 세트형은 구성 조합이라 사이즈가 아니므로 건드리지 않는다.
@@ -34,12 +38,15 @@ type ApiProduct = {
   variants?: Variant[];
 };
 
-type CatalogSizeOption = string | { name: string; salePrice?: number; components?: unknown[] };
+type CatalogSizeOption =
+  | string
+  | { name: string; salePrice?: number; typePrices?: Record<string, number>; components?: unknown[] };
 
 type CatalogProduct = {
   productNo: number;
   productName: string;
   salePrice?: number;
+  typePrices?: Record<string, number>;
   colors?: Record<string, string>;
   sizes?: CatalogSizeOption[];
   components?: unknown[];
@@ -85,9 +92,9 @@ async function fetchAllProducts(mallId: string, accessToken: string): Promise<Ap
   return products;
 }
 
-// 축(COLOR·SIZE) 값을 API 순서 그대로 모은다.
+// 축(COLOR·SIZE·TYPE) 값을 API 순서 그대로 모은다.
 // 같은 사이즈가 색상마다 반복되므로 추가금이 갈리는지도 함께 본다. 갈리면 사이즈 단위로 정할 수 없다.
-function collectAxis(variants: Variant[], axis: "COLOR" | "SIZE"): AxisValues {
+function collectAxis(variants: Variant[], axis: "COLOR" | "SIZE" | "TYPE"): AxisValues {
   const order: string[] = [];
   const seen = new Map<string, Set<number>>();
 
@@ -119,6 +126,33 @@ function collectAxis(variants: Variant[], axis: "COLOR" | "SIZE"): AxisValues {
   return { order, addPrices, conflicts };
 }
 
+function getOptionValue(variant: Variant, axis: string): string {
+  return variant.options?.find((option) => option.name === axis)?.value?.trim() ?? "";
+}
+
+// 기준 추가금(baseAmount)과 다른 TYPE만 판매가로 남긴다. 같으면 상품·사이즈 판매가 그대로다.
+function toTypePrices(
+  typeAxis: AxisValues,
+  basePrice: number,
+  baseAmount: number,
+  before?: Record<string, number>,
+): Record<string, number> | undefined {
+  const prices: Record<string, number> = {};
+
+  for (const name of typeAxis.order) {
+    const amount = typeAxis.addPrices.get(name);
+
+    // 색상마다 추가금이 갈리는 TYPE은 정할 수 없으니 기존 값을 그대로 둔다.
+    if (amount === undefined) {
+      if (before?.[name] != null) prices[name] = before[name];
+      continue;
+    }
+    if (amount !== baseAmount) prices[name] = basePrice + amount;
+  }
+
+  return Object.keys(prices).length > 0 ? prices : undefined;
+}
+
 async function main(): Promise<void> {
   const { mallId } = loadCafe24Config();
   const accessToken = await getAccessToken();
@@ -147,7 +181,20 @@ async function main(): Promise<void> {
 
     const changes: string[] = [];
     const colorAxis = collectAxis(variants, "COLOR");
-    const sizeAxis = collectAxis(variants, "SIZE");
+    const typeAxis = collectAxis(variants, "TYPE");
+    const baseType = typeAxis.order[0];
+    const sizeOrder = collectAxis(variants, "SIZE").order;
+    // SIZE와 TYPE이 같이 있으면 추가금이 둘을 합친 값이라, 사이즈 가격은 첫 TYPE variant로만 정한다.
+    const sizeAxis =
+      baseType && sizeOrder.length > 0
+        ? {
+            ...collectAxis(
+              variants.filter((variant) => getOptionValue(variant, "TYPE") === baseType),
+              "SIZE",
+            ),
+            order: sizeOrder,
+          }
+        : collectAxis(variants, "SIZE");
 
     if (sizeAxis.conflicts.length > 0) {
       conflicted.push(`${product.productNo} ${product.productName}: ${sizeAxis.conflicts.join(", ")}`);
@@ -200,14 +247,27 @@ async function main(): Promise<void> {
 
         const salePrice = basePrice + addPrice;
         const beforePrice = typeof before === "object" ? before.salePrice : undefined;
+        const beforeTypePrices = typeof before === "object" ? before.typePrices : undefined;
+        const sizeTypeAxis = collectAxis(
+          variants.filter((variant) => getOptionValue(variant, "SIZE") === name),
+          "TYPE",
+        );
+        const typePrices = toTypePrices(sizeTypeAxis, basePrice, addPrice, beforeTypePrices);
+
+        if (sizeTypeAxis.conflicts.length > 0) {
+          conflicted.push(`${product.productNo} ${product.productName} ${name}: ${sizeTypeAxis.conflicts.join(", ")}`);
+        }
+        if (JSON.stringify(typePrices) !== JSON.stringify(beforeTypePrices)) {
+          changes.push(`${name} TYPE ${JSON.stringify(beforeTypePrices ?? {})} → ${JSON.stringify(typePrices ?? {})}`);
+        }
 
         if (addPrice === 0) {
-          nextSizes.push(name);
+          nextSizes.push(typePrices ? { name, typePrices } : name);
           if (beforePrice != null) changes.push(`${name} ${beforePrice} → ${salePrice}`);
           continue;
         }
 
-        nextSizes.push({ ...(typeof before === "object" ? before : {}), name, salePrice });
+        nextSizes.push({ ...(typeof before === "object" ? before : {}), name, salePrice, typePrices });
         if (beforePrice !== salePrice) {
           changes.push(`${name} ${beforePrice ?? basePrice} → ${salePrice}`);
         }
@@ -220,6 +280,19 @@ async function main(): Promise<void> {
       if (removed.length > 0) changes.push(`사이즈 삭제 ${removed.join("/")}`);
 
       if (changes.length > 0) product.sizes = nextSizes;
+    }
+
+    /* ---------- TYPE 가격 (사이즈 축이 없는 상품) ---------- */
+    if (typeAxis.order.length > 0 && sizeOrder.length === 0) {
+      if (typeAxis.conflicts.length > 0) {
+        conflicted.push(`${product.productNo} ${product.productName}: ${typeAxis.conflicts.join(", ")}`);
+      }
+
+      const typePrices = toTypePrices(typeAxis, basePrice, 0, product.typePrices);
+      if (JSON.stringify(typePrices) !== JSON.stringify(product.typePrices)) {
+        changes.push(`TYPE ${JSON.stringify(product.typePrices ?? {})} → ${JSON.stringify(typePrices ?? {})}`);
+        product.typePrices = typePrices;
+      }
     }
 
     if (changes.length > 0) {
