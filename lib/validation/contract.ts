@@ -62,8 +62,8 @@ export type ContractFormValues = {
   signatureDataUrl?: string;
   termsAgreed: boolean;
   marketingConsentAgreed: boolean;
-  // 배송·교환·반품 안내문에 펜으로 표시한 내용을 안내문과 함께 찍은 이미지(JPEG data URL). 필기가 없으면 없음
-  noticeAnnotationImage?: string;
+  // 배송·교환·반품 안내문에 펜으로 표시한 선(NoticeSheet 기준 좌표). 필기가 없으면 없음
+  noticeAnnotation?: { strokes: { tool: "pen" | "highlighter"; points: [number, number][] }[] };
 };
 
 const yearSchema = z

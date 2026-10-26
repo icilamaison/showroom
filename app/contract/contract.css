@@ -1105,29 +1105,52 @@
   border-color: #e6c200;
 }
 
-.notice-annotator__paper {
+/* 안내문 시트 (NoticeSheet): 항상 860px·같은 글꼴로 그리고 화면이 좁으면 통째로 축소한다.
+   기기마다 줄바꿈이 같아야 펜 표시가 원문 위 같은 자리에 겹치므로, 화면 폭에 따라 바뀌는 문서 스타일을 여기서 고정한다 */
+.notice-sheet {
   position: relative;
+  width: 100%;
+  overflow: hidden;
   background: var(--color-surface);
 }
 
-/* 안내문 아래 동의 체크 영역. 필기 이미지에 같이 찍힌다 */
-.notice-annotator__extra {
-  padding: 1.5rem var(--doc-padding-x) var(--doc-padding-y);
+.notice-sheet__paper {
+  position: relative;
+  transform-origin: 0 0;
+  font-family: "Pretendard Variable", Pretendard, var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+  background: var(--color-surface);
+}
+
+.notice-sheet .notice-sheet__document {
+  padding: 1.75rem 1.75rem 0;
+  font-family: inherit;
+}
+
+.notice-sheet .contract-doc__title {
+  font-size: 1.42rem;
+}
+
+.notice-sheet .contract-doc__meta {
+  justify-content: center;
+}
+
+/* 안내문 아래 동의 문구 */
+.notice-sheet__extra {
+  padding: 1.75rem;
 }
 
 /* 손가락 스크롤은 그대로 두고 펜만 그린다(touch-action 기본값 유지) */
-.notice-annotator__canvas {
+.notice-sheet__overlay {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
-/* 저장된 안내문+필기 이미지 */
-.notice-annotation-image {
-  display: block;
-  width: 100%;
-  height: auto;
+/* 보기 화면에서는 링크 클릭·텍스트 선택이 되도록 표시 레이어가 터치를 받지 않는다 */
+.notice-sheet__overlay--readonly {
+  pointer-events: none;
 }
 
 /* 계약서 조회 — 모바일: 보험 앱처럼 페이지 넘김, 데스크톱: 세로 스크롤 */

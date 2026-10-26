@@ -33,7 +33,7 @@ export function purchasePayloadToFormValues(
     termsAgreed: payload.termsAgreed,
     marketingConsentAgreed: payload.marketingConsentAgreed ?? false,
     // 스키마에 없는 값이라 원본 payload에서 그대로 꺼낸다
-    noticeAnnotationImage: (payload as { noticeAnnotationImage?: string }).noticeAnnotationImage,
+    noticeAnnotation: (payload as Pick<ContractFormValues, "noticeAnnotation">).noticeAnnotation,
   };
 }
 

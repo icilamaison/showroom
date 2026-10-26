@@ -110,10 +110,10 @@ export async function updateContract(
       return "not_found";
     }
 
-    // 수정 화면은 안내문 단계를 거치지 않으므로 작성 때 저장한 필기 이미지를 그대로 이어받는다
-    const previous = (current.rows[0].payload ?? {}) as { noticeAnnotationImage?: string };
+    // 수정 화면은 안내문 단계를 거치지 않으므로 작성 때 저장한 펜 표시를 그대로 이어받는다
+    const previous = (current.rows[0].payload ?? {}) as { noticeAnnotation?: unknown };
     const payload = buildPayload(input, {
-      noticeAnnotationImage: previous.noticeAnnotationImage,
+      noticeAnnotation: previous.noticeAnnotation,
       ...(typeof rawPayload === "object" && rawPayload !== null ? rawPayload : {}),
     });
 

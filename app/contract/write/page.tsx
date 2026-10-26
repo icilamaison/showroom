@@ -32,6 +32,7 @@ import "../../ui.css";
 import "../contract.css";
 import ContractCompanyFooter from "../ContractCompanyFooter";
 import NoticeAnnotator, { type NoticeAnnotatorHandle } from "../NoticeAnnotator";
+import { NoticeAgreeLine } from "../NoticeSheet";
 import ContractForm, { createInitialContractFormValues } from "./ContractForm";
 
 export default function ContractWritePage() {
@@ -531,10 +532,10 @@ export default function ContractWritePage() {
     setIsSubmitting(true);
 
     try {
-      const noticeAnnotationImage = await noticeAnnotatorRef.current?.capture();
+      const noticeAnnotation = noticeAnnotatorRef.current?.getAnnotation();
       const result = await submitContract({
         ...validation.data,
-        ...(noticeAnnotationImage ? { noticeAnnotationImage } : {}),
+        ...(noticeAnnotation ? { noticeAnnotation } : {}),
       });
       router.push(
         `/contract/complete?contractNumber=${encodeURIComponent(result.contractNumber)}&viewToken=${encodeURIComponent(result.viewToken)}`,
@@ -589,16 +590,10 @@ export default function ContractWritePage() {
             ) : null}
 
             {/* 동의 문구에도 펜으로 표시할 수 있게 필기 영역 안에 둔다 */}
-            <NoticeAnnotator ref={noticeAnnotatorRef}>
-              <label className="notice-agree">
-                <input
-                  type="checkbox"
-                  checked={noticeAgreed}
-                  onChange={(event) => setNoticeAgreed(event.target.checked)}
-                />
-                위 배송·교환·반품 등 안내사항을 모두 확인하였습니다.
-              </label>
-            </NoticeAnnotator>
+            <NoticeAnnotator
+              ref={noticeAnnotatorRef}
+              extra={<NoticeAgreeLine checked={noticeAgreed} onChange={setNoticeAgreed} />}
+            />
 
             <div className="contract-doc-flow__actions">
 

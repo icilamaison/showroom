@@ -1,4 +1,7 @@
-import type { ValidatedContractFormValues } from "./validation/contract";
+import type {
+  ContractFormValues,
+  ValidatedContractFormValues,
+} from "./validation/contract";
 
 export type ApiSuccessResponse<T> = {
   success: true;
@@ -40,7 +43,7 @@ async function parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
 }
 
 export async function submitContract(
-  payload: ValidatedContractFormValues & { noticeAnnotationImage?: string },
+  payload: ValidatedContractFormValues & Pick<ContractFormValues, "noticeAnnotation">,
 ): Promise<SubmitContractResult> {
   const response = await fetch("/api/contracts", {
     method: "POST",

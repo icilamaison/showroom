@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import ContractDocumentView from "./ContractDocumentView";
-import ContractNoticeDocument from "./ContractNoticeDocument";
+import { ContractNoticeSheet } from "./NoticeSheet";
 import type { ContractFormValues } from "@/lib/validation/contract";
 
 type ContractDocumentViewerProps = {
@@ -66,16 +66,8 @@ export default function ContractDocumentViewer({
 
   const renderPageContent = (pageKey: (typeof DOCUMENT_PAGES)[number]["key"]) => {
     if (pageKey === "notice") {
-      // 작성 때 펜으로 표시했다면 고객이 본 그대로(안내문+필기 이미지) 보여준다
-      return values.noticeAnnotationImage ? (
-        <img
-          className="notice-annotation-image"
-          src={values.noticeAnnotationImage}
-          alt="펜으로 표시한 배송·교환·반품 등 안내"
-        />
-      ) : (
-        <ContractNoticeDocument className="contract-doc contract-doc--document contract-doc--sheet notice-document" />
-      );
+      // 원문(링크·텍스트 선택 가능) 위에 작성 때 펜으로 표시한 내용을 겹쳐 보여준다
+      return <ContractNoticeSheet values={values} />;
     }
 
     return (
