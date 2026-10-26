@@ -274,7 +274,8 @@
             "패드 K 1P + 홑이불 QK 1P + 베개커버 지퍼형 2P",
             "패드 220X205 1P + 홑이불 QK 1P + 베개커버 지퍼형 2P",
             "패드 260X205 1P + 홑이불 QK 1P + 베개커버 지퍼형 2P"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BVO",
@@ -354,7 +355,8 @@
         "soldOutSizes": [
             "S",
             "L"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BVH",
@@ -431,7 +433,8 @@
         ],
         "soldOutSizes": [
             "40X60"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BSS",
@@ -453,7 +456,8 @@
             "쿨포터 바디필로우 20X100 (솜 포함)",
             "쿨포터 소파패드 3인 65X180",
             "쿨포터 소파패드 4인 65X230"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BSP",
@@ -475,7 +479,8 @@
         "soldOutColors": [
             "화이트 3인 65X180",
             "화이트 4인 65X230"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BSO",
@@ -492,7 +497,8 @@
         },
         "soldOutColors": [
             "화이트 QK겸용 200X210"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BSN",
@@ -509,7 +515,8 @@
         },
         "soldOutColors": [
             "화이트 SS 150X200"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BSG",
@@ -612,7 +619,8 @@
         },
         "soldOutColors": [
             "내추럴 1호 160X240"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BSB",
@@ -678,7 +686,8 @@
         "discontinued": true,
         "soldOutColors": [
             "밀크글라스 아이보리 250ml"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BRV",
@@ -2780,7 +2789,8 @@
             "원형 150 이하",
             "원형 200 이하",
             "원형 300 이하"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BIW",
@@ -3217,7 +3227,8 @@
             "195X200X55",
             "205X200X55",
             "215X200X55"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BHV",
@@ -3424,7 +3435,8 @@
                 ]
             }
         ],
-        "discontinued": true
+        "discontinued": true,
+        "hidden": true
     },
     {
         "productCode": "P0000BHO",
@@ -3453,7 +3465,8 @@
                 ]
             }
         ],
-        "discontinued": true
+        "discontinued": true,
+        "hidden": true
     },
     {
         "productCode": "P0000BHN",
@@ -3481,7 +3494,8 @@
                 ]
             }
         ],
-        "discontinued": true
+        "discontinued": true,
+        "hidden": true
     },
     {
         "productCode": "P0000BHM",
@@ -3509,7 +3523,8 @@
                 ]
             }
         ],
-        "discontinued": true
+        "discontinued": true,
+        "hidden": true
     },
     {
         "productCode": "P0000BHL",
@@ -4225,7 +4240,8 @@
         },
         "soldOutColors": [
             "화이트 패밀리 260X205"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BGQ",
@@ -4242,7 +4258,8 @@
         },
         "soldOutColors": [
             "화이트 패밀리 220X205"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BGP",
@@ -4259,7 +4276,8 @@
         },
         "soldOutColors": [
             "화이트 K 180X205"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BGO",
@@ -4276,7 +4294,8 @@
         },
         "soldOutColors": [
             "화이트 Q 155X205"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BGL",
@@ -4505,7 +4524,8 @@
                 ]
             }
         ],
-        "discontinued": true
+        "discontinued": true,
+        "hidden": true
     },
     {
         "productCode": "P0000BFV",
@@ -4714,7 +4734,8 @@
         "soldOutSizes": [
             "S 48X60",
             "M 48X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BFK",
@@ -4778,7 +4799,8 @@
         "soldOutSizes": [
             "S 48X60",
             "M 48X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BFH",
@@ -4842,7 +4864,8 @@
         "soldOutSizes": [
             "S 48X60",
             "M 48X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BFE",
@@ -4951,7 +4974,8 @@
         },
         "soldOutColors": [
             "딥블루"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BEY",
@@ -5048,7 +5072,8 @@
         "soldOutSizes": [
             "S 48X60",
             "M 48X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BES",
@@ -5070,7 +5095,8 @@
         "soldOutSizes": [
             "S 48X60",
             "M 48X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BER",
@@ -5172,7 +5198,8 @@
         "soldOutSizes": [
             "S 48X60",
             "M 48X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BEL",
@@ -5239,7 +5266,8 @@
         ],
         "soldOutSizes": [
             "L (권장사이즈 255-280mm)"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BEH",
@@ -5254,7 +5282,8 @@
         "sizes": [
             "M (권장사이즈 220-250mm)",
             "L (권장사이즈 255-280mm)"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BEG",
@@ -5269,7 +5298,8 @@
         "sizes": [
             "M (권장사이즈 220-250mm)",
             "L (권장사이즈 255-280mm)"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BEF",
@@ -5284,7 +5314,8 @@
         "sizes": [
             "M (권장사이즈 220-250mm)",
             "L (권장사이즈 255-280mm)"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BEE",
@@ -5697,7 +5728,8 @@
         "colorPrices": {
             "브라운 30X50": 23760,
             "솔리드그레이 30X50": 23760
-        }
+        },
+        "hidden": true
     },
     {
         "productCode": "P0000BDD",
@@ -5735,7 +5767,8 @@
         },
         "soldOutColors": [
             "아이보리 반호 140X200"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BDB",
@@ -5752,7 +5785,8 @@
         },
         "soldOutColors": [
             "아이보리 2호 200X290"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BDA",
@@ -5766,7 +5800,8 @@
         "salePrice": 198900,
         "colors": {
             "아이보리 1호 160X230": "#f5f3e2"
-        }
+        },
+        "hidden": true
     },
     {
         "productCode": "P0000BCZ",
@@ -5783,7 +5818,8 @@
         },
         "soldOutColors": [
             "아이보리 1.5호 200X250"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BCY",
@@ -5800,7 +5836,8 @@
         },
         "soldOutColors": [
             "화이트 SS 110X205"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BCV",
@@ -6029,7 +6066,8 @@
             "브라운 30X50": 23760,
             "솔리드그레이 30X50": 23760,
             "그레이 30X50": 23760
-        }
+        },
+        "hidden": true
     },
     {
         "productCode": "P0000BCJ",
@@ -6198,7 +6236,8 @@
         "soldOutSizes": [
             "S 45X60",
             "M 45X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BBZ",
@@ -6233,7 +6272,8 @@
         ],
         "soldOutSizes": [
             "20X100 (커버 단품)"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BBW",
@@ -6250,7 +6290,8 @@
         ],
         "soldOutSizes": [
             "50X70"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BBT",
@@ -6560,7 +6601,8 @@
         "soldOutSizes": [
             "S 48X60",
             "M 48X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BAX",
@@ -6651,7 +6693,8 @@
         "consumerPrice": 8500,
         "supplyPrice": 0,
         "productPrice": 7727,
-        "salePrice": 8500
+        "salePrice": 8500,
+        "hidden": true
     },
     {
         "productCode": "P0000BAP",
@@ -6691,7 +6734,8 @@
             "아이보리 원형 300",
             "그레이시베이지 원형 300",
             "라이트그레이 원형 300"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BAN",
@@ -6712,7 +6756,8 @@
             "아이보리 원형 200",
             "그레이시베이지 원형 200",
             "라이트그레이 원형 200"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BAM",
@@ -6733,7 +6778,8 @@
             "아이보리 원형 150",
             "그레이시베이지 원형 150",
             "라이트그레이 원형 150"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BAK",
@@ -6754,7 +6800,8 @@
             "아이보리 3호 240X330",
             "그레이시베이지 3호 240X330",
             "라이트그레이 3호 240X330"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BAJ",
@@ -6775,7 +6822,8 @@
             "아이보리 2호 200X300",
             "그레이시베이지 2호 200X300",
             "라이트그레이 2호 200X300"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BAI",
@@ -6796,7 +6844,8 @@
             "아이보리 1호 160X240",
             "그레이시베이지 1호 160X240",
             "라이트그레이 1호 160X240"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BAH",
@@ -7571,7 +7620,8 @@
         "consumerPrice": 5900,
         "supplyPrice": 0,
         "productPrice": 5364,
-        "salePrice": 5900
+        "salePrice": 5900,
+        "hidden": true
     },
     {
         "productCode": "P00000YJ",
@@ -9170,7 +9220,8 @@
             "50X70",
             "50X120",
             "40X60 (10월 26일 순차 발송)"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BPA",
@@ -9191,7 +9242,8 @@
             "아이보리 3호 240X330",
             "베이지 3호 240X330",
             "그레이 3호 240X330"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BOZ",
@@ -9212,7 +9264,8 @@
             "아이보리 2호 200X290",
             "베이지 2호 200X290",
             "그레이 2호 200X290"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BOY",
@@ -9224,7 +9277,8 @@
         "supplyPrice": 0,
         "productPrice": 116000,
         "salePrice": 127600,
-        "colors": {}
+        "colors": {},
+        "hidden": true
     },
     {
         "productCode": "P0000BOX",
@@ -9239,7 +9293,8 @@
         "colors": {},
         "types": [
             "라이트타입 1.1cm"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000CBI",
