@@ -1,15 +1,25 @@
 "use client";
 
-import { ApiClientError, submitContract } from "@/lib/api-client";
-import { getSizeSalePrice, getTypeSalePrice, getVariantComponents, isSetProduct, withSizeSiblings, type CatalogProduct } from "@/lib/product-catalog";
 import {
+  ApiClientError,
+  fetchAdminContractById,
+  submitContract,
+  updateAdminContract,
+} from "@/lib/api-client";
+import { findCatalogProductByName, getSizeSalePrice, getTypeSalePrice, getVariantComponents, isSetProduct, searchProducts, withSizeSiblings, type CatalogProduct } from "@/lib/product-catalog";
+import {
+  buildSetSelectionsFromColor,
   createSetComponentSelections,
   formatSetOptionName,
   resolveComponentPriceForSize,
   type SetComponentSelection,
 } from "@/lib/set-product";
 import { formatPhoneInput, PHONE_FORM_FIELDS } from "@/lib/phone";
-import type { ContractFormValues, ProductRow } from "@/lib/validation/contract";
+import type {
+  ContractFormValues,
+  ProductRow,
+  ValidatedContractFormValues,
+} from "@/lib/validation/contract";
 import {
   createEmptyProductRow,
   PRODUCT_ROW_COUNT,
@@ -17,7 +27,7 @@ import {
 } from "@/lib/validation/contract";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../../ui.css";
 import "../contract.css";
 import ContractCompanyFooter from "../ContractCompanyFooter";
@@ -41,6 +51,71 @@ export default function ContractWritePage() {
   // 계약서 작성 → 배송·교환·반품 안내 동의 → 제출 순서
   const [step, setStep] = useState<"form" | "notice">("form");
   const [noticeAgreed, setNoticeAgreed] = useState(false);
+  // 관리자 상세의 "수정"으로 들어오면(?edit=계약서ID) 저장된 내용을 채우고, 저장 시 같은 계약서를 고친다
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editContractNumber, setEditContractNumber] = useState("");
+
+  useEffect(() => {
+    const id = Number(new URLSearchParams(window.location.search).get("edit"));
+    if (!Number.isInteger(id) || id <= 0) {
+      return;
+    }
+
+    fetchAdminContractById(id)
+      .then((contract) => {
+        if (contract.approvalNumber) {
+          window.alert("승인번호가 저장된 계약서는 수정할 수 없습니다.");
+          router.replace(`/admin/contracts/${id}`);
+          return;
+        }
+
+        const payload = contract.payload as Partial<ContractFormValues>;
+        const products = [...(payload.products ?? [])];
+        while (products.length < PRODUCT_ROW_COUNT) {
+          products.push(createEmptyProductRow());
+        }
+
+        // 상품 드롭다운·세트 구성품 선택도 저장된 값으로 되돌린다
+        const nextSelections: Record<number, CatalogProduct | null> = {};
+        const nextSetSelections: Record<number, SetComponentSelection[]> = {};
+        products.forEach((product, index) => {
+          const name = product.name.trim();
+          if (!name) {
+            return;
+          }
+
+          // 묶음 상품은 검색 결과에만 있고, 미진열 상품은 검색에서 빠지므로 이름 조회로 한 번 더 찾는다
+          const catalogProduct =
+            searchProducts(name, 50).find((candidate) => candidate.productName === name) ??
+            findCatalogProductByName(name);
+          if (!catalogProduct) {
+            return;
+          }
+
+          nextSelections[index] = withSizeSiblings(catalogProduct);
+          if (isSetProduct(catalogProduct)) {
+            nextSetSelections[index] = buildSetSelectionsFromColor(
+              catalogProduct.components ?? [],
+              product.color,
+            );
+          }
+        });
+
+        setValues({ ...createInitialContractFormValues(), ...payload, products });
+        setProductSelections(nextSelections);
+        setSetComponentSelections(nextSetSelections);
+        setEditId(id);
+        setEditContractNumber(contract.contractNumber);
+      })
+      .catch((error) => {
+        if (error instanceof ApiClientError && error.status === 401) {
+          router.push("/admin/login");
+          return;
+        }
+
+        setFormError("수정할 계약서를 불러오지 못했습니다.");
+      });
+  }, [router]);
 
   function clearFieldError(field: string) {
     if (!errors[field]) {
@@ -413,8 +488,41 @@ export default function ContractWritePage() {
     }
 
     setErrors({});
+
+    if (editId) {
+      void handleEditSave(editId, validation.data);
+      return;
+    }
+
     setStep("notice");
     window.scrollTo(0, 0);
+  }
+
+  async function handleEditSave(id: number, data: ValidatedContractFormValues) {
+    setFormError("");
+    setIsSubmitting(true);
+
+    try {
+      await updateAdminContract(id, data);
+      router.push(`/admin/contracts/${id}`);
+    } catch (error) {
+      if (error instanceof ApiClientError) {
+        if (error.status === 401) {
+          router.push("/admin/login");
+          return;
+        }
+
+        setFormError(error.message);
+
+        if (error.errors) {
+          setErrors(error.errors);
+        }
+      } else {
+        setFormError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function handleNoticeSubmit() {
@@ -451,9 +559,15 @@ export default function ContractWritePage() {
     <main className="app-page">
       <div className="app-container app-container--doc">
         {step === "form" ? (
-          <Link href="/" className="app-back-link">
-            ← 홈으로
-          </Link>
+          editId ? (
+            <Link href={`/admin/contracts/${editId}`} className="app-back-link">
+              ← 계약서 상세로 돌아가기 (수정 중: {editContractNumber})
+            </Link>
+          ) : (
+            <Link href="/" className="app-back-link">
+              ← 홈으로
+            </Link>
+          )
         ) : (
           <button
             type="button"
@@ -513,6 +627,7 @@ export default function ContractWritePage() {
             values={values}
             errors={errors}
             isSubmitting={isSubmitting}
+            submitLabel={editId ? "수정 저장" : undefined}
             productSelections={productSelections}
             setComponentSelections={setComponentSelections}
             onChange={handleChange}

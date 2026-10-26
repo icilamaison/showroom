@@ -218,6 +218,7 @@ export type ContractDetail = {
   updatedAt: string;
   createdByUsername: string | null;
   createdByName: string | null;
+  edits?: { editedAt: string; editorName: string | null; changedFields: string[] }[];
 };
 
 export type ContractStatusUpdateResult = {
@@ -285,6 +286,16 @@ export async function updateAdminContractApprovalNumber(
       body: JSON.stringify({ approvalNumber }),
     },
   );
+}
+
+export async function updateAdminContract(
+  id: number,
+  payload: ValidatedContractFormValues,
+): Promise<{ id: number }> {
+  return adminFetch<{ id: number }>(`/api/admin/contracts/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getAdminOrderExcelDownloadUrl(

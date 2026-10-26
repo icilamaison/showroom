@@ -85,6 +85,8 @@ type ContractFormProps = {
   values: ContractFormValues;
   errors?: Record<string, string>;
   isSubmitting?: boolean;
+  // 수정 모드에서는 안내 단계 없이 바로 저장한다
+  submitLabel?: string;
   productSelections?: Record<number, CatalogProduct | null>;
   setComponentSelections?: Record<number, SetComponentSelection[]>;
   onChange: (
@@ -319,6 +321,7 @@ export default function ContractForm({
   values,
   errors = {},
   isSubmitting = false,
+  submitLabel = "다음",
   productSelections = {},
   setComponentSelections = {},
   onChange,
@@ -1032,7 +1035,7 @@ export default function ContractForm({
         disabled={isSubmitDisabled}
         className="contract-doc__submit"
       >
-        {isSubmitting ? "제출 중..." : "다음"}
+        {isSubmitting ? "제출 중..." : submitLabel}
       </button>
       {isSignatureModalOpen ? (
         <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">

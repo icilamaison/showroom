@@ -55,7 +55,73 @@ export type ContractDetail = {
   updatedAt: string;
   createdByUsername: string | null;
   createdByName: string | null;
+  edits?: ContractEdit[];
 };
+
+export type ContractEdit = {
+  editedAt: string;
+  editorName: string | null;
+  changedFields: string[];
+};
+
+// 수정 이력에 보여줄 항목명. 목록에 없는 값(서명 이미지 등)은 바뀌어도 표시하지 않는다
+const EDIT_FIELD_LABELS: Record<string, string> = {
+  managerName: "담당자",
+  writtenDate: "작성일자",
+  buyerName: "구매자 성명",
+  buyerPhone: "구매자 연락처",
+  recipientSameAsBuyer: "수령자 정보",
+  recipientName: "수령자 성명",
+  recipientPhone: "수령자 연락처",
+  recipientPostalCode: "우편번호",
+  recipientAddress: "배송지 주소",
+  recipientAddressDetail: "상세주소",
+  products: "상품 정보",
+  totalDiscountRate: "전체 할인율",
+  paymentMethod: "결제수단",
+  cashReceiptType: "현금영수증",
+  cashReceiptPhone: "현금영수증 번호",
+  cashReceiptBusinessNumber: "사업자등록번호",
+  taxInvoiceRequested: "세금계산서",
+  taxInvoiceEmail: "세금계산서 이메일",
+  agreementDate: "동의일자",
+  signatureName: "서명자",
+  marketingConsentAgreed: "마케팅 동의",
+};
+
+function getChangedFields(before: unknown, after: unknown): string[] {
+  const beforeRecord = (before ?? {}) as Record<string, unknown>;
+  const afterRecord = (after ?? {}) as Record<string, unknown>;
+
+  return Object.entries(EDIT_FIELD_LABELS)
+    .filter(([key]) => JSON.stringify(beforeRecord[key]) !== JSON.stringify(afterRecord[key]))
+    .map(([, label]) => label);
+}
+
+async function getContractEdits(contractId: number): Promise<ContractEdit[]> {
+  const result = await pool.query<{
+    created_at: Date;
+    editor_name: string | null;
+    before_payload: unknown;
+    after_payload: unknown;
+  }>(
+    `SELECT contract_edits.created_at,
+            COALESCE(admins.name, admins.username) AS editor_name,
+            contract_edits.before_payload,
+            contract_edits.after_payload
+     FROM contract_edits
+     LEFT JOIN admins ON admins.id = contract_edits.admin_id
+     WHERE contract_edits.contract_id = $1
+     ORDER BY contract_edits.created_at DESC`,
+    [contractId],
+  );
+
+  return result.rows.map((row) => ({
+    editedAt: row.created_at.toISOString(),
+    editorName: row.editor_name,
+    changedFields: getChangedFields(row.before_payload, row.after_payload),
+  }));
+}
 
 type ContractListRow = {
   id: number;
@@ -305,6 +371,7 @@ export async function getContractById(
   return {
     ...mapContractDetail(result.rows[0]),
     viewToken: result.rows[0].view_token ?? null,
+    edits: await getContractEdits(id),
   };
 }
 

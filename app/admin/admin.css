@@ -210,6 +210,14 @@
   word-break: break-word;
 }
 
+/* 수정 이력: 최신순 한 줄씩 */
+.admin-edit-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
 .admin-product-table-wrap {
   overflow-x: auto;
   margin-top: 0.25rem;
