@@ -144,6 +144,20 @@ function applyIfChanged(
   return before !== after;
 }
 
+// 이전·현재 품절 목록을 비교해 새로 품절된 옵션과 재입고된 옵션을 나눠 담는다.
+function collectStockChanges(
+  label: string,
+  before: string[],
+  after: string[],
+  newlySoldOut: string[],
+  restocked: string[],
+): void {
+  const added = after.filter((name) => !before.includes(name));
+  const removed = before.filter((name) => !after.includes(name));
+  if (added.length > 0) newlySoldOut.push(`${label}: ${added.join(", ")}`);
+  if (removed.length > 0) restocked.push(`${label}: ${removed.join(", ")}`);
+}
+
 async function main(): Promise<void> {
   const { mallId } = loadCafe24Config();
   const accessToken = await getAccessToken();
@@ -157,6 +171,8 @@ async function main(): Promise<void> {
   let updated = 0;
   let skipped = 0;
   let missing = 0;
+  const newlySoldOut: string[] = [];
+  const restocked: string[] = [];
 
   for (const product of catalog) {
     // 세트 상품의 재고는 구성품에 있다. variants로는 판단할 수 없다.
@@ -180,27 +196,35 @@ async function main(): Promise<void> {
 
     if (colorNames.length === 0 && sizeNames.length === 0) continue;
 
-    const changes: string[] = [];
+    const label = `${product.productName} (${product.productNo})`;
+    let changed = false;
 
     if (colorNames.length > 0) {
+      const before = product.soldOutColors ?? [];
       const soldOut = findSoldOutNames(variants, "COLOR", colorNames);
       if (applyIfChanged(product, "soldOutColors", soldOut)) {
-        changes.push(`soldOutColors → ${JSON.stringify(soldOut)}`);
+        collectStockChanges(label, before, soldOut, newlySoldOut, restocked);
+        changed = true;
       }
     }
 
     if (sizeNames.length > 0) {
+      const before = product.soldOutSizes ?? [];
       const soldOut = findSoldOutNames(variants, "SIZE", sizeNames);
       if (applyIfChanged(product, "soldOutSizes", soldOut)) {
-        changes.push(`soldOutSizes → ${JSON.stringify(soldOut)}`);
+        collectStockChanges(label, before, soldOut, newlySoldOut, restocked);
+        changed = true;
       }
     }
 
-    if (changes.length > 0) {
-      updated += 1;
-      console.log(`● ${product.productName} (${product.productNo}): ${changes.join(" / ")}`);
-    }
+    if (changed) updated += 1;
   }
+
+  /* ---------- 새로 품절 / 재입고 ---------- */
+  console.log(`\n[새로 품절] ${newlySoldOut.length}건`);
+  for (const line of newlySoldOut) console.log(`  ${line}`);
+  console.log(`\n[재입고] ${restocked.length}건`);
+  for (const line of restocked) console.log(`  ${line}`);
 
   if (WRITE) {
     writeFileSync(JSON_PATH, `${JSON.stringify(catalog, null, 4)}\n`, "utf8");

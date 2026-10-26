@@ -157,7 +157,7 @@ jobs:
             fi
             if [ -f artifacts/catalog-sync/stock-variants-dry-run.log ]; then
               echo "[stock]"
-              grep -E '\(dry-run\)' artifacts/catalog-sync/stock-variants-dry-run.log | tail -n 3 || true
+              sed -n '/^\[새로 품절\]/,$p' artifacts/catalog-sync/stock-variants-dry-run.log | head -n 60 || true
               echo
             fi
             if [ -f artifacts/catalog-sync/options-dry-run.log ]; then

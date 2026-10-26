@@ -103,7 +103,8 @@ set -e
   echo "> 세트 구성품 품절은 HTML 파싱(\`sync-stock-from-cafe24.ts\`)이라 CI 1단계에서는 제외했습니다."
   echo
   echo '```'
-  tail -n 50 "$STOCK_LOG"
+  # 상품 수집 진행 로그는 빼고 새로 품절 / 재입고 목록만 남긴다
+  grep -v '^\[products\]' "$STOCK_LOG" | tail -n 80
   echo '```'
   echo
 } >> "$SUMMARY"
