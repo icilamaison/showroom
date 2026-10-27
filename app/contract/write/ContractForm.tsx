@@ -833,126 +833,131 @@ export default function ContractForm({
                 <FieldError message={errors.paymentMethod} />
               </td>
             </tr>
-            <tr>
-              <th scope="row" rowSpan={2} className="contract-doc__payment-note">
-                계좌이체
-                <br />
-                결제 시
-              </th>
-              <th scope="row">현금영수증 발행</th>
-              <td colSpan={2}>
-                <div className="contract-doc__option-group contract-doc__option-group--stack">
-                  <label className="contract-doc__checkbox">
-                    <input
-                      type="checkbox"
-                      checked={values.cashReceiptType === "income_deduction"}
-                      disabled={cashReceiptDisabled}
-                      onChange={() =>
-                        onChange(
-                          "cashReceiptType",
-                          values.cashReceiptType === "income_deduction"
-                            ? ""
-                            : "income_deduction",
-                        )
-                      }
-                      className="contract-doc__checkbox-input"
-                    />
-                    <span className="contract-doc__checkbox-box" aria-hidden="true">
-                      [{values.cashReceiptType === "income_deduction" ? "✓" : " "}]
-                    </span>
-                    <span>
-                      소득공제용(휴대폰번호{" "}
-                      <input
-                        type="tel"
-                        value={values.cashReceiptPhone}
-                        onChange={(event) =>
-                          onChange("cashReceiptPhone", event.target.value)
-                        }
-                        className="contract-doc__inline-input contract-doc__inline-input--phone"
-                        disabled={cashReceiptDisabled}
-                        placeholder="010-0000-0000"
-                      />
-                      )
-                    </span>
-                  </label>
-                  <label className="contract-doc__checkbox">
-                    <input
-                      type="checkbox"
-                      checked={values.cashReceiptType === "expense_proof"}
-                      disabled={cashReceiptDisabled}
-                      onChange={() =>
-                        onChange(
-                          "cashReceiptType",
-                          values.cashReceiptType === "expense_proof"
-                            ? ""
-                            : "expense_proof",
-                        )
-                      }
-                      className="contract-doc__checkbox-input"
-                    />
-                    <span className="contract-doc__checkbox-box" aria-hidden="true">
-                      [{values.cashReceiptType === "expense_proof" ? "✓" : " "}]
-                    </span>
-                    <span>
-                      지출증빙용(사업자등록번호 :{" "}
-                      <input
-                        type="text"
-                        value={values.cashReceiptBusinessNumber}
-                        onChange={(event) =>
-                          onChange(
-                            "cashReceiptBusinessNumber",
-                            event.target.value,
+            {/* 계좌이체 고객이 적어 계좌이체를 골랐을 때만 노출 */}
+            {showBankTransferFields ? (
+              <>
+                <tr>
+                  <th scope="row" rowSpan={2} className="contract-doc__payment-note">
+                    계좌이체
+                    <br />
+                    결제 시
+                  </th>
+                  <th scope="row">현금영수증 발행</th>
+                  <td colSpan={2}>
+                    <div className="contract-doc__option-group contract-doc__option-group--stack">
+                      <label className="contract-doc__checkbox">
+                        <input
+                          type="checkbox"
+                          checked={values.cashReceiptType === "income_deduction"}
+                          disabled={cashReceiptDisabled}
+                          onChange={() =>
+                            onChange(
+                              "cashReceiptType",
+                              values.cashReceiptType === "income_deduction"
+                                ? ""
+                                : "income_deduction",
+                            )
+                          }
+                          className="contract-doc__checkbox-input"
+                        />
+                        <span className="contract-doc__checkbox-box" aria-hidden="true">
+                          [{values.cashReceiptType === "income_deduction" ? "✓" : " "}]
+                        </span>
+                        <span>
+                          소득공제용(휴대폰번호{" "}
+                          <input
+                            type="tel"
+                            value={values.cashReceiptPhone}
+                            onChange={(event) =>
+                              onChange("cashReceiptPhone", event.target.value)
+                            }
+                            className="contract-doc__inline-input contract-doc__inline-input--phone"
+                            disabled={cashReceiptDisabled}
+                            placeholder="010-0000-0000"
+                          />
                           )
+                        </span>
+                      </label>
+                      <label className="contract-doc__checkbox">
+                        <input
+                          type="checkbox"
+                          checked={values.cashReceiptType === "expense_proof"}
+                          disabled={cashReceiptDisabled}
+                          onChange={() =>
+                            onChange(
+                              "cashReceiptType",
+                              values.cashReceiptType === "expense_proof"
+                                ? ""
+                                : "expense_proof",
+                            )
+                          }
+                          className="contract-doc__checkbox-input"
+                        />
+                        <span className="contract-doc__checkbox-box" aria-hidden="true">
+                          [{values.cashReceiptType === "expense_proof" ? "✓" : " "}]
+                        </span>
+                        <span>
+                          지출증빙용(사업자등록번호 :{" "}
+                          <input
+                            type="text"
+                            value={values.cashReceiptBusinessNumber}
+                            onChange={(event) =>
+                              onChange(
+                                "cashReceiptBusinessNumber",
+                                event.target.value,
+                              )
+                            }
+                            className="contract-doc__inline-input contract-doc__inline-input--biz"
+                            disabled={cashReceiptDisabled}
+                            placeholder="000-00-00000"
+                          />
+                          )
+                        </span>
+                      </label>
+                    </div>
+                    <FieldError message={errors.cashReceiptType} />
+                    <FieldError message={errors.cashReceiptPhone} />
+                    <FieldError message={errors.cashReceiptBusinessNumber} />
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">세금계산서 발행</th>
+                  <td colSpan={2}>
+                    <label className="contract-doc__checkbox">
+                      <input
+                        type="checkbox"
+                        checked={values.taxInvoiceRequested}
+                        disabled={!showBankTransferFields}
+                        onChange={(event) =>
+                          onChange("taxInvoiceRequested", event.target.checked)
                         }
-                        className="contract-doc__inline-input contract-doc__inline-input--biz"
-                        disabled={cashReceiptDisabled}
-                        placeholder="000-00-00000"
+                        className="contract-doc__checkbox-input"
                       />
-                      )
-                    </span>
-                  </label>
-                </div>
-                <FieldError message={errors.cashReceiptType} />
-                <FieldError message={errors.cashReceiptPhone} />
-                <FieldError message={errors.cashReceiptBusinessNumber} />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">세금계산서 발행</th>
-              <td colSpan={2}>
-                <label className="contract-doc__checkbox">
-                  <input
-                    type="checkbox"
-                    checked={values.taxInvoiceRequested}
-                    disabled={!showBankTransferFields}
-                    onChange={(event) =>
-                      onChange("taxInvoiceRequested", event.target.checked)
-                    }
-                    className="contract-doc__checkbox-input"
-                  />
-                  <span className="contract-doc__checkbox-box" aria-hidden="true">
-                    [{values.taxInvoiceRequested ? "✓" : " "}]
-                  </span>
-                  <span>
-                    사업자등록증 별도 제출 필수. (세금계산서 수령 이메일 :{" "}
-                    <input
-                      type="email"
-                      value={values.taxInvoiceEmail}
-                      onChange={(event) =>
-                        onChange("taxInvoiceEmail", event.target.value)
-                      }
-                      className="contract-doc__inline-input contract-doc__inline-input--email"
-                      disabled={
-                        !showBankTransferFields || !values.taxInvoiceRequested
-                      }
-                      placeholder="email@example.com"
-                    />
-                    )
-                  </span>
-                </label>
-                <FieldError message={errors.taxInvoiceEmail} />
-              </td>
-            </tr>
+                      <span className="contract-doc__checkbox-box" aria-hidden="true">
+                        [{values.taxInvoiceRequested ? "✓" : " "}]
+                      </span>
+                      <span>
+                        사업자등록증 별도 제출 필수. (세금계산서 수령 이메일 :{" "}
+                        <input
+                          type="email"
+                          value={values.taxInvoiceEmail}
+                          onChange={(event) =>
+                            onChange("taxInvoiceEmail", event.target.value)
+                          }
+                          className="contract-doc__inline-input contract-doc__inline-input--email"
+                          disabled={
+                            !showBankTransferFields || !values.taxInvoiceRequested
+                          }
+                          placeholder="email@example.com"
+                        />
+                        )
+                      </span>
+                    </label>
+                    <FieldError message={errors.taxInvoiceEmail} />
+                  </td>
+                </tr>
+              </>
+            ) : null}
           </tbody>
         </table>
       </section>

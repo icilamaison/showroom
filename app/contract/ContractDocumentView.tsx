@@ -486,62 +486,67 @@ export default function ContractDocumentView({
                 </div>
               </td>
             </tr>
-            <tr>
-              <th scope="row" rowSpan={2} className="contract-doc__payment-note">
-                계좌이체
-                <br />
-                결제 시
-              </th>
-              <th scope="row">현금영수증 발행</th>
-              <td colSpan={2}>
-                <div className="contract-doc__option-group contract-doc__option-group--stack">
-                  <DocCheckboxDisplay
-                    checked={values.cashReceiptType === "income_deduction"}
-                    label={
-                      <>
-                        소득공제용(휴대폰번호{" "}
-                        <ReadonlyValue
-                          value={values.cashReceiptPhone}
-                          className="contract-doc__inline-input contract-doc__inline-input--phone"
-                        />
-                        )
-                      </>
-                    }
-                  />
-                  <DocCheckboxDisplay
-                    checked={values.cashReceiptType === "expense_proof"}
-                    label={
-                      <>
-                        지출증빙용(사업자등록번호 :{" "}
-                        <ReadonlyValue
-                          value={values.cashReceiptBusinessNumber}
-                          className="contract-doc__inline-input contract-doc__inline-input--biz"
-                        />
-                        )
-                      </>
-                    }
-                  />
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">세금계산서 발행</th>
-              <td colSpan={2}>
-                <DocCheckboxDisplay
-                  checked={values.taxInvoiceRequested}
-                  label={
-                    <>
-                      사업자등록증 별도 제출 필수. (세금계산서 수령 이메일 :{" "}
-                      <ReadonlyValue
-                        value={values.taxInvoiceEmail}
-                        className="contract-doc__inline-input contract-doc__inline-input--email"
+            {/* 계좌이체 고객이 적어 계좌이체를 골랐을 때만 노출 */}
+            {values.paymentMethod === "bank_transfer" ? (
+              <>
+                <tr>
+                  <th scope="row" rowSpan={2} className="contract-doc__payment-note">
+                    계좌이체
+                    <br />
+                    결제 시
+                  </th>
+                  <th scope="row">현금영수증 발행</th>
+                  <td colSpan={2}>
+                    <div className="contract-doc__option-group contract-doc__option-group--stack">
+                      <DocCheckboxDisplay
+                        checked={values.cashReceiptType === "income_deduction"}
+                        label={
+                          <>
+                            소득공제용(휴대폰번호{" "}
+                            <ReadonlyValue
+                              value={values.cashReceiptPhone}
+                              className="contract-doc__inline-input contract-doc__inline-input--phone"
+                            />
+                            )
+                          </>
+                        }
                       />
-                      )
-                    </>
-                  }
-                />
-              </td>
-            </tr>
+                      <DocCheckboxDisplay
+                        checked={values.cashReceiptType === "expense_proof"}
+                        label={
+                          <>
+                            지출증빙용(사업자등록번호 :{" "}
+                            <ReadonlyValue
+                              value={values.cashReceiptBusinessNumber}
+                              className="contract-doc__inline-input contract-doc__inline-input--biz"
+                            />
+                            )
+                          </>
+                        }
+                      />
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">세금계산서 발행</th>
+                  <td colSpan={2}>
+                    <DocCheckboxDisplay
+                      checked={values.taxInvoiceRequested}
+                      label={
+                        <>
+                          사업자등록증 별도 제출 필수. (세금계산서 수령 이메일 :{" "}
+                          <ReadonlyValue
+                            value={values.taxInvoiceEmail}
+                            className="contract-doc__inline-input contract-doc__inline-input--email"
+                          />
+                          )
+                        </>
+                      }
+                    />
+                  </td>
+                </tr>
+              </>
+            ) : null}
           </tbody>
         </table>
       </section>
