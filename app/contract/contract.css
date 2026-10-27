@@ -1386,3 +1386,65 @@
     min-height: auto;
   }
 }
+
+/* ---------- 터치 기기(아이패드) ----------
+   종이 계약서처럼 보이려고 입력칸을 24px로 얇게 그렸는데, 손가락으로는 정확히 누르기 어렵다.
+   마우스(PC)는 그대로 두고, 터치 기기에서만 누르는 영역을 44px(애플 권장 최소)로 넓힌다 */
+@media (pointer: coarse) {
+  .contract-doc__cell-input,
+  .contract-doc__cell-select,
+  .contract-doc__inline-input,
+  .contract-doc__total-discount-input {
+    min-height: 44px;
+  }
+
+  .contract-doc__date-group {
+    line-height: 44px;
+  }
+
+  .contract-doc__date-input {
+    height: 44px;
+    line-height: 43px;
+  }
+
+  .contract-doc__date-input--md {
+    width: 2.6rem;
+  }
+
+  .contract-doc__address-search-button,
+  .contract-doc__row-action-button {
+    min-height: 44px;
+    padding: 0 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  /* "[ ] 구매자와 동일" 같은 글자형 체크박스는 줄 전체를 누르는 영역으로 쓴다 */
+  .contract-doc__checkbox,
+  .contract-doc__terms {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .contract-doc__terms input {
+    width: 22px;
+    height: 22px;
+    margin-top: 0;
+  }
+
+  /* 서명란: 이름 칸과 "(인)"을 눌러 서명 창을 여는 버튼 */
+  .contract-doc__signature-buyer-name {
+    height: 44px;
+    line-height: 43px;
+  }
+
+  .contract-doc__signature-trigger {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .notice-annotator__tool {
+    min-height: 44px;
+    padding: 0 1rem;
+    font-size: 0.92rem;
+  }
+}
