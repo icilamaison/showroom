@@ -111,6 +111,7 @@ export default function SetProductComponents({
               </span>
             </td>
             <td />
+            <td />
           </tr>
         );
       })}

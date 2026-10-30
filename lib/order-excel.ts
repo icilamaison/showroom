@@ -1,5 +1,11 @@
 import type { ProductRow, PurchaseContractPayload } from "./validation/contract";
 import { formatFullAddress } from "./address";
+import {
+  applyTotalDiscount,
+  contractTotal,
+  discountedUnitPrice,
+  lineAmount,
+} from "./contract-amount";
 import { findCatalogProductByName, resolveCafe24Variant } from "./product-catalog";
 import { formatCafe24SetOptionName, formatSetOptionLabel } from "./set-product";
 
@@ -140,8 +146,27 @@ function safeTrim(value: string | undefined): string {
   return value?.trim() ?? "";
 }
 
-function buildLineAmount(product: ProductRow): string {
-  return safeTrim(product.unitPrice);
+// 금액 칸은 개별 할인 적용 단가. 전체 할인 금액은 가장 비싼 상품 한 줄에서만 뺀다
+// (엑셀 금액 합계가 계약서 합계와 같아지도록). 단가가 비어 있으면 빈칸 유지
+function buildLineAmounts(
+  products: ProductRow[],
+  totalDiscountRate: string | undefined,
+): string[] {
+  const subtotal = contractTotal(products);
+  const totalDiscount = subtotal - applyTotalDiscount(subtotal, totalDiscountRate ?? "");
+  // 동일 금액이면 위쪽 행
+  const maxIndex = products.reduce(
+    (best, product, index) =>
+      lineAmount(product) > lineAmount(products[best]) ? index : best,
+    0,
+  );
+
+  return products.map((product, index) => {
+    if (!safeTrim(product.unitPrice)) return "";
+    const amount = discountedUnitPrice(product);
+    // ponytail: 수량 2개 이상인 상품이 최댓값이면 단가에서 할인 전액을 빼므로 합계가 어긋남. 수기 보정 전제
+    return String(index === maxIndex ? amount - totalDiscount : amount);
+  });
 }
 
 function buildSharedOrderFields(
@@ -176,16 +201,18 @@ export function buildOrderExcelRows(
 ): OrderExcelRow[] {
   const sharedFields = buildSharedOrderFields(payload, shoppingMallOrderNumber);
 
-  return payload.products
-    .filter((product) => product.name.trim())
-    .map((product) => {
+  const products = payload.products.filter((product) => product.name.trim());
+  const amounts = buildLineAmounts(products, payload.totalDiscountRate);
+
+  return products
+    .map((product, index) => {
       const { productName, optionName } = buildCafe24ProductAndOption(product);
       return {
         ...sharedFields,
         "온라인 상품명": productName,
         "옵션명": optionName,
         "주문수량": safeTrim(product.quantity),
-        "금액": buildLineAmount(product),
+        "금액": amounts[index],
         "배송메세지": safeTrim(product.remarks ?? ""),
       };
     });

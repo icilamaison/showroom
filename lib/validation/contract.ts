@@ -15,6 +15,8 @@ export type ProductRow = {
   size: string;
   quantity: string;
   unitPrice: string;
+  // 개별 할인율(%). 구 계약 payload에는 없을 수 있음
+  discountRate?: string;
   remarks: string;
 };
 
@@ -26,6 +28,7 @@ export function createEmptyProductRow(): ProductRow {
     size: "",
     quantity: "",
     unitPrice: "",
+    discountRate: "",
     remarks: "",
   };
 }
@@ -86,6 +89,7 @@ const productRowSchema = z.object({
   size: z.string().trim(),
   quantity: z.string().trim(),
   unitPrice: z.string().trim(),
+  discountRate: z.string().trim().optional(),
   remarks: z.string().trim(),
 });
 
@@ -254,6 +258,18 @@ const contractFormSchema = z
           code: z.ZodIssueCode.custom,
           path: ["products", index, "unitPrice"],
           message: "금액은 1 이상의 숫자로 입력해주세요.",
+        });
+      }
+
+      const discountRate = product.discountRate?.trim() ?? "";
+      if (
+        discountRate &&
+        (!/^\d+(\.\d+)?$/.test(discountRate) || Number(discountRate) > 100)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["products", index, "discountRate"],
+          message: "할인율은 0~100 사이의 숫자로 입력해주세요.",
         });
       }
     }

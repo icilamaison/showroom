@@ -40,6 +40,12 @@ describe("contract-amount", () => {
     expect(formatAmount(130000)).toBe("130,000");
   });
 
+  it("개별 할인율을 줄 금액에 반영한다", () => {
+    expect(lineAmount({ quantity: "1", unitPrice: "246400", discountRate: "5" })).toBe(234080);
+    expect(lineAmount({ quantity: "2", unitPrice: "246400", discountRate: "5" })).toBe(468160);
+    expect(lineAmount({ quantity: "1", unitPrice: "246400", discountRate: "" })).toBe(246400);
+  });
+
   it("입력값에서 숫자만 추출한다", () => {
     expect(toDigits("50,000")).toBe("50000");
     expect(toDigits("1a2b3")).toBe("123");

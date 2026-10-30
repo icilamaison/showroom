@@ -535,6 +535,7 @@ export default function ContractForm({
               <th>사이즈</th>
               <th>수량</th>
               <th>금액</th>
+              <th>할인율</th>
               <th>비고</th>
             </tr>
           </thead>
@@ -701,6 +702,24 @@ export default function ContractForm({
                   />
                   <FieldError message={errors[`products.${index}.unitPrice`]} />
                 </td>
+                <td className="contract-doc__discount-cell">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={product.discountRate ?? ""}
+                    onChange={(event) =>
+                      onProductChange(
+                        index,
+                        "discountRate",
+                        event.target.value.replace(/[^\d.]/g, ""),
+                      )
+                    }
+                    className="contract-doc__discount-input"
+                    placeholder="0"
+                  />
+                  %
+                  <FieldError message={errors[`products.${index}.discountRate`]} />
+                </td>
                 <td>
                   <input
                     type="text"
@@ -736,9 +755,9 @@ export default function ContractForm({
             })}
             <tr className="contract-doc__total-row">
               <td colSpan={6} className="contract-doc__total-label">
-                소계
+                소계 (개별 할인 반영)
               </td>
-              <td className="contract-doc__total-value">
+              <td colSpan={2} className="contract-doc__total-value">
                 {formatAmount(productsSubtotal)}
               </td>
               <td />
@@ -747,7 +766,7 @@ export default function ContractForm({
               <td colSpan={6} className="contract-doc__total-label">
                 전체 할인율
               </td>
-              <td className="contract-doc__total-value">
+              <td colSpan={2} className="contract-doc__total-value">
                 <input
                   type="text"
                   inputMode="decimal"
@@ -775,7 +794,7 @@ export default function ContractForm({
               <td colSpan={6} className="contract-doc__total-label">
                 합계
               </td>
-              <td className="contract-doc__total-value">
+              <td colSpan={2} className="contract-doc__total-value">
                 {formatAmount(finalTotal)}
               </td>
               <td />

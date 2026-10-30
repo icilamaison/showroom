@@ -216,6 +216,22 @@ describe("buildOrderExcelRows", () => {
     expect(rows[0]["주소"]).toBe("서울시 강남구 테헤란로 1 101동 1001호");
     expect(rows[0]["금액"]).toBe("12000");
   });
+
+  it("applies item discounts and puts the total discount on the most expensive row", () => {
+    const products = createEmptyProductRows();
+    const row = { type: "", color: "", size: "", quantity: "1", remarks: "" };
+    products[0] = { ...row, name: "러그 A", unitPrice: "657000" };
+    products[1] = { ...row, name: "러그 B", unitPrice: "246400", discountRate: "5" };
+    products[2] = { ...row, name: "러그 C", unitPrice: "193200" };
+
+    const rows = buildOrderExcelRows({
+      ...basePayload,
+      totalDiscountRate: "5",
+      products,
+    });
+
+    expect(rows.map((r) => r["금액"])).toEqual(["602786", "234080", "193200"]);
+  });
 });
 
 describe("findMissingOrderExcelRequiredFields", () => {

@@ -158,6 +158,7 @@ function SetProductDocumentComponents({
               </span>
             </td>
             <td />
+            <td />
           </tr>
         );
       })}
@@ -348,6 +349,7 @@ export default function ContractDocumentView({
               <th>사이즈</th>
               <th>수량</th>
               <th>금액</th>
+              <th>할인율</th>
               <th>비고</th>
             </tr>
           </thead>
@@ -407,6 +409,9 @@ export default function ContractDocumentView({
                         className="contract-doc__cell-input contract-doc__cell-input--numeric"
                       />
                     </td>
+                    <td className="contract-doc__discount-cell">
+                      {Number(product.discountRate) > 0 ? `${product.discountRate}%` : ""}
+                    </td>
                     <td>
                       <ReadonlyValue
                         value={product.remarks}
@@ -426,9 +431,9 @@ export default function ContractDocumentView({
             })}
             <tr className="contract-doc__total-row">
               <td colSpan={6} className="contract-doc__total-label">
-                소계
+                소계 (개별 할인 반영)
               </td>
-              <td className="contract-doc__total-value">
+              <td colSpan={2} className="contract-doc__total-value">
                 {formatAmount(productsSubtotal)}
               </td>
               <td />
@@ -437,7 +442,7 @@ export default function ContractDocumentView({
               <td colSpan={6} className="contract-doc__total-label">
                 전체 할인율
               </td>
-              <td className="contract-doc__total-value">
+              <td colSpan={2} className="contract-doc__total-value">
                 {values.totalDiscountRate ? `${values.totalDiscountRate}%` : "-"}
                 {productsSubtotal - finalTotal > 0 ? (
                   <span className="contract-doc__total-discount-amount">
@@ -451,7 +456,7 @@ export default function ContractDocumentView({
               <td colSpan={6} className="contract-doc__total-label">
                 합계
               </td>
-              <td className="contract-doc__total-value">
+              <td colSpan={2} className="contract-doc__total-value">
                 {formatAmount(finalTotal)}
               </td>
               <td />

@@ -1,16 +1,30 @@
 import type { ProductRow } from "./validation/contract";
 
-type AmountInput = Pick<ProductRow, "quantity" | "unitPrice">;
+type AmountInput = Pick<ProductRow, "quantity" | "unitPrice" | "discountRate">;
 
-// 한 줄 금액 = 수량 × 단가. 빈칸/숫자 아님은 0으로 처리.
-export function lineAmount({ quantity, unitPrice }: AmountInput): number {
-  const qty = Number(quantity);
-  const price = Number(unitPrice);
-  if (!Number.isFinite(qty) || !Number.isFinite(price)) return 0;
-  return qty * price;
+function toRate(discountRate: string | undefined): number {
+  const rate = Number(discountRate);
+  return Number.isFinite(rate) && rate > 0 ? rate : 0;
 }
 
-// 소계 = 모든 줄 금액의 합 (할인 적용 전).
+// 개별 할인 적용 단가. 원 단위 반올림. 숫자 아님은 0으로 처리.
+export function discountedUnitPrice({
+  unitPrice,
+  discountRate,
+}: Pick<ProductRow, "unitPrice" | "discountRate">): number {
+  const price = Number(unitPrice);
+  if (!Number.isFinite(price)) return 0;
+  return Math.round(price * (1 - toRate(discountRate) / 100));
+}
+
+// 한 줄 금액 = 수량 × 개별 할인 적용 단가. 빈칸/숫자 아님은 0으로 처리.
+export function lineAmount(product: AmountInput): number {
+  const qty = Number(product.quantity);
+  if (!Number.isFinite(qty)) return 0;
+  return qty * discountedUnitPrice(product);
+}
+
+// 소계 = 모든 줄 금액의 합 (개별 할인 반영, 전체 할인 적용 전).
 export function contractTotal(products: AmountInput[]): number {
   return products.reduce((sum, product) => sum + lineAmount(product), 0);
 }
@@ -20,9 +34,7 @@ export function applyTotalDiscount(
   subtotal: number,
   discountRate: string,
 ): number {
-  const rate = Number(discountRate);
-  const safeRate = Number.isFinite(rate) && rate > 0 ? rate : 0;
-  return Math.round(subtotal * (1 - safeRate / 100));
+  return Math.round(subtotal * (1 - toRate(discountRate) / 100));
 }
 
 export function formatAmount(value: number): string {
