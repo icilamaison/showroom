@@ -20,6 +20,13 @@ describe("contract-amount", () => {
     expect(applyTotalDiscount(10000, "")).toBe(10000);
   });
 
+  it("할인 금액의 원 단위 미만은 버린다 (포스와 동일)", () => {
+    // 비벤디 2호 오리지널 629,300원: 개별 5% → 597,835, 전체 5% → 567,944
+    const subtotal = lineAmount({ quantity: "1", unitPrice: "629300", discountRate: "5" });
+    expect(subtotal).toBe(597835);
+    expect(applyTotalDiscount(subtotal, "5")).toBe(567944);
+  });
+
   it("빈칸이나 숫자가 아니면 0으로 처리한다", () => {
     expect(lineAmount({ quantity: "", unitPrice: "50000" })).toBe(0);
     expect(lineAmount({ quantity: "3", unitPrice: "" })).toBe(0);

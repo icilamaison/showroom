@@ -7,14 +7,20 @@ function toRate(discountRate: string | undefined): number {
   return Number.isFinite(rate) && rate > 0 ? rate : 0;
 }
 
-// 개별 할인 적용 단가. 원 단위 반올림. 숫자 아님은 0으로 처리.
+// 할인 적용 금액. 포스와 같게 할인 금액의 원 단위 미만은 버린다
+// (예: 597,835원 5% → 할인 29,891.75 → 29,891 → 567,944원)
+function applyDiscount(amount: number, discountRate: string | undefined): number {
+  return amount - Math.floor((amount * toRate(discountRate)) / 100);
+}
+
+// 개별 할인 적용 단가. 숫자 아님은 0으로 처리.
 export function discountedUnitPrice({
   unitPrice,
   discountRate,
 }: Pick<ProductRow, "unitPrice" | "discountRate">): number {
   const price = Number(unitPrice);
   if (!Number.isFinite(price)) return 0;
-  return Math.round(price * (1 - toRate(discountRate) / 100));
+  return applyDiscount(price, discountRate);
 }
 
 // 한 줄 금액 = 수량 × 개별 할인 적용 단가. 빈칸/숫자 아님은 0으로 처리.
@@ -29,12 +35,12 @@ export function contractTotal(products: AmountInput[]): number {
   return products.reduce((sum, product) => sum + lineAmount(product), 0);
 }
 
-// 최종 합계 = 소계 × (1 - 전체 할인율). 원 단위 반올림.
+// 최종 합계 = 소계 - 전체 할인 금액.
 export function applyTotalDiscount(
   subtotal: number,
   discountRate: string,
 ): number {
-  return Math.round(subtotal * (1 - toRate(discountRate) / 100));
+  return applyDiscount(subtotal, discountRate);
 }
 
 export function formatAmount(value: number): string {
