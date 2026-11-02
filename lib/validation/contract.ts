@@ -38,6 +38,8 @@ export function createEmptyProductRow(): ProductRow {
 // 베르데·ORDER-MADE처럼 호 없이 치수만 있는 상품은 치수로 본다(4호는 3호 이상에도 포함)
 const RUG_SIZE_3_BOX = String.raw`240\s*[Xx×]\s*3[2-5]0`; // 240X320~350
 const RUG_SIZE_4_BOX = String.raw`(?:290|300)\s*[Xx×]\s*400`; // 로브 290X400, 그 외 300X400
+// 원형 300은 포장 후 한 변이 200 초과라 3호 이상(반품 불가). 4호 배송 동의는 확인 전이라 넣지 않음
+const RUG_ROUND_300 = String.raw`원형\s*300(?!\d)`;
 
 function hasRugSize(products: ProductRow[], sizes: string, boxes: string[]): boolean {
   const pattern = new RegExp(
@@ -53,7 +55,7 @@ function hasRugSize(products: ProductRow[], sizes: string, boxes: string[]): boo
 // 사이즈는 반호~4호까지만 있어 3호 이상 = 3호·4호
 export function getRugSizeNotices(products: ProductRow[]) {
   return {
-    noReturn: hasRugSize(products, "34", [RUG_SIZE_3_BOX, RUG_SIZE_4_BOX]),
+    noReturn: hasRugSize(products, "34", [RUG_SIZE_3_BOX, RUG_SIZE_4_BOX, RUG_ROUND_300]),
     // 주문 제작은 러그·침구 상관없이 사이즈와 무관하게 반품 불가
     orderMade: products.some((product) => /ORDER-?MADE/i.test(product.name)),
     size4Delivery: hasRugSize(products, "4", [RUG_SIZE_4_BOX]),

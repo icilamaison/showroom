@@ -155,6 +155,15 @@ describe("parseContractInput", () => {
       expect(orderMadeSmall.errors.size4DeliveryAgreed).toBeUndefined();
     }
 
+    // 원형 300은 교환·반품 불가만, 원형 200은 해당 없음
+    const round300 = parseContractInput(withSize("라이트그레이 원형 300"));
+    expect(round300.success).toBe(false);
+    if (!round300.success) {
+      expect(round300.errors.largeRugNoticeAgreed).toBeDefined();
+      expect(round300.errors.size4DeliveryAgreed).toBeUndefined();
+    }
+    expect(parseContractInput(withSize("라이트그레이 원형 200")).success).toBe(true);
+
     // 커튼 호수는 러그 사이즈가 아니다
     expect(parseContractInput(withSize("3호 / 민자")).success).toBe(true);
     expect(
