@@ -4,9 +4,8 @@ import NextImage from "next/image";
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
   createEmptyProductRows,
-  getRugSizeNotices,
+  getRugNoticeChecks,
   PRODUCT_ROW_COUNT,
-  RUG_NOTICE_TEXT,
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
@@ -350,18 +349,8 @@ export default function ContractForm({
   const displayedRecipientPhone = recipientPhoneDisabled
     ? values.buyerPhone
     : values.recipientPhone;
-  // 러그 3호 이상 / 4호를 고르면 동의 체크를 추가로 받는다
-  const rugNotices = getRugSizeNotices(values.products);
-  const rugNoticeChecks = [
-    rugNotices.noReturn && {
-      field: "largeRugNoticeAgreed" as const,
-      ...RUG_NOTICE_TEXT.noReturn,
-    },
-    rugNotices.size4Delivery && {
-      field: "size4DeliveryAgreed" as const,
-      ...RUG_NOTICE_TEXT.size4Delivery,
-    },
-  ].filter((item) => item !== false);
+  // 러그 3호 이상·주문 제작 / 4호를 고르면 동의 체크를 추가로 받는다
+  const rugNoticeChecks = getRugNoticeChecks(values.products);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [draftSignature, setDraftSignature] = useState(values.signatureDataUrl || "");
 

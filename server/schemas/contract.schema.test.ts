@@ -120,6 +120,41 @@ describe("parseContractInput", () => {
     }
 
     expect(parseContractInput(withSize("크림베이지 1.5호 180X240")).success).toBe(true);
+    // 호 표기 없는 베르데 300X400도 4호
+    const verde = parseContractInput(withSize("카멜 300X400"));
+    expect(verde.success).toBe(false);
+    if (!verde.success) {
+      expect(verde.errors.largeRugNoticeAgreed).toBeDefined();
+      expect(verde.errors.size4DeliveryAgreed).toBeDefined();
+    }
+    expect(parseContractInput(withSize("카멜 200X300")).success).toBe(true);
+
+    // ORDER-MADE 3호급(240X320~350)은 교환·반품 불가만, 290X400은 4호
+    const orderMade3 = parseContractInput(withSize("240X330 이하"));
+    expect(orderMade3.success).toBe(false);
+    if (!orderMade3.success) {
+      expect(orderMade3.errors.largeRugNoticeAgreed).toBeDefined();
+      expect(orderMade3.errors.size4DeliveryAgreed).toBeUndefined();
+    }
+    const orderMade4 = parseContractInput(withSize("290X400 이하"));
+    expect(orderMade4.success).toBe(false);
+    if (!orderMade4.success) {
+      expect(orderMade4.errors.size4DeliveryAgreed).toBeDefined();
+    }
+
+    // 주문 제작은 사이즈와 무관하게 교환·반품 불가 체크(배송 동의는 없음)
+    const orderMadeSmall = parseContractInput({
+      ...withSize("150X200 이하"),
+      products: validInput.products.map((product, index) =>
+        index === 0 ? { ...product, name: "비벤디 ORDER-MADE", color: "크림베이지", size: "150X200 이하" } : product,
+      ),
+    });
+    expect(orderMadeSmall.success).toBe(false);
+    if (!orderMadeSmall.success) {
+      expect(orderMadeSmall.errors.largeRugNoticeAgreed).toBeDefined();
+      expect(orderMadeSmall.errors.size4DeliveryAgreed).toBeUndefined();
+    }
+
     // 커튼 호수는 러그 사이즈가 아니다
     expect(parseContractInput(withSize("3호 / 민자")).success).toBe(true);
     expect(

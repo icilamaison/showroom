@@ -34,9 +34,15 @@ export function createEmptyProductRow(): ProductRow {
 }
 
 // 상품명·컬러·사이즈 어디에든 사이즈가 들어간다("크림베이지 2호 200X300"). 1.5호는 제외
-// 러그는 항상 "N호 가로X세로"라 치수까지 본다. 커튼 호수("3호 / 민자")가 걸리지 않게 하기 위함
-function hasRugSize(products: ProductRow[], sizes: string): boolean {
-  const pattern = new RegExp(`(?<![\\d.])[${sizes}]호\\s*\\d+\\s*[Xx×]`);
+// 러그는 "N호 가로X세로"라 치수까지 본다. 커튼 호수("3호 / 민자")가 걸리지 않게 하기 위함
+// 베르데·ORDER-MADE처럼 호 없이 치수만 있는 상품은 치수로 본다(4호는 3호 이상에도 포함)
+const RUG_SIZE_3_BOX = String.raw`240\s*[Xx×]\s*3[2-5]0`; // 240X320~350
+const RUG_SIZE_4_BOX = String.raw`(?:290|300)\s*[Xx×]\s*400`; // 로브 290X400, 그 외 300X400
+
+function hasRugSize(products: ProductRow[], sizes: string, boxes: string[]): boolean {
+  const pattern = new RegExp(
+    [`(?<![\\d.])[${sizes}]호\\s*\\d+\\s*[Xx×]`, ...boxes].join("|"),
+  );
   return products.some(
     (product) =>
       product.name.trim() &&
@@ -47,8 +53,10 @@ function hasRugSize(products: ProductRow[], sizes: string): boolean {
 // 사이즈는 반호~4호까지만 있어 3호 이상 = 3호·4호
 export function getRugSizeNotices(products: ProductRow[]) {
   return {
-    noReturn: hasRugSize(products, "34"),
-    size4Delivery: hasRugSize(products, "4"),
+    noReturn: hasRugSize(products, "34", [RUG_SIZE_3_BOX, RUG_SIZE_4_BOX]),
+    // 주문 제작은 러그·침구 상관없이 사이즈와 무관하게 반품 불가
+    orderMade: products.some((product) => /ORDER-?MADE/i.test(product.name)),
+    size4Delivery: hasRugSize(products, "4", [RUG_SIZE_4_BOX]),
   };
 }
 
@@ -56,6 +64,17 @@ export function getRugSizeNotices(products: ProductRow[]) {
 export const RUG_NOTICE_TEXT = {
   noReturn: {
     title: "3호 이상 러그 교환·반품 불가 확인",
+    label: "러그 3호 이상(주문 제작 사이즈 포함) 및 주문 제작 상품은 교환 및 반품이 불가합니다.",
+    detail: "",
+  },
+  orderMade: {
+    title: "주문 제작 상품 교환·반품 불가 확인",
+    label: "주문 제작 상품은 교환 및 반품이 불가합니다.",
+    detail: "",
+  },
+  // 러그 3호 이상과 주문 제작을 같이 사면 체크 하나로 합친다. 문구는 둘 다 담은 3호 문구 그대로
+  noReturnOrderMade: {
+    title: "3호 이상 러그 및 주문 제작 상품 교환·반품 불가 확인",
     label: "러그 3호 이상(주문 제작 사이즈 포함) 및 주문 제작 상품은 교환 및 반품이 불가합니다.",
     detail: "",
   },
@@ -67,6 +86,28 @@ export const RUG_NOTICE_TEXT = {
       "엘리베이터에 대각선 방향으로 3m 길이가 충분히 들어갈 수 있는 건물에 한해서만 배송이 가능하며, 배송 기사님께서 엘리베이터에 실을 때에 도움을 요청하실 수도 있는 점 참고 부탁드립니다.",
   },
 } as const;
+
+// 화면에 띄울 동의 체크 목록. 교환·반품 불가는 3호 이상·주문 제작 중 무엇이든 체크 하나(largeRugNoticeAgreed)
+export function getRugNoticeChecks(products: ProductRow[]) {
+  const notices = getRugSizeNotices(products);
+  const noReturnText =
+    notices.noReturn && notices.orderMade
+      ? RUG_NOTICE_TEXT.noReturnOrderMade
+      : notices.noReturn
+        ? RUG_NOTICE_TEXT.noReturn
+        : RUG_NOTICE_TEXT.orderMade;
+
+  return [
+    (notices.noReturn || notices.orderMade) && {
+      field: "largeRugNoticeAgreed" as const,
+      ...noReturnText,
+    },
+    notices.size4Delivery && {
+      field: "size4DeliveryAgreed" as const,
+      ...RUG_NOTICE_TEXT.size4Delivery,
+    },
+  ].filter((item) => item !== false);
+}
 
 export function createEmptyProductRows(): ProductRow[] {
   return Array.from({ length: PRODUCT_ROW_COUNT }, () => createEmptyProductRow());
@@ -321,11 +362,11 @@ const contractFormSchema = z
     }
 
     const rugNotices = getRugSizeNotices(data.products);
-    if (rugNotices.noReturn && !data.largeRugNoticeAgreed) {
+    if ((rugNotices.noReturn || rugNotices.orderMade) && !data.largeRugNoticeAgreed) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["largeRugNoticeAgreed"],
-        message: "3호 이상 교환·반품 불가 안내에 동의해주세요.",
+        message: "교환·반품 불가 안내에 동의해주세요.",
       });
     }
     if (rugNotices.size4Delivery && !data.size4DeliveryAgreed) {
