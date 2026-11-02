@@ -190,6 +190,9 @@ const contractFormSchema = z
     signatureDataUrl: z.string().trim().min(1, "서명을 입력해주세요."),
     largeRugNoticeAgreed: z.boolean().optional(),
     size4DeliveryAgreed: z.boolean().optional(),
+    // 필수 여부는 계약서 작성 화면에서 확인한다. 여기 없으면 제출 시 값이 빠져 저장되지 않는다
+    padPurchased: z.boolean().nullable().optional(),
+    padQuantity: z.string().trim().optional(),
     termsAgreed: z.literal(true, {
       errorMap: () => ({
         message: "개인정보 수집·이용에 동의해야 합니다.",

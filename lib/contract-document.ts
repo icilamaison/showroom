@@ -30,6 +30,10 @@ export function purchasePayloadToFormValues(
     agreementDateDay: payload.agreementDateDay,
     signatureName: payload.signatureName,
     signatureDataUrl: payload.signatureDataUrl,
+    largeRugNoticeAgreed: payload.largeRugNoticeAgreed,
+    size4DeliveryAgreed: payload.size4DeliveryAgreed,
+    padPurchased: payload.padPurchased,
+    padQuantity: payload.padQuantity,
     termsAgreed: payload.termsAgreed,
     marketingConsentAgreed: payload.marketingConsentAgreed ?? false,
     // 스키마에 없는 값이라 원본 payload에서 그대로 꺼낸다

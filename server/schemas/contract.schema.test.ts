@@ -58,6 +58,17 @@ describe("parseContractInput", () => {
     }
   });
 
+  // 스키마에 없으면 제출 시 값이 빠져 계약서·PDF에 패드 구매 체크가 사라진다
+  it("keeps slip pad purchase", () => {
+    const result = parseContractInput({ ...validInput, padPurchased: true, padQuantity: "2" });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.padPurchased).toBe(true);
+      expect(result.data.padQuantity).toBe("2");
+    }
+  });
+
   it("rejects missing required fields", () => {
     const result = parseContractInput({
       ...validInput,
