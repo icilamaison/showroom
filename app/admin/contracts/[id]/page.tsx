@@ -78,7 +78,7 @@ function ProductTable({
               <th>컬러</th>
               <th>사이즈</th>
               <th>수량</th>
-              <th>금액</th>
+              <th>단가</th>
               <th>비고</th>
             </tr>
           </thead>

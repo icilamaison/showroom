@@ -75,7 +75,7 @@ describe("buildOrderExcelRows", () => {
       "온라인 상품명": "테스트 상품",
       "옵션명": "TYPE=라이트타입 1.5cm, COLOR=블랙, SIZE=L",
       "주문수량": "2",
-      "금액": "50000",
+      "금액": "100000",
       "배송메세지": "문 앞에 놔주세요",
       "주문일": "2026-07-01",
       "국가코드": "KR",
@@ -231,6 +231,22 @@ describe("buildOrderExcelRows", () => {
     });
 
     expect(rows.map((r) => r["금액"])).toEqual(["602786", "234080", "193200"]);
+  });
+
+  it("uses line totals so the amounts add up to the contract total", () => {
+    const products = createEmptyProductRows();
+    const row = { type: "", color: "", size: "", remarks: "" };
+    products[0] = { ...row, name: "러그", quantity: "1", unitPrice: "629300", discountRate: "5" };
+    products[1] = { ...row, name: "미끄럼방지 패드 4P", quantity: "2", unitPrice: "5900" };
+
+    const rows = buildOrderExcelRows({
+      ...basePayload,
+      totalDiscountRate: "5",
+      products,
+    });
+
+    // 소계 597,835 + 11,800 = 609,635 → 전체 5% 할인 30,481 → 579,154
+    expect(rows.map((r) => r["금액"])).toEqual(["567354", "11800"]);
   });
 });
 

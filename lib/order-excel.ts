@@ -3,7 +3,6 @@ import { formatFullAddress } from "./address";
 import {
   applyTotalDiscount,
   contractTotal,
-  discountedUnitPrice,
   lineAmount,
 } from "./contract-amount";
 import { findCatalogProductByName, resolveCafe24Variant } from "./product-catalog";
@@ -163,8 +162,8 @@ function buildLineAmounts(
 
   return products.map((product, index) => {
     if (!safeTrim(product.unitPrice)) return "";
-    const amount = discountedUnitPrice(product);
-    // ponytail: 수량 2개 이상인 상품이 최댓값이면 단가에서 할인 전액을 빼므로 합계가 어긋남. 수기 보정 전제
+    // 금액은 줄 총액(수량 × 개별 할인 단가). 금액 칸 합계가 계약서 최종 합계와 같아진다
+    const amount = lineAmount(product);
     return String(index === maxIndex ? amount - totalDiscount : amount);
   });
 }
