@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { formatFullAddress } from "../../lib/address";
-import { applyTotalDiscount, contractTotal } from "../../lib/contract-amount";
+import { contractTotal, totalDiscountAmount } from "../../lib/contract-amount";
 import {
   contractFormSchema,
   formatValidationErrors,
@@ -41,10 +41,8 @@ export function mapContractInput(
   );
 
   const filledProducts = data.products.filter((product) => product.name.trim());
-  const contractAmount = applyTotalDiscount(
-    contractTotal(data.products),
-    data.totalDiscountRate,
-  );
+  const contractAmount =
+    contractTotal(data.products) - totalDiscountAmount(data.products, data.totalDiscountRate);
 
   return {
     ...data,

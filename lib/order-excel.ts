@@ -1,10 +1,6 @@
 import type { ProductRow, PurchaseContractPayload } from "./validation/contract";
 import { formatFullAddress } from "./address";
-import {
-  applyTotalDiscount,
-  contractTotal,
-  lineAmount,
-} from "./contract-amount";
+import { isNoDiscountProduct, lineAmount, totalDiscountAmount } from "./contract-amount";
 import { findCatalogProductByName, resolveCafe24Variant } from "./product-catalog";
 import { formatCafe24SetOptionName, formatSetOptionLabel } from "./set-product";
 
@@ -151,13 +147,15 @@ function buildLineAmounts(
   products: ProductRow[],
   totalDiscountRate: string | undefined,
 ): string[] {
-  const subtotal = contractTotal(products);
-  const totalDiscount = subtotal - applyTotalDiscount(subtotal, totalDiscountRate ?? "");
-  // 동일 금액이면 위쪽 행
+  const totalDiscount = totalDiscountAmount(products, totalDiscountRate ?? "");
+  // 전체 할인을 떠안을 행: 할인 제외 상품을 뺀 최고가. 동일 금액이면 위쪽 행
   const maxIndex = products.reduce(
     (best, product, index) =>
-      lineAmount(product) > lineAmount(products[best]) ? index : best,
-    0,
+      !isNoDiscountProduct(product.name) &&
+      (best < 0 || lineAmount(product) > lineAmount(products[best]))
+        ? index
+        : best,
+    -1,
   );
 
   return products.map((product, index) => {

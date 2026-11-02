@@ -223,18 +223,27 @@ const catalog = (catalogData as CatalogProduct[]).map((product) =>
     : product,
 );
 
-// 미끄럼방지 패드는 같은 상품이 8개 등록돼 있어 쇼룸에서 쓰는 885번만 검색·자동 추가에 쓴다
-const SLIP_PAD_PRODUCT_NO = 885;
-// 카페24 상품명의 "(sy)"는 내부 구분용이라 계약서에는 빼고 보여준다
-const slipPadSource = catalog.find((product) => product.productNo === SLIP_PAD_PRODUCT_NO);
-export const SLIP_PAD_PRODUCT = slipPadSource
-  ? { ...slipPadSource, productName: slipPadSource.productName.replace(/\s*\(sy\)$/, "") }
-  : null;
+// 카페24 '기타' 카테고리(cate_no=315) 상품. 같은 상품이 여러 번 등록돼 있어(패드 8개, 스트랩 3개)
+// 쇼룸에서 쓰는 이 번호만 검색에 남기고, 상품명의 "(sy)"는 떼고 보여준다
+const ETC_PRODUCT_NOS = [885, 772, 742, 731, 732];
 
-function isDuplicateSlipPad(product: CatalogProduct): boolean {
+function stripSy(name: string): string {
+  return name.replace(/\s*\(sy\)$/, "");
+}
+
+const etcProducts = new Map(
+  catalog
+    .filter((product) => ETC_PRODUCT_NOS.includes(product.productNo))
+    .map((product) => [product.productNo, { ...product, productName: stripSy(product.productName) }]),
+);
+const etcProductNames = new Set([...etcProducts.values()].map((product) => product.productName));
+
+export const SLIP_PAD_PRODUCT = etcProducts.get(885) ?? null;
+
+function isDuplicateEtcProduct(product: CatalogProduct): boolean {
   return (
-    product.productName.startsWith("미끄럼방지 패드") &&
-    product.productNo !== SLIP_PAD_PRODUCT_NO
+    etcProductNames.has(stripSy(product.productName)) &&
+    !ETC_PRODUCT_NOS.includes(product.productNo)
   );
 }
 
@@ -246,14 +255,14 @@ export function searchProducts(query: string, limit = 8): CatalogProduct[] {
   }
 
   return [...colorGroupProducts, ...sizeGroupProducts, ...catalog]
-    .map((product) => (product.productNo === SLIP_PAD_PRODUCT_NO && SLIP_PAD_PRODUCT) || product)
+    .map((product) => etcProducts.get(product.productNo) ?? product)
     .filter((product) => {
       if (
         product.hidden ||
         groupedSizeProducts.has(product) ||
         groupedColorProducts.has(product) ||
         sizeGroupMembers.has(product) ||
-        isDuplicateSlipPad(product) ||
+        isDuplicateEtcProduct(product) ||
         HIDDEN_FROM_SEARCH_PATTERN.test(product.productName)
       ) {
         return false;

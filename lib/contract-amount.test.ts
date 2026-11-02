@@ -6,6 +6,7 @@ import {
   formatDigits,
   lineAmount,
   toDigits,
+  totalDiscountAmount,
 } from "./contract-amount";
 
 describe("contract-amount", () => {
@@ -51,6 +52,14 @@ describe("contract-amount", () => {
     expect(lineAmount({ quantity: "1", unitPrice: "246400", discountRate: "5" })).toBe(234080);
     expect(lineAmount({ quantity: "2", unitPrice: "246400", discountRate: "5" })).toBe(468160);
     expect(lineAmount({ quantity: "1", unitPrice: "246400", discountRate: "" })).toBe(246400);
+  });
+
+  it("기타 카테고리 상품(패드·스트랩 등)은 개별·전체 할인에서 뺀다", () => {
+    const pad = { name: "미끄럼방지 패드 4P", quantity: "2", unitPrice: "5900", discountRate: "5" };
+    const strap = { name: "러그 보관용 버클스트랩(sy)", quantity: "1", unitPrice: "9000" };
+    const rug = { name: "러그", quantity: "1", unitPrice: "100000" };
+    expect(lineAmount(pad)).toBe(11800);
+    expect(totalDiscountAmount([rug, pad, strap], "5")).toBe(5000);
   });
 
   it("입력값에서 숫자만 추출한다", () => {

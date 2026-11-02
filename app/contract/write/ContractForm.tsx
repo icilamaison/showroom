@@ -19,11 +19,12 @@ import {
   withSoldOutLabels,
 } from "@/lib/product-catalog";
 import {
-  applyTotalDiscount,
   contractTotal,
   formatAmount,
   formatDigits,
   toDigits,
+  isNoDiscountProduct,
+  totalDiscountAmount,
 } from "@/lib/contract-amount";
 import type { SetComponentSelection } from "@/lib/set-product";
 import {
@@ -336,7 +337,8 @@ export default function ContractForm({
   onSubmit,
 }: ContractFormProps) {
   const productsSubtotal = contractTotal(values.products);
-  const finalTotal = applyTotalDiscount(productsSubtotal, values.totalDiscountRate);
+  const finalTotal =
+    productsSubtotal - totalDiscountAmount(values.products, values.totalDiscountRate);
   const isSubmitDisabled = !values.termsAgreed || isSubmitting;
   const showBankTransferFields = values.paymentMethod === "bank_transfer";
   const cashReceiptDisabled =
@@ -711,7 +713,9 @@ export default function ContractForm({
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={product.discountRate ?? ""}
+                    // 할인 제외 상품(패드·스트랩 등)은 입력을 막는다
+                    disabled={isNoDiscountProduct(product.name)}
+                    value={isNoDiscountProduct(product.name) ? "" : (product.discountRate ?? "")}
                     onChange={(event) =>
                       onProductChange(
                         index,

@@ -36,7 +36,7 @@ import { NoticeAgreeLine } from "../NoticeSheet";
 import ContractForm, { createInitialContractFormValues } from "./ContractForm";
 
 // 패드를 구매로 체크하고 수량을 넣으면 상품 표에 패드 행을 넣고(빈 행 우선), 미구매·수량 0이면 비운다.
-// 할인은 다른 상품과 같이 개별·전체 할인율이 그대로 적용된다
+// 패드는 기타 카테고리 상품이라 개별·전체 할인에서 빠진다(contract-amount 참고)
 function syncSlipPadRow(values: ContractFormValues): ProductRow[] {
   if (!SLIP_PAD_PRODUCT) {
     return values.products;

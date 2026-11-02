@@ -22,10 +22,11 @@ import {
   type ProductRow,
 } from "@/lib/validation/contract";
 import {
-  applyTotalDiscount,
   contractTotal,
   formatAmount,
   formatDigits,
+  isNoDiscountProduct,
+  totalDiscountAmount,
 } from "@/lib/contract-amount";
 import "./contract.css";
 import { ContractConsentSection } from "./ContractConsentSection";
@@ -226,7 +227,8 @@ export default function ContractDocumentView({
     ? values.buyerPhone
     : values.recipientPhone;
   const productsSubtotal = contractTotal(values.products);
-  const finalTotal = applyTotalDiscount(productsSubtotal, values.totalDiscountRate);
+  const finalTotal =
+    productsSubtotal - totalDiscountAmount(values.products, values.totalDiscountRate);
   // 러그 3호 이상·주문 제작 / 4호를 고르면 동의 체크를 추가로 받는다
   const rugNoticeChecks = getRugNoticeChecks(values.products);
 
@@ -416,7 +418,9 @@ export default function ContractDocumentView({
                       />
                     </td>
                     <td className="contract-doc__discount-cell">
-                      {Number(product.discountRate) > 0 ? `${product.discountRate}%` : ""}
+                      {Number(product.discountRate) > 0 && !isNoDiscountProduct(product.name)
+                        ? `${product.discountRate}%`
+                        : ""}
                     </td>
                     <td>
                       <ReadonlyValue
