@@ -102,7 +102,7 @@ function todayValue(): string {
 }
 
 const ITEM_FIELDS: { field: keyof CurtainItem; label: string }[] = [
-  { field: "productName", label: "제품명" },
+  { field: "productName", label: "상품명" },
   { field: "space", label: "공간" },
   { field: "style", label: "스타일\n(민자/나비)" },
   { field: "color", label: "색상" },

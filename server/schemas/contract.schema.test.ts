@@ -86,6 +86,40 @@ describe("parseContractInput", () => {
     }
   });
 
+  it("requires rug notice signatures only for 3호/4호", () => {
+    const withSize = (color: string) => ({
+      ...validInput,
+      products: validInput.products.map((product, index) =>
+        index === 0 ? { ...product, color } : product,
+      ),
+    });
+
+    const size3 = parseContractInput(withSize("크림베이지 3호 240X300"));
+    expect(size3.success).toBe(false);
+    if (!size3.success) {
+      expect(size3.errors.largeRugNoticeAgreed).toBeDefined();
+      expect(size3.errors.size4DeliveryAgreed).toBeUndefined();
+    }
+
+    const size4 = parseContractInput(withSize("크림베이지 4호 300X400"));
+    expect(size4.success).toBe(false);
+    if (!size4.success) {
+      expect(size4.errors.largeRugNoticeAgreed).toBeDefined();
+      expect(size4.errors.size4DeliveryAgreed).toBeDefined();
+    }
+
+    expect(parseContractInput(withSize("크림베이지 1.5호 180X240")).success).toBe(true);
+    // 커튼 호수는 러그 사이즈가 아니다
+    expect(parseContractInput(withSize("3호 / 민자")).success).toBe(true);
+    expect(
+      parseContractInput({
+        ...withSize("크림베이지 4호 300X400"),
+        largeRugNoticeAgreed: true,
+        size4DeliveryAgreed: true,
+      }).success,
+    ).toBe(true);
+  });
+
   it("rejects missing drawn signature", () => {
     const result = parseContractInput({
       ...validInput,

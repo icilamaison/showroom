@@ -16,7 +16,12 @@ import {
   formatSetOptionLabel,
   type SetComponentSelection,
 } from "@/lib/set-product";
-import type { ContractFormValues, ProductRow } from "@/lib/validation/contract";
+import {
+  getRugSizeNotices,
+  RUG_NOTICE_TEXT,
+  type ContractFormValues,
+  type ProductRow,
+} from "@/lib/validation/contract";
 import {
   applyTotalDiscount,
   contractTotal,
@@ -223,6 +228,18 @@ export default function ContractDocumentView({
     : values.recipientPhone;
   const productsSubtotal = contractTotal(values.products);
   const finalTotal = applyTotalDiscount(productsSubtotal, values.totalDiscountRate);
+  // 러그 3호 이상 / 4호를 고르면 동의 체크를 추가로 받는다
+  const rugNotices = getRugSizeNotices(values.products);
+  const rugNoticeChecks = [
+    rugNotices.noReturn && {
+      field: "largeRugNoticeAgreed" as const,
+      ...RUG_NOTICE_TEXT.noReturn,
+    },
+    rugNotices.size4Delivery && {
+      field: "size4DeliveryAgreed" as const,
+      ...RUG_NOTICE_TEXT.size4Delivery,
+    },
+  ].filter((item) => item !== false);
 
   return (
     <article className={`contract-doc contract-doc--document ${className}`.trim()}>
@@ -343,7 +360,7 @@ export default function ContractDocumentView({
           <thead>
             <tr>
               <th>No</th>
-              <th>제품명</th>
+              <th>상품명</th>
               <th>타입</th>
               <th>컬러</th>
               <th>사이즈</th>
@@ -461,6 +478,20 @@ export default function ContractDocumentView({
               </td>
               <td />
             </tr>
+            {typeof values.padPurchased === "boolean" ? (
+              <tr className="contract-doc__total-row">
+                <td colSpan={6} className="contract-doc__total-label">
+                  미끄럼방지 패드
+                </td>
+                <td colSpan={3} className="contract-doc__pad-cell">
+                  <DocCheckboxDisplay checked={values.padPurchased} label="구매" />
+                  <DocCheckboxDisplay checked={!values.padPurchased} label="미구매" />
+                  {values.padPurchased ? (
+                    <span className="contract-doc__pad-qty">수량 {values.padQuantity}개</span>
+                  ) : null}
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </section>
@@ -572,6 +603,22 @@ export default function ContractDocumentView({
             termsAgreed={values.termsAgreed}
             marketingConsentAgreed={values.marketingConsentAgreed}
           />
+
+          {rugNoticeChecks.map(({ field, title, label, detail }) => (
+            <div key={field} className="contract-doc__consent">
+              <p className="contract-doc__consent-heading">{title}</p>
+              <div className="contract-doc__consent-item">
+                <DocCheckboxDisplay
+                  checked={values[field] === true}
+                  label={
+                    <>
+                      <b>{label}</b> {detail}
+                    </>
+                  }
+                />
+              </div>
+            </div>
+          ))}
 
           <div className="contract-doc__agreement-sign">
             <DateDisplay

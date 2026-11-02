@@ -73,7 +73,7 @@ function ProductTable({
           <thead>
             <tr>
               <th>상품번호</th>
-              <th>제품명</th>
+              <th>상품명</th>
               <th>타입</th>
               <th>컬러</th>
               <th>사이즈</th>

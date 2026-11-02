@@ -4,7 +4,9 @@ import NextImage from "next/image";
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
   createEmptyProductRows,
+  getRugSizeNotices,
   PRODUCT_ROW_COUNT,
+  RUG_NOTICE_TEXT,
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
@@ -52,6 +54,8 @@ export const emptyContractFormValues: ContractFormValues = {
   recipientAddressDetail: "",
   products: createEmptyProductRows(),
   totalDiscountRate: "",
+  padPurchased: null,
+  padQuantity: "",
   paymentMethod: "card",
   cashReceiptType: "",
   cashReceiptPhone: "",
@@ -346,6 +350,18 @@ export default function ContractForm({
   const displayedRecipientPhone = recipientPhoneDisabled
     ? values.buyerPhone
     : values.recipientPhone;
+  // 러그 3호 이상 / 4호를 고르면 동의 체크를 추가로 받는다
+  const rugNotices = getRugSizeNotices(values.products);
+  const rugNoticeChecks = [
+    rugNotices.noReturn && {
+      field: "largeRugNoticeAgreed" as const,
+      ...RUG_NOTICE_TEXT.noReturn,
+    },
+    rugNotices.size4Delivery && {
+      field: "size4DeliveryAgreed" as const,
+      ...RUG_NOTICE_TEXT.size4Delivery,
+    },
+  ].filter((item) => item !== false);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [draftSignature, setDraftSignature] = useState(values.signatureDataUrl || "");
 
@@ -529,7 +545,7 @@ export default function ContractForm({
           <thead>
             <tr>
               <th>No</th>
-              <th>제품명</th>
+              <th>상품명</th>
               <th>타입</th>
               <th>컬러</th>
               <th>사이즈</th>
@@ -799,6 +815,41 @@ export default function ContractForm({
               </td>
               <td />
             </tr>
+            <tr className="contract-doc__total-row">
+              <td colSpan={6} className="contract-doc__total-label">
+                미끄럼방지 패드
+              </td>
+              <td colSpan={3} className="contract-doc__pad-cell">
+                <DocCheckbox
+                  name="padPurchased"
+                  checked={values.padPurchased === true}
+                  label="구매"
+                  onChange={() => onChange("padPurchased", true)}
+                />
+                <DocCheckbox
+                  name="padNotPurchased"
+                  checked={values.padPurchased === false}
+                  label="미구매"
+                  onChange={() => onChange("padPurchased", false)}
+                />
+                <span className="contract-doc__pad-qty">
+                  수량
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={values.padQuantity ?? ""}
+                    disabled={values.padPurchased !== true}
+                    onChange={(event) =>
+                      onChange("padQuantity", event.target.value.replace(/\D/g, ""))
+                    }
+                    className="contract-doc__pad-qty-input"
+                    aria-label="미끄럼방지 패드 수량"
+                  />
+                  개
+                </span>
+                <FieldError message={errors.padPurchased || errors.padQuantity} />
+              </td>
+            </tr>
           </tbody>
         </table>
         <div className="contract-doc__row-actions">
@@ -999,6 +1050,25 @@ export default function ContractForm({
             onChange={onChange}
             errors={errors}
           />
+
+          {rugNoticeChecks.map(({ field, title, label, detail }) => (
+            <div key={field} className="contract-doc__consent">
+              <p className="contract-doc__consent-heading">{title}</p>
+              <div className="contract-doc__consent-item">
+                <DocCheckbox
+                  name={field}
+                  checked={values[field] === true}
+                  onChange={() => onChange(field, !values[field])}
+                  label={
+                    <>
+                      <b>{label}</b> {detail}
+                    </>
+                  }
+                />
+                <FieldError message={errors[field]} />
+              </div>
+            </div>
+          ))}
 
           <div className="contract-doc__agreement-sign">
             <DateFields

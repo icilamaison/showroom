@@ -183,6 +183,34 @@
   font-weight: 700;
 }
 
+/* 미끄럼방지 패드 구매 여부 */
+.contract-doc__total-row .contract-doc__pad-cell {
+  text-align: left;
+}
+
+.contract-doc__pad-cell .contract-doc__checkbox {
+  margin-right: 0.8rem;
+}
+
+.contract-doc__pad-qty {
+  white-space: nowrap;
+}
+
+.contract-doc__pad-qty-input {
+  width: 2.6rem;
+  margin: 0 0.2rem;
+  border: none;
+  border-bottom: 1px solid var(--contract-rule);
+  background: transparent;
+  font: inherit;
+  text-align: right;
+  outline: none;
+}
+
+.contract-doc__pad-qty-input:disabled {
+  color: #c4c4c4;
+}
+
 .contract-doc__total-discount-input {
   width: 2.6rem;
   min-height: 0;

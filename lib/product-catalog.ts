@@ -223,6 +223,21 @@ const catalog = (catalogData as CatalogProduct[]).map((product) =>
     : product,
 );
 
+// 미끄럼방지 패드는 같은 상품이 8개 등록돼 있어 쇼룸에서 쓰는 885번만 검색·자동 추가에 쓴다
+const SLIP_PAD_PRODUCT_NO = 885;
+// 카페24 상품명의 "(sy)"는 내부 구분용이라 계약서에는 빼고 보여준다
+const slipPadSource = catalog.find((product) => product.productNo === SLIP_PAD_PRODUCT_NO);
+export const SLIP_PAD_PRODUCT = slipPadSource
+  ? { ...slipPadSource, productName: slipPadSource.productName.replace(/\s*\(sy\)$/, "") }
+  : null;
+
+function isDuplicateSlipPad(product: CatalogProduct): boolean {
+  return (
+    product.productName.startsWith("미끄럼방지 패드") &&
+    product.productNo !== SLIP_PAD_PRODUCT_NO
+  );
+}
+
 export function searchProducts(query: string, limit = 8): CatalogProduct[] {
   const normalized = query.trim().toLowerCase();
 
@@ -231,12 +246,14 @@ export function searchProducts(query: string, limit = 8): CatalogProduct[] {
   }
 
   return [...colorGroupProducts, ...sizeGroupProducts, ...catalog]
+    .map((product) => (product.productNo === SLIP_PAD_PRODUCT_NO && SLIP_PAD_PRODUCT) || product)
     .filter((product) => {
       if (
         product.hidden ||
         groupedSizeProducts.has(product) ||
         groupedColorProducts.has(product) ||
         sizeGroupMembers.has(product) ||
+        isDuplicateSlipPad(product) ||
         HIDDEN_FROM_SEARCH_PATTERN.test(product.productName)
       ) {
         return false;

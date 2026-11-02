@@ -6,7 +6,7 @@ import {
   submitContract,
   updateAdminContract,
 } from "@/lib/api-client";
-import { findCatalogProductByName, getSizeSalePrice, getTypeSalePrice, getVariantComponents, isSetProduct, searchProducts, withSizeSiblings, type CatalogProduct } from "@/lib/product-catalog";
+import { findCatalogProductByName, getSizeSalePrice, getTypeSalePrice, getVariantComponents, isSetProduct, searchProducts, SLIP_PAD_PRODUCT, withSizeSiblings, type CatalogProduct } from "@/lib/product-catalog";
 import {
   buildSetSelectionsFromColor,
   createSetComponentSelections,
@@ -34,6 +34,54 @@ import ContractCompanyFooter from "../ContractCompanyFooter";
 import NoticeAnnotator, { type NoticeAnnotatorHandle } from "../NoticeAnnotator";
 import { NoticeAgreeLine } from "../NoticeSheet";
 import ContractForm, { createInitialContractFormValues } from "./ContractForm";
+
+// 패드를 구매로 체크하고 수량을 넣으면 상품 표에 패드 행을 넣고(빈 행 우선), 미구매·수량 0이면 비운다.
+// 할인은 다른 상품과 같이 개별·전체 할인율이 그대로 적용된다
+function syncSlipPadRow(values: ContractFormValues): ProductRow[] {
+  if (!SLIP_PAD_PRODUCT) {
+    return values.products;
+  }
+
+  const name = SLIP_PAD_PRODUCT.productName;
+  const quantity = values.padPurchased ? (values.padQuantity ?? "") : "";
+  const products = [...values.products];
+  let index = products.findIndex((product) => product.name.trim() === name);
+
+  if (!Number(quantity)) {
+    if (index >= 0) {
+      products[index] = createEmptyProductRow();
+    }
+    return products;
+  }
+
+  if (index < 0) {
+    index = products.findIndex((product) => !product.name.trim());
+  }
+  if (index < 0) {
+    products.push(createEmptyProductRow());
+    index = products.length - 1;
+  }
+
+  products[index] = {
+    ...products[index],
+    name,
+    quantity,
+    unitPrice: products[index].unitPrice || String(SLIP_PAD_PRODUCT.salePrice),
+  };
+  return products;
+}
+
+// 미끄럼방지 패드 구매 여부는 계약서 작성 화면 전용 필수 항목이라
+// 커튼 주문서와 같이 쓰는 스키마 대신 여기서 확인한다
+function validatePadPurchase(values: ContractFormValues): Record<string, string> {
+  if (typeof values.padPurchased !== "boolean") {
+    return { padPurchased: "미끄럼방지 패드 구매 여부를 선택해주세요." };
+  }
+  if (values.padPurchased && !(Number(values.padQuantity) >= 1)) {
+    return { padQuantity: "미끄럼방지 패드 수량을 입력해주세요." };
+  }
+  return {};
+}
 
 export default function ContractWritePage() {
   const router = useRouter();
@@ -180,6 +228,10 @@ export default function ContractWritePage() {
         next.signatureName = nextValue;
       }
 
+      if (field === "padPurchased" || field === "padQuantity") {
+        next.products = syncSlipPadRow(next);
+      }
+
       return next;
     });
 
@@ -197,6 +249,10 @@ export default function ContractWritePage() {
 
     if (field === "buyerName") {
       clearFieldError("signatureName");
+    }
+
+    if (field === "padPurchased") {
+      clearFieldError("padQuantity");
     }
   }
 
@@ -477,9 +533,10 @@ export default function ContractWritePage() {
     setFormError("");
 
     const validation = validateContractForm(values);
+    const padErrors = validatePadPurchase(values);
 
-    if (!validation.valid) {
-      setErrors(validation.errors);
+    if (!validation.valid || Object.keys(padErrors).length) {
+      setErrors({ ...(validation.valid ? {} : validation.errors), ...padErrors });
       return;
     }
 

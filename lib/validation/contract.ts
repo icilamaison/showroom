@@ -33,6 +33,41 @@ export function createEmptyProductRow(): ProductRow {
   };
 }
 
+// 상품명·컬러·사이즈 어디에든 사이즈가 들어간다("크림베이지 2호 200X300"). 1.5호는 제외
+// 러그는 항상 "N호 가로X세로"라 치수까지 본다. 커튼 호수("3호 / 민자")가 걸리지 않게 하기 위함
+function hasRugSize(products: ProductRow[], sizes: string): boolean {
+  const pattern = new RegExp(`(?<![\\d.])[${sizes}]호\\s*\\d+\\s*[Xx×]`);
+  return products.some(
+    (product) =>
+      product.name.trim() &&
+      pattern.test(`${product.name} ${product.color} ${product.size}`),
+  );
+}
+
+// 사이즈는 반호~4호까지만 있어 3호 이상 = 3호·4호
+export function getRugSizeNotices(products: ProductRow[]) {
+  return {
+    noReturn: hasRugSize(products, "34"),
+    size4Delivery: hasRugSize(products, "4"),
+  };
+}
+
+// label은 굵게, detail은 그 뒤에 보통 글씨로 이어 붙인다
+export const RUG_NOTICE_TEXT = {
+  noReturn: {
+    title: "3호 이상 러그 교환·반품 불가 확인",
+    label: "러그 3호 이상(주문 제작 사이즈 포함) 및 주문 제작 상품은 교환 및 반품이 불가합니다.",
+    detail: "",
+  },
+  size4Delivery: {
+    title: "4호 러그 배송 동의",
+    label:
+      "러그 4호 구매 시, 배송 전 엘리베이터 내부 규격 확인이 필요하며 해당 규격에 따른 배송 가능 여부를 반드시 확인해 주셔야 합니다.",
+    detail:
+      "엘리베이터에 대각선 방향으로 3m 길이가 충분히 들어갈 수 있는 건물에 한해서만 배송이 가능하며, 배송 기사님께서 엘리베이터에 실을 때에 도움을 요청하실 수도 있는 점 참고 부탁드립니다.",
+  },
+} as const;
+
 export function createEmptyProductRows(): ProductRow[] {
   return Array.from({ length: PRODUCT_ROW_COUNT }, () => createEmptyProductRow());
 }
@@ -52,6 +87,9 @@ export type ContractFormValues = {
   recipientAddressDetail: string;
   products: ProductRow[];
   totalDiscountRate: string;
+  // 미끄럼방지 패드 구매 여부. 계약서 작성 화면에서만 필수(커튼 주문서는 없음)
+  padPurchased?: boolean | null;
+  padQuantity?: string;
   paymentMethod: "card" | "bank_transfer" | "";
   cashReceiptType: "income_deduction" | "expense_proof" | "";
   cashReceiptPhone: string;
@@ -63,6 +101,9 @@ export type ContractFormValues = {
   agreementDateDay: string;
   signatureName: string;
   signatureDataUrl?: string;
+  // 러그 3호 이상 교환·반품 불가 / 4호 배송 동의 체크. 해당 사이즈를 고를 때만 받는다
+  largeRugNoticeAgreed?: boolean;
+  size4DeliveryAgreed?: boolean;
   termsAgreed: boolean;
   marketingConsentAgreed: boolean;
   // 배송·교환·반품 안내문에 펜으로 표시한 선(NoticeSheet 기준 좌표). 필기가 없으면 없음
@@ -147,6 +188,8 @@ const contractFormSchema = z
       .min(2, "서명명은 2자 이상 50자 이하로 입력해주세요.")
       .max(50, "서명명은 2자 이상 50자 이하로 입력해주세요."),
     signatureDataUrl: z.string().trim().min(1, "서명을 입력해주세요."),
+    largeRugNoticeAgreed: z.boolean().optional(),
+    size4DeliveryAgreed: z.boolean().optional(),
     termsAgreed: z.literal(true, {
       errorMap: () => ({
         message: "개인정보 수집·이용에 동의해야 합니다.",
@@ -272,6 +315,22 @@ const contractFormSchema = z
           message: "할인율은 0~100 사이의 숫자로 입력해주세요.",
         });
       }
+    }
+
+    const rugNotices = getRugSizeNotices(data.products);
+    if (rugNotices.noReturn && !data.largeRugNoticeAgreed) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["largeRugNoticeAgreed"],
+        message: "3호 이상 교환·반품 불가 안내에 동의해주세요.",
+      });
+    }
+    if (rugNotices.size4Delivery && !data.size4DeliveryAgreed) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["size4DeliveryAgreed"],
+        message: "4호 러그 배송 안내에 동의해주세요.",
+      });
     }
 
     if (
