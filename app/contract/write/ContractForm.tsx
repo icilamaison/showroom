@@ -397,7 +397,7 @@ export default function ContractForm({
           </span>
         </div>
 
-        <h1 className="contract-doc__title">구매 계약서 (거래명세서)</h1>
+        <h1 className="contract-doc__title">구매 계약서</h1>
 
         <div className="contract-doc__meta">
           <label className="contract-doc__meta-item">
