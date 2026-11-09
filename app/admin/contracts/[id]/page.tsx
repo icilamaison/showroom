@@ -654,7 +654,7 @@ export default function AdminContractDetailPage() {
                       <div className="admin-file-item__text">
                         <p className="admin-file-item__title">관리자용 계약서</p>
                         <p className="admin-file-item__description">
-                          관리자만 볼 수 있는 계약서입니다. 고객용 링크 유효기간과 상관없이 언제든 확인하고 PDF로 받을 수 있습니다.
+                          링크 유효기간과 상관없이 확인할 수 있습니다.
                         </p>
                       </div>
                       <div className="admin-file-item__actions">
@@ -708,7 +708,7 @@ export default function AdminContractDetailPage() {
                       <div className="admin-file-item__text">
                         <p className="admin-file-item__title">고객용 계약서</p>
                         <p className="admin-file-item__description">
-                          고객에게 보내는 계약서 링크입니다. 발급일부터 90일간 열리며, 재발급하면 이전 링크는 더 이상 열리지 않습니다.
+                          발급일부터 90일간 열립니다. 재발급하면 이전 링크는 열리지 않습니다.
                         </p>
                         <p className={`admin-link-expiry${isCustomerLinkExpired ? " is_expired" : ""}`}>
                           {contract.viewTokenExpiresAt
@@ -758,7 +758,7 @@ export default function AdminContractDetailPage() {
                       <div className="admin-file-item__text">
                         <p className="admin-file-item__title">PlayAuto 주문 엑셀</p>
                         <p className="admin-file-item__description">
-                          승인번호를 등록한 후 주문 엑셀 파일을 다운로드할 수 있습니다.
+                          승인번호를 저장해야 다운로드할 수 있습니다.
                         </p>
                         <div className="admin-detail-actions admin-file-item__form">
                           <div className="app-field">
