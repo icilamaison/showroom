@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import ContractDocumentView from "./ContractDocumentView";
-import { ContractNoticeSheet } from "./NoticeSheet";
+import ContractDocumentView, { ContractNoticePage } from "./ContractDocumentView";
 import type { ContractFormValues } from "@/lib/validation/contract";
 
 type ContractDocumentViewerProps = {
@@ -11,12 +10,12 @@ type ContractDocumentViewerProps = {
 
 const DOCUMENT_PAGES = [
   {
-    key: "notice",
-    title: "배송·교환·반품 등 안내",
-  },
-  {
     key: "contract",
     title: "구매 계약서",
+  },
+  {
+    key: "notice",
+    title: "배송·교환·반품 등 안내",
   },
 ] as const;
 
@@ -66,8 +65,8 @@ export default function ContractDocumentViewer({
 
   const renderPageContent = (pageKey: (typeof DOCUMENT_PAGES)[number]["key"]) => {
     if (pageKey === "notice") {
-      // 원문(링크·텍스트 선택 가능) 위에 작성 때 펜으로 표시한 내용을 겹쳐 보여준다
-      return <ContractNoticeSheet values={values} />;
+      // 작성 화면과 같이 안내문(작성 때 펜 표시 포함) 아래에 동의·서명
+      return <ContractNoticePage values={values} />;
     }
 
     return (

@@ -1,5 +1,4 @@
-import ContractDocumentView from "./ContractDocumentView";
-import { ContractNoticeSheet } from "./NoticeSheet";
+import ContractDocumentView, { ContractNoticePage } from "./ContractDocumentView";
 import type { ContractFormValues } from "@/lib/validation/contract";
 
 type ContractPdfDocumentProps = {
@@ -9,14 +8,15 @@ type ContractPdfDocumentProps = {
 export default function ContractPdfDocument({ values }: ContractPdfDocumentProps) {
   return (
     <div className="contract-doc__pdf-document">
-      <div className="contract-doc__pdf-notice-section">
-        <ContractNoticeSheet
-          values={values}
-          className="contract-doc contract-doc--document notice-document contract-doc__pdf-notice"
-        />
-      </div>
+      {/* 작성 화면 순서: 계약서 → 안내문 + 동의·서명 */}
       <div className="contract-doc__pdf-contract-section">
         <ContractDocumentView values={values} hideEmptyRows />
+      </div>
+      <div className="contract-doc__pdf-notice-section">
+        <ContractNoticePage
+          values={values}
+          noticeClassName="contract-doc contract-doc--document notice-document contract-doc__pdf-notice"
+        />
       </div>
     </div>
   );

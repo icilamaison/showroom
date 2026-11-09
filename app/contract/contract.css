@@ -47,6 +47,11 @@
   letter-spacing: 0;
 }
 
+/* 구매 계약서 제목 위 여백. 안내문은 펜 표시가 고정 좌표라 위 여백을 바꾸면 표시가 어긋나므로 제외 */
+.contract-doc:not(.notice-document) .contract-doc__title {
+  margin-top: 0.9rem;
+}
+
 .contract-doc__meta {
   display: flex;
   flex-wrap: wrap;

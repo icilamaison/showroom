@@ -173,9 +173,10 @@ export async function exportContractDocumentToPdf(
   });
 
   if (noticeElement && contractElement) {
-    appendCanvasToPdf(pdf, await captureElement(noticeElement));
-    pdf.addPage();
+    // 작성 화면 순서: 계약서 → 안내문 + 동의·서명
     appendCanvasToPdf(pdf, await captureElement(contractElement));
+    pdf.addPage();
+    appendCanvasToPdf(pdf, await captureElement(noticeElement));
   } else {
     appendCanvasToPdf(pdf, await captureElement(element));
   }

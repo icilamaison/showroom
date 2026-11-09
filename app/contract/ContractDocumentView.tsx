@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import Image from "next/image";
 import { ContractCompanyFooterContent } from "./ContractCompanyFooter";
+import { ContractNoticeSheet } from "./NoticeSheet";
 import {
   findCatalogProductByName,
   getVariantComponents,
@@ -583,63 +584,27 @@ export default function ContractDocumentView({
         </p>
       </section>
 
-      <section className="contract-doc__section">
-        <div className="contract-doc__agreement-box">
-          <p className="contract-doc__agreement-text">
-            본인은 위 상품·결제·배송 정보 및 별첨 안내문(배송·교환·반품 등 안내)의
-            내용을 모두 안내받아 이해하였으며, 이에 동의하여 아래와 같이
-            서명합니다.
-          </p>
-
-          <ContractConsentSection
-            termsAgreed={values.termsAgreed}
-            marketingConsentAgreed={values.marketingConsentAgreed}
-          />
-
-          {rugNoticeChecks.map(({ field, title, label, detail }) => (
-            <div key={field} className="contract-doc__consent">
-              <p className="contract-doc__consent-heading">{title}</p>
-              <div className="contract-doc__consent-item">
-                <DocCheckboxDisplay
-                  checked={values[field] === true}
-                  label={
-                    <>
-                      <b>{label}</b> {detail}
-                    </>
-                  }
-                />
-              </div>
-            </div>
-          ))}
-
-          <div className="contract-doc__agreement-sign">
-            <DateDisplay
-              year={values.agreementDateYear}
-              month={values.agreementDateMonth}
-              day={values.agreementDateDay}
-            />
-            <span className="contract-doc__signature">
-              <span>구매자 :</span>
-              <span className="contract-doc__signature-buyer-name">
-                {values.signatureName || values.buyerName}
-              </span>
-              <span className="contract-doc__signature-stamp-wrap">
-                {values.signatureDataUrl ? (
-                  <Image
-                    src={values.signatureDataUrl}
-                    alt="구매자 서명"
-                    className="contract-doc__signature-stamp-image"
-                    width={70}
-                    height={28}
-                    unoptimized
+      {rugNoticeChecks.length ? (
+        <section className="contract-doc__section">
+          <div className="contract-doc__agreement-box contract-doc__agreement-box--rug">
+            {rugNoticeChecks.map(({ field, title, label, detail }) => (
+              <div key={field} className="contract-doc__consent">
+                <p className="contract-doc__consent-heading">{title}</p>
+                <div className="contract-doc__consent-item">
+                  <DocCheckboxDisplay
+                    checked={values[field] === true}
+                    label={
+                      <>
+                        <b>{label}</b> {detail}
+                      </>
+                    }
                   />
-                ) : null}
-                <span className="contract-doc__signature-stamp-text">(인)</span>
-              </span>
-            </span>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <footer className="contract-doc__footer">
         <p className="contract-doc__footer-note">
@@ -649,5 +614,70 @@ export default function ContractDocumentView({
         <ContractCompanyFooterContent />
       </footer>
     </article>
+  );
+}
+
+// 동의 문구·필수 동의·서명. 작성 화면과 같이 안내문 아래에 둔다
+function ContractAgreementDisplay({ values }: { values: ContractFormValues }) {
+  return (
+    <div className="contract-doc__agreement-box">
+      <p className="contract-doc__agreement-text">
+        본인은 위 상품·결제·배송 정보 및 별첨 안내문(배송·교환·반품 등 안내)의
+        내용을 모두 안내받아 이해하였으며, 이에 동의하여 아래와 같이
+        서명합니다.
+      </p>
+
+      <ContractConsentSection
+        termsAgreed={values.termsAgreed}
+        marketingConsentAgreed={values.marketingConsentAgreed}
+      />
+
+      <div className="contract-doc__agreement-sign">
+        <DateDisplay
+          year={values.agreementDateYear}
+          month={values.agreementDateMonth}
+          day={values.agreementDateDay}
+        />
+        <span className="contract-doc__signature">
+          <span>구매자 :</span>
+          <span className="contract-doc__signature-buyer-name">
+            {values.signatureName || values.buyerName}
+          </span>
+          <span className="contract-doc__signature-stamp-wrap">
+            {values.signatureDataUrl ? (
+              <Image
+                src={values.signatureDataUrl}
+                alt="구매자 서명"
+                className="contract-doc__signature-stamp-image"
+                width={70}
+                height={28}
+                unoptimized
+              />
+            ) : null}
+            <span className="contract-doc__signature-stamp-text">(인)</span>
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// 두 번째 페이지: 안내문(펜 표시 포함) + 동의·서명 — 작성 화면(write) 안내 단계와 같은 구성
+export function ContractNoticePage({
+  values,
+  noticeClassName,
+}: {
+  values: ContractFormValues;
+  noticeClassName?: string;
+}) {
+  return (
+    <div className="contract-doc-flow contract-doc-flow--attached">
+      <ContractNoticeSheet values={values} className={noticeClassName} />
+      <div className="contract-doc-flow__actions">
+        <div className="contract-doc">
+          <ContractAgreementDisplay values={values} />
+        </div>
+      </div>
+    </div>
   );
 }
