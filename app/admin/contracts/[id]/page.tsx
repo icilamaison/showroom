@@ -4,6 +4,7 @@ import {
   ApiClientError,
   downloadAdminOrderExcel,
   fetchAdminContractById,
+  reissueAdminContractViewToken,
   updateAdminContractApprovalNumber,
   updateAdminContractStatus,
   type ContractDetail,
@@ -266,6 +267,7 @@ export default function AdminContractDetailPage() {
   // 서버에 저장된 승인번호. 입력값과 같을 때만 주문 엑셀을 받을 수 있다
   const [savedApprovalNumber, setSavedApprovalNumber] = useState("");
   const [isSavingApprovalNumber, setIsSavingApprovalNumber] = useState(false);
+  const [isReissuingLink, setIsReissuingLink] = useState(false);
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -331,6 +333,55 @@ export default function AdminContractDetailPage() {
       }
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  const customerLinkUrl =
+    contract?.viewToken
+      ? `${window.location.origin}/contract/view/${encodeURIComponent(contract.contractNumber)}?token=${encodeURIComponent(contract.viewToken)}`
+      : "";
+  const isCustomerLinkExpired = Boolean(
+    contract?.viewTokenExpiresAt && new Date(contract.viewTokenExpiresAt) < new Date(),
+  );
+
+  async function handleCopyCustomerLink() {
+    try {
+      await navigator.clipboard.writeText(customerLinkUrl);
+      window.alert("고객용 링크를 복사했습니다.");
+    } catch {
+      window.prompt("아래 링크를 복사해주세요.", customerLinkUrl);
+    }
+  }
+
+  async function handleReissueCustomerLink() {
+    if (!contract) {
+      return;
+    }
+
+    if (!window.confirm("링크를 재발급하면 이전에 보낸 링크는 더 이상 열리지 않습니다. 재발급할까요?")) {
+      return;
+    }
+
+    setIsReissuingLink(true);
+    setError("");
+
+    try {
+      const reissued = await reissueAdminContractViewToken(contract.id);
+      setContract({ ...contract, ...reissued });
+      window.alert("새 링크를 발급했습니다. 링크 복사로 고객에게 다시 보내주세요.");
+    } catch (reissueError) {
+      if (reissueError instanceof ApiClientError && reissueError.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
+
+      setError(
+        reissueError instanceof ApiClientError
+          ? reissueError.message
+          : "링크 재발급 중 오류가 발생했습니다.",
+      );
+    } finally {
+      setIsReissuingLink(false);
     }
   }
 
@@ -554,21 +605,20 @@ export default function AdminContractDetailPage() {
                   <div className="admin-action-group">
                     <p className="admin-action-group__title">계약서 PDF</p>
                     <div className="admin-detail-actions admin-detail-actions--start">
-                      {contract.viewToken ? (
-                        <button
-                          type="button"
-                          className="app-button app-button--secondary"
-                          onClick={() => {
-                            window.open(
-                              `/contract/view/${encodeURIComponent(contract.contractNumber)}?token=${encodeURIComponent(contract.viewToken!)}`,
-                              "_blank",
-                              "noopener,noreferrer",
-                            );
-                          }}
-                        >
-                          계약서 웹으로 보기
-                        </button>
-                      ) : null}
+                      {/* 관리자 전용 보기: 고객용 링크 유효기간과 상관없이 열린다 */}
+                      <button
+                        type="button"
+                        className="app-button app-button--secondary"
+                        onClick={() => {
+                          window.open(
+                            `/admin/contracts/${contract.id}/view`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
+                        }}
+                      >
+                        계약서 웹으로 보기
+                      </button>
                       <button
                         type="button"
                         className="app-button"
@@ -598,6 +648,38 @@ export default function AdminContractDetailPage() {
                         {isDownloadingPdf
                           ? "다운로드 중..."
                           : "계약서 PDF 다운로드"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="admin-action-group">
+                    <p className="admin-action-group__title">고객용 링크</p>
+                    <p className="admin-action-group__description">
+                      {contract.viewTokenExpiresAt
+                        ? `${new Date(contract.viewTokenExpiresAt).toLocaleDateString("ko-KR")}까지${isCustomerLinkExpired ? " (만료됨)" : ""}`
+                        : "발급된 링크 없음"}
+                    </p>
+                    <div className="admin-detail-actions admin-detail-actions--start">
+                      {contract.viewToken && !isCustomerLinkExpired ? (
+                        <button
+                          type="button"
+                          className="app-button app-button--secondary"
+                          onClick={() => {
+                            void handleCopyCustomerLink();
+                          }}
+                        >
+                          링크 복사
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="app-button app-button--secondary"
+                        disabled={isReissuingLink}
+                        onClick={() => {
+                          void handleReissueCustomerLink();
+                        }}
+                      >
+                        {isReissuingLink ? "발급 중..." : "링크 재발급"}
                       </button>
                     </div>
                   </div>

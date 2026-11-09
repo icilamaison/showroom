@@ -1,5 +1,13 @@
-import { timingSafeEqual } from "crypto";
+import { randomBytes, timingSafeEqual } from "crypto";
 import { pool } from "../db/pool";
+
+// 고객용 계약서 링크 유효기간. 배송(주문 제작 2~3주) + 수령 후 7일 교환·반품 기간을 넉넉히 덮는 길이.
+// 만료 후에는 관리자가 재발급하면 새 링크로 다시 90일
+export const VIEW_TOKEN_VALID_DAYS = 90;
+
+function getViewTokenExpiresAt(issuedAt: Date): Date {
+  return new Date(issuedAt.getTime() + VIEW_TOKEN_VALID_DAYS * 24 * 60 * 60 * 1000);
+}
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -38,6 +46,7 @@ export type ContractDetail = {
   id: number;
   contractNumber: string;
   viewToken?: string | null;
+  viewTokenExpiresAt?: string | null;
   customerName: string;
   customerPhone: string;
   customerAddress: string;
@@ -138,6 +147,7 @@ type ContractDetailRow = {
   id: number;
   contract_number: string;
   view_token?: string | null;
+  view_token_issued_at?: Date | null;
   customer_name: string;
   customer_phone: string;
   customer_address: string;
@@ -341,6 +351,7 @@ export async function getContractById(
        contracts.id,
        contracts.contract_number,
        contracts.view_token,
+       contracts.view_token_issued_at,
        contracts.customer_name,
        contracts.customer_phone,
        contracts.customer_address,
@@ -371,14 +382,18 @@ export async function getContractById(
   return {
     ...mapContractDetail(result.rows[0]),
     viewToken: result.rows[0].view_token ?? null,
+    viewTokenExpiresAt: result.rows[0].view_token_issued_at
+      ? getViewTokenExpiresAt(result.rows[0].view_token_issued_at).toISOString()
+      : null,
     edits: await getContractEdits(id),
   };
 }
 
+// 토큰이 맞지 않으면 null, 맞지만 유효기간이 지났으면 "expired"
 export async function getContractByNumberAndToken(
   contractNumber: string,
   token: string,
-): Promise<ContractDetail | null> {
+): Promise<ContractDetail | "expired" | null> {
   const result = await pool.query<ContractDetailRow & { view_token: string | null }>(
     `SELECT
        id,
@@ -398,7 +413,8 @@ export async function getContractByNumberAndToken(
        payload,
        created_at,
        updated_at,
-       view_token
+       view_token,
+       view_token_issued_at
      FROM contracts
      WHERE contract_number = $1`,
     [contractNumber],
@@ -414,6 +430,10 @@ export async function getContractByNumberAndToken(
   // 토큰 없는(구버전) 계약서는 조회 링크 자체가 발급되지 않았으므로 항상 거부
   if (!storedToken || !isTokenMatch(storedToken, token)) {
     return null;
+  }
+
+  if (row.view_token_issued_at && getViewTokenExpiresAt(row.view_token_issued_at) < new Date()) {
+    return "expired";
   }
 
   return mapContractDetail(row);
@@ -497,5 +517,29 @@ export async function updateContractApprovalNumber(
     id: row.id,
     approvalNumber: row.approval_number,
     updatedAt: row.updated_at.toISOString(),
+  };
+}
+
+// 고객용 링크 재발급: 새 토큰으로 바꿔 이전 링크는 바로 막히고, 유효기간은 지금부터 다시 시작
+export async function reissueContractViewToken(
+  id: number,
+): Promise<{ viewToken: string; viewTokenExpiresAt: string } | null> {
+  const result = await pool.query<{ view_token: string; view_token_issued_at: Date }>(
+    `UPDATE contracts
+     SET view_token = $2, view_token_issued_at = NOW()
+     WHERE id = $1
+     RETURNING view_token, view_token_issued_at`,
+    [id, randomBytes(24).toString("hex")],
+  );
+
+  if (!result.rowCount) {
+    return null;
+  }
+
+  const row = result.rows[0];
+
+  return {
+    viewToken: row.view_token,
+    viewTokenExpiresAt: getViewTokenExpiresAt(row.view_token_issued_at).toISOString(),
   };
 }

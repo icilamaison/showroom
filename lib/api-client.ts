@@ -204,6 +204,7 @@ export type ContractDetail = {
   id: number;
   contractNumber: string;
   viewToken?: string | null;
+  viewTokenExpiresAt?: string | null;
   customerName: string;
   customerPhone: string;
   customerAddress: string;
@@ -288,6 +289,15 @@ export async function updateAdminContractApprovalNumber(
       method: "PATCH",
       body: JSON.stringify({ approvalNumber }),
     },
+  );
+}
+
+export async function reissueAdminContractViewToken(
+  id: number,
+): Promise<{ viewToken: string; viewTokenExpiresAt: string }> {
+  return adminFetch<{ viewToken: string; viewTokenExpiresAt: string }>(
+    `/api/admin/contracts/${id}/view-token`,
+    { method: "POST" },
   );
 }
 

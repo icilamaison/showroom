@@ -23,6 +23,10 @@ contractsRouter.get("/public/:contractNumber", async (req, res) => {
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
 
+    if (contract === "expired") {
+      return sendError(res, "링크 유효기간이 지났습니다. 매장에 링크 재발급을 요청해주세요.", 410);
+    }
+
     return sendSuccess(res, contract);
   } catch (error) {
     console.error("[contracts] Failed to get public contract:", error);

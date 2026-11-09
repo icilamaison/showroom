@@ -11,6 +11,7 @@ import {
   listContracts,
   listContractsForExport,
   updateContractApprovalNumber,
+  reissueContractViewToken,
   updateContractStatus,
 } from "../../services/admin-contract.service";
 import { parseContractInput } from "../../schemas/contract.schema";
@@ -233,6 +234,27 @@ contractsRouter.patch("/:id/approval-number", async (req, res) => {
       "[admin/contracts] Failed to update approval number:",
       error,
     );
+    return sendError(res, "서버 오류가 발생했습니다.", 500);
+  }
+});
+
+contractsRouter.post("/:id/view-token", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
+  }
+
+  try {
+    const reissued = await reissueContractViewToken(id);
+
+    if (!reissued) {
+      return sendError(res, "계약서를 찾을 수 없습니다.", 404);
+    }
+
+    return sendSuccess(res, reissued);
+  } catch (error) {
+    console.error("[admin/contracts] Failed to reissue view token:", error);
     return sendError(res, "서버 오류가 발생했습니다.", 500);
   }
 });

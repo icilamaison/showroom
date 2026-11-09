@@ -45,6 +45,8 @@ export default function ContractViewPage() {
       } catch (loadError) {
         if (loadError instanceof ApiClientError && loadError.status === 404) {
           setError("계약서를 찾을 수 없습니다. 링크를 다시 확인해주세요.");
+        } else if (loadError instanceof ApiClientError && loadError.status === 410) {
+          setError(loadError.message);
         } else {
           setError("계약서를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
         }
