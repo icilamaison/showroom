@@ -325,7 +325,9 @@ export default function AdminContractDetailPage() {
 
     try {
       await updateAdminContractStatus(contractId, selectedStatus);
-      router.push("/admin/contracts");
+      // 목록으로 이동하지 않고 이 화면에 머문다 (상단 상태 배지만 갱신)
+      setContract({ ...contract, status: selectedStatus });
+      window.alert("저장되었습니다.");
     } catch (saveError) {
       if (saveError instanceof ApiClientError) {
         if (saveError.status === 401) {
@@ -647,12 +649,12 @@ export default function AdminContractDetailPage() {
                   <h2 className="app-section-title">계약서 및 파일 관리</h2>
 
                   <ul className="admin-file-list">
-                    {/* 계약서 PDF */}
+                    {/* 관리자용 계약서 */}
                     <li className="admin-file-item">
                       <div className="admin-file-item__text">
-                        <p className="admin-file-item__title">계약서 PDF</p>
+                        <p className="admin-file-item__title">관리자용 계약서</p>
                         <p className="admin-file-item__description">
-                          계약서 원본 파일을 확인하고 다운로드할 수 있습니다.
+                          관리자만 볼 수 있는 계약서입니다. 고객용 링크 유효기간과 상관없이 언제든 확인하고 PDF로 받을 수 있습니다.
                         </p>
                       </div>
                       <div className="admin-file-item__actions">
@@ -701,12 +703,12 @@ export default function AdminContractDetailPage() {
                       </div>
                     </li>
 
-                    {/* 고객용 링크 */}
+                    {/* 고객용 계약서 */}
                     <li className="admin-file-item">
                       <div className="admin-file-item__text">
-                        <p className="admin-file-item__title">고객용 링크</p>
+                        <p className="admin-file-item__title">고객용 계약서</p>
                         <p className="admin-file-item__description">
-                          고객에게 공유하는 계약서 링크입니다. 발급일부터 90일간 열리며, 재발급하면 이전 링크는 더 이상 열리지 않습니다.
+                          고객에게 보내는 계약서 링크입니다. 발급일부터 90일간 열리며, 재발급하면 이전 링크는 더 이상 열리지 않습니다.
                         </p>
                         <p className={`admin-link-expiry${isCustomerLinkExpired ? " is_expired" : ""}`}>
                           {contract.viewTokenExpiresAt
@@ -716,15 +718,27 @@ export default function AdminContractDetailPage() {
                       </div>
                       <div className="admin-file-item__actions">
                         {contract.viewToken && !isCustomerLinkExpired ? (
-                          <button
-                            type="button"
-                            className="app-button app-button--secondary"
-                            onClick={() => {
-                              void handleCopyCustomerLink();
-                            }}
-                          >
-                            링크 복사
-                          </button>
+                          <>
+                            {/* 고객이 받는 화면 그대로 확인 (만료되면 고객과 같이 안 열리므로 숨김) */}
+                            <button
+                              type="button"
+                              className="app-button app-button--secondary"
+                              onClick={() => {
+                                window.open(customerLinkUrl, "_blank", "noopener,noreferrer");
+                              }}
+                            >
+                              계약서 웹으로 보기
+                            </button>
+                            <button
+                              type="button"
+                              className="app-button app-button--secondary"
+                              onClick={() => {
+                                void handleCopyCustomerLink();
+                              }}
+                            >
+                              링크 복사
+                            </button>
+                          </>
                         ) : null}
                         <button
                           type="button"
