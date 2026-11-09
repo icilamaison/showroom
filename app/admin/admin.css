@@ -250,38 +250,6 @@
   border-bottom: none;
 }
 
-.admin-action-card {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-
-.admin-action-card > .app-section-title {
-  grid-column: 1 / -1;
-}
-
-.admin-action-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem 1.125rem;
-  border: 1px solid var(--color-border-light);
-  background: var(--color-table-head);
-}
-
-.admin-action-group__title {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.admin-action-group__description {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  line-height: 1.55;
-}
-
 .admin-detail-actions {
   display: flex;
   align-items: flex-end;
@@ -311,6 +279,93 @@
   min-width: 0;
 }
 
+/* 입력값과 헷갈리지 않게 예시는 연하게 */
+.admin-approval-input .app-input::placeholder {
+  color: #c4c8cf;
+}
+
+/* ---------- 계약서 및 파일 관리 카드 ---------- */
+.admin-file-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 행: 제목/설명 · 버튼(오른쪽) */
+.admin-file-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 0;
+}
+
+.admin-file-item:first-child {
+  padding-top: 0.25rem;
+}
+
+.admin-file-item:last-child {
+  padding-bottom: 0;
+}
+
+.admin-file-item + .admin-file-item {
+  border-top: 1px solid var(--color-border-light);
+}
+
+/* 엑셀 행은 입력 폼이 설명 아래로 이어지므로 위 정렬 */
+.admin-file-item--stacked {
+  align-items: flex-start;
+}
+
+.admin-file-item__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-file-item__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.admin-file-item__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-subtle);
+}
+
+.admin-file-item__actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.admin-file-item__form {
+  margin-top: 0.875rem;
+}
+
+.admin-file-item__form .app-field {
+  flex: 0 1 360px;
+}
+
+/* 유효기간 표시 */
+.admin-link-expiry {
+  display: inline-block;
+  margin: 0.5rem 0 0;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-table-head);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-link-expiry.is_expired {
+  border-color: #fecaca;
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
 .admin-status-form {
   display: flex;
   flex-wrap: wrap;
@@ -318,9 +373,25 @@
   gap: 0.875rem 1rem;
 }
 
+/* 선택 칸이 카드 전체 폭으로 늘어나 비어 보이지 않게 폭 제한 */
 .admin-status-form .app-field {
   min-width: 220px;
-  flex: 1 1 220px;
+  flex: 0 1 360px;
+}
+
+/* 서명 행은 이미지 높이 때문에 글자 기준선 정렬이면 라벨이 아래로 처져서 가운데 정렬 */
+.admin-detail-item:has(.admin-signature-image) {
+  align-items: center;
+}
+
+/* 서명 이미지: 계약서의 서명 크기와 비슷하게 */
+.admin-signature-image {
+  display: block;
+  height: 44px;
+  width: auto;
+  max-width: 100%;
+  border: 1px solid var(--color-border-light);
+  background: #fff;
 }
 
 .admin-detail-card--full {
@@ -334,6 +405,16 @@
 }
 
 @media (max-width: 768px) {
+  /* 좁은 화면: 버튼을 설명 아래 줄로 */
+  .admin-file-item {
+    flex-wrap: wrap;
+  }
+
+  .admin-file-item__actions {
+    width: 100%;
+  }
+
+
   .admin-detail-grid {
     grid-template-columns: 1fr;
   }
@@ -352,13 +433,6 @@
     gap: 0.35rem;
   }
 
-  .admin-action-card {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-action-card > .app-section-title {
-    grid-column: auto;
-  }
 }
 
 @media (max-width: 640px) {
