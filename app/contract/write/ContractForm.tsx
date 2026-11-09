@@ -91,6 +91,8 @@ type ContractFormProps = {
   isSubmitting?: boolean;
   // 수정 모드에서는 안내 단계 없이 바로 저장한다
   submitLabel?: string;
+  // 동의·서명 박스 노출 여부 (수정 모드에서만 true)
+  showAgreement?: boolean;
   productSelections?: Record<number, CatalogProduct | null>;
   setComponentSelections?: Record<number, SetComponentSelection[]>;
   onChange: (
@@ -199,7 +201,7 @@ function DocCheckbox({
         className="contract-doc__checkbox-input"
       />
       <span className="contract-doc__checkbox-box" aria-hidden="true">
-        [{checked ? "✓" : " "}]
+        [<span className="contract-doc__checkbox-mark">{checked ? "✓" : ""}</span>]
       </span>
       <span>{label}</span>
     </label>
@@ -321,38 +323,15 @@ export function SignaturePad({
   );
 }
 
-export default function ContractForm({
+export function ContractAgreementBox({
   values,
   errors = {},
-  isSubmitting = false,
-  submitLabel = "다음",
-  productSelections = {},
-  setComponentSelections = {},
   onChange,
-  onProductChange,
-  onProductSelect,
-  onAddProductRow,
-  onRemoveLastProductRow,
-  onSetComponentChange,
-  onSubmit,
-}: ContractFormProps) {
-  const productsSubtotal = contractTotal(values.products);
-  const finalTotal =
-    productsSubtotal - totalDiscountAmount(values.products, values.totalDiscountRate);
-  const isSubmitDisabled = !values.termsAgreed || isSubmitting;
-  const showBankTransferFields = values.paymentMethod === "bank_transfer";
-  const cashReceiptDisabled =
-    !showBankTransferFields || values.taxInvoiceRequested;
-  const recipientNameDisabled = values.recipientSameAsBuyer === true;
-  const recipientPhoneDisabled = values.recipientSameAsBuyer === true;
-  const displayedRecipientName = recipientNameDisabled
-    ? values.buyerName
-    : values.recipientName;
-  const displayedRecipientPhone = recipientPhoneDisabled
-    ? values.buyerPhone
-    : values.recipientPhone;
-  // 러그 3호 이상·주문 제작 / 4호를 고르면 동의 체크를 추가로 받는다
-  const rugNoticeChecks = getRugNoticeChecks(values.products);
+}: {
+  values: ContractFormValues;
+  errors?: Record<string, string>;
+  onChange: ContractFormProps["onChange"];
+}) {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [draftSignature, setDraftSignature] = useState(values.signatureDataUrl || "");
 
@@ -370,6 +349,134 @@ export default function ContractForm({
     closeSignatureModal();
   }
 
+  return (
+    <>
+      <div className="contract-doc__agreement-box">
+        <p className="contract-doc__agreement-text">
+          본인은 위 상품·결제·배송 정보 및 별첨 안내문(배송·교환·반품 등 안내)의
+          내용을 모두 안내받아 이해하였으며, 이에 동의하여 아래와 같이
+          서명합니다.
+        </p>
+
+        <ContractConsentSection
+          termsAgreed={values.termsAgreed}
+          marketingConsentAgreed={values.marketingConsentAgreed}
+          onChange={onChange}
+          errors={errors}
+        />
+
+        <div className="contract-doc__agreement-sign">
+          <DateFields
+            prefix="agreementDate"
+            year={values.agreementDateYear}
+            month={values.agreementDateMonth}
+            day={values.agreementDateDay}
+            onChange={onChange}
+            errors={errors}
+          />
+          <label className="contract-doc__signature">
+            <span>구매자 :</span>
+            <input
+              type="text"
+              value={values.signatureName}
+              onChange={(event) =>
+                onChange("signatureName", event.target.value)
+              }
+              className="contract-doc__signature-buyer-name"
+              aria-label="서명 구매자명"
+            />
+            <button
+              type="button"
+              onClick={openSignatureModal}
+              className="contract-doc__signature-trigger"
+              aria-label="서명 패드 열기"
+            >
+              <span className="contract-doc__signature-stamp-wrap">
+                {values.signatureDataUrl ? (
+                  <NextImage
+                    src={values.signatureDataUrl}
+                    alt="입력된 서명"
+                    className="contract-doc__signature-stamp-image"
+                    width={82}
+                    height={30}
+                    unoptimized
+                  />
+                ) : null}
+                <span className="contract-doc__signature-stamp-text">(인)</span>
+              </span>
+            </button>
+          </label>
+        </div>
+        <FieldError message={errors.signatureName || errors.signatureDataUrl} />
+      </div>
+      {isSignatureModalOpen ? (
+        <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="contract-doc__signature-modal">
+            <p className="contract-doc__signature-modal-title">서명을 입력해주세요.</p>
+            <SignaturePad value={draftSignature} onChange={setDraftSignature} />
+            <div className="contract-doc__signature-modal-actions">
+              <button
+                type="button"
+                onClick={() => setDraftSignature("")}
+                className="contract-doc__signature-clear"
+              >
+                지우기
+              </button>
+              <button
+                type="button"
+                onClick={closeSignatureModal}
+                className="contract-doc__signature-cancel"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={saveSignature}
+                className="contract-doc__signature-save"
+              >
+                적용
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+export default function ContractForm({
+  values,
+  errors = {},
+  isSubmitting = false,
+  submitLabel = "다음",
+  showAgreement = false,
+  productSelections = {},
+  setComponentSelections = {},
+  onChange,
+  onProductChange,
+  onProductSelect,
+  onAddProductRow,
+  onRemoveLastProductRow,
+  onSetComponentChange,
+  onSubmit,
+}: ContractFormProps) {
+  const productsSubtotal = contractTotal(values.products);
+  const finalTotal =
+    productsSubtotal - totalDiscountAmount(values.products, values.totalDiscountRate);
+  const isSubmitDisabled = (showAgreement && !values.termsAgreed) || isSubmitting;
+  const showBankTransferFields = values.paymentMethod === "bank_transfer";
+  const cashReceiptDisabled =
+    !showBankTransferFields || values.taxInvoiceRequested;
+  const recipientNameDisabled = values.recipientSameAsBuyer === true;
+  const recipientPhoneDisabled = values.recipientSameAsBuyer === true;
+  const displayedRecipientName = recipientNameDisabled
+    ? values.buyerName
+    : values.recipientName;
+  const displayedRecipientPhone = recipientPhoneDisabled
+    ? values.buyerPhone
+    : values.recipientPhone;
+  // 러그 3호 이상·주문 제작 / 4호를 고르면 동의 체크를 추가로 받는다
+  const rugNoticeChecks = getRugNoticeChecks(values.products);
   return (
     <form
       onSubmit={onSubmit}
@@ -450,7 +557,7 @@ export default function ContractForm({
 
       <section className="contract-doc__section">
         <div className="contract-doc__section-heading">
-          <h2 className="contract-doc__section-title">수령자 정보 :</h2>
+          <h2 className="contract-doc__section-title">수령자 정보</h2>
           <div className="contract-doc__option-group">
             <DocCheckbox
               name="recipientSameAsBuyer"
@@ -924,7 +1031,7 @@ export default function ContractForm({
                           className="contract-doc__checkbox-input"
                         />
                         <span className="contract-doc__checkbox-box" aria-hidden="true">
-                          [{values.cashReceiptType === "income_deduction" ? "✓" : " "}]
+                          [<span className="contract-doc__checkbox-mark">{values.cashReceiptType === "income_deduction" ? "✓" : ""}</span>]
                         </span>
                         <span>
                           소득공제용(휴대폰번호{" "}
@@ -957,7 +1064,7 @@ export default function ContractForm({
                           className="contract-doc__checkbox-input"
                         />
                         <span className="contract-doc__checkbox-box" aria-hidden="true">
-                          [{values.cashReceiptType === "expense_proof" ? "✓" : " "}]
+                          [<span className="contract-doc__checkbox-mark">{values.cashReceiptType === "expense_proof" ? "✓" : ""}</span>]
                         </span>
                         <span>
                           지출증빙용(사업자등록번호 :{" "}
@@ -997,7 +1104,7 @@ export default function ContractForm({
                         className="contract-doc__checkbox-input"
                       />
                       <span className="contract-doc__checkbox-box" aria-hidden="true">
-                        [{values.taxInvoiceRequested ? "✓" : " "}]
+                        [<span className="contract-doc__checkbox-mark">{values.taxInvoiceRequested ? "✓" : ""}</span>]
                       </span>
                       <span>
                         사업자등록증 별도 제출 필수. (세금계산서 수령 이메일 :{" "}
@@ -1023,91 +1130,42 @@ export default function ContractForm({
             ) : null}
           </tbody>
         </table>
-      </section>
-
-      <section className="contract-doc__section">
         <p className="contract-doc__notice">
           ※ 운송장번호는 상품 배송이 완료된 후 카카오톡으로 별도 안내드립니다.
         </p>
-
-        <div className="contract-doc__agreement-box">
-          <p className="contract-doc__agreement-text">
-            본인은 위 상품·결제·배송 정보 및 별첨 안내문(배송·교환·반품 등 안내)의
-            내용을 모두 안내받아 이해하였으며, 이에 동의하여 아래와 같이
-            서명합니다.
-          </p>
-
-          <ContractConsentSection
-            termsAgreed={values.termsAgreed}
-            marketingConsentAgreed={values.marketingConsentAgreed}
-            onChange={onChange}
-            errors={errors}
-          />
-
-          {rugNoticeChecks.map(({ field, title, label, detail }) => (
-            <div key={field} className="contract-doc__consent">
-              <p className="contract-doc__consent-heading">{title}</p>
-              <div className="contract-doc__consent-item">
-                <DocCheckbox
-                  name={field}
-                  checked={values[field] === true}
-                  onChange={() => onChange(field, !values[field])}
-                  label={
-                    <>
-                      <b>{label}</b> {detail}
-                    </>
-                  }
-                />
-                <FieldError message={errors[field]} />
-              </div>
-            </div>
-          ))}
-
-          <div className="contract-doc__agreement-sign">
-            <DateFields
-              prefix="agreementDate"
-              year={values.agreementDateYear}
-              month={values.agreementDateMonth}
-              day={values.agreementDateDay}
-              onChange={onChange}
-              errors={errors}
-            />
-            <label className="contract-doc__signature">
-              <span>구매자 :</span>
-              <input
-                type="text"
-                value={values.signatureName}
-                onChange={(event) =>
-                  onChange("signatureName", event.target.value)
-                }
-                className="contract-doc__signature-buyer-name"
-                aria-label="서명 구매자명"
-              />
-              <button
-                type="button"
-                onClick={openSignatureModal}
-                className="contract-doc__signature-trigger"
-                aria-label="서명 패드 열기"
-              >
-                <span className="contract-doc__signature-stamp-wrap">
-                  {values.signatureDataUrl ? (
-                    <NextImage
-                      src={values.signatureDataUrl}
-                      alt="입력된 서명"
-                      className="contract-doc__signature-stamp-image"
-                      width={82}
-                      height={30}
-                      unoptimized
-                    />
-                  ) : null}
-                  <span className="contract-doc__signature-stamp-text">(인)</span>
-                </span>
-              </button>
-            </label>
-          </div>
-          <FieldError message={errors.signatureName || errors.signatureDataUrl} />
-        </div>
       </section>
+
+      {rugNoticeChecks.length ? (
+        <section className="contract-doc__section">
+          <div className="contract-doc__agreement-box contract-doc__agreement-box--rug">
+            {rugNoticeChecks.map(({ field, title, label, detail }) => (
+              <div key={field} className="contract-doc__consent">
+                <p className="contract-doc__consent-heading">{title}</p>
+                <div className="contract-doc__consent-item">
+                  <DocCheckbox
+                    name={field}
+                    checked={values[field] === true}
+                    onChange={() => onChange(field, !values[field])}
+                    label={
+                      <>
+                        <b>{label}</b> {detail}
+                      </>
+                    }
+                  />
+                  <FieldError message={errors[field]} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* 동의·서명은 안내문을 본 뒤 두 번째 페이지에서 받는다. 수정 모드는 안내 단계가 없어 여기서 받는다 */}
+      {showAgreement ? (
+        <section className="contract-doc__section">
+          <ContractAgreementBox values={values} errors={errors} onChange={onChange} />
+        </section>
+      ) : null}
 
       <footer className="contract-doc__footer">
         <p className="contract-doc__footer-note">
@@ -1124,37 +1182,6 @@ export default function ContractForm({
       >
         {isSubmitting ? "제출 중..." : submitLabel}
       </button>
-      {isSignatureModalOpen ? (
-        <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">
-          <div className="contract-doc__signature-modal">
-            <p className="contract-doc__signature-modal-title">서명을 입력해주세요.</p>
-            <SignaturePad value={draftSignature} onChange={setDraftSignature} />
-            <div className="contract-doc__signature-modal-actions">
-              <button
-                type="button"
-                onClick={() => setDraftSignature("")}
-                className="contract-doc__signature-clear"
-              >
-                지우기
-              </button>
-              <button
-                type="button"
-                onClick={closeSignatureModal}
-                className="contract-doc__signature-cancel"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={saveSignature}
-                className="contract-doc__signature-save"
-              >
-                적용
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </form>
   );
 }

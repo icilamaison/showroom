@@ -151,6 +151,7 @@
 .contract-doc__row-actions {
   display: flex;
   gap: 0.5rem;
+  margin-top: 0.4rem;
 }
 
 .contract-doc__row-action-button {
@@ -438,6 +439,7 @@
 
 .contract-doc__address-detail-input {
   margin-top: 0.18rem;
+  border-bottom: 1px solid var(--contract-line);
 }
 
 .contract-doc__address-readonly {
@@ -603,10 +605,15 @@
 
 .contract-doc__checkbox-box {
   flex: 0 0 auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: -0.05em;
   white-space: nowrap;
   line-height: 1.45;
+}
+
+/* 체크 여부와 관계없이 [ ] 폭 고정 (Pretendard ✓ 폭 0.546em + 양쪽 여백) */
+.contract-doc__checkbox-mark {
+  display: inline-block;
+  width: 0.75em;
+  text-align: center;
 }
 
 .contract-doc__checkbox > span:last-child {
@@ -633,7 +640,6 @@
   margin: 0;
   font-size: 0.72rem;
   color: #4b5563;
-  font-style: italic;
 }
 
 .contract-doc__agreement-box {
@@ -642,6 +648,16 @@
   background: var(--contract-cell);
   word-break: keep-all;
   overflow-wrap: break-word;
+}
+
+/* 첫 페이지 러그 동의 박스: 박스 테두리가 있으니 첫 항목 구분선·마지막 여백 제거 */
+.contract-doc__agreement-box--rug > .contract-doc__consent:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.contract-doc__agreement-box--rug > .contract-doc__consent:last-child {
+  margin-bottom: 0;
 }
 
 .contract-doc__agreement-text {
@@ -708,6 +724,7 @@
 }
 
 .contract-doc__agreement-sign {
+  margin-top: 1.25rem; /* 위 동의 블록 margin-bottom(0.85rem)과 상쇄되므로 그보다 크게 */
   display: flex;
   flex-wrap: nowrap;
   justify-content: flex-end;
@@ -971,6 +988,8 @@
 .contract-doc--sheet.notice-document {
   display: flex;
   flex-direction: column;
+  /* 마지막 문단(감사합니다) 아래가 답답하지 않게 작성 화면(동의 박스 위 3rem)과 맞춤 */
+  padding-bottom: 3rem;
 }
 
 .contract-doc-flow__actions {

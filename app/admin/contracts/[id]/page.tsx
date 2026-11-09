@@ -67,7 +67,6 @@ function ProductTable({
 
   return (
     <div className="admin-detail-item admin-detail-item--stacked">
-      <span className="admin-detail-item__label">상품 목록</span>
       <div className="admin-product-table-wrap">
         <table className="admin-product-table">
           <thead>

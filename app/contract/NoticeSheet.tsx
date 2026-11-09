@@ -145,33 +145,11 @@ export function ContractNoticeSheet({
 
   return (
     <NoticeSheet
-      extra={<NoticeAgreeLine />}
       overlay={
         values.noticeAnnotation ? (
           <NoticeStrokesLayer strokes={values.noticeAnnotation.strokes} />
         ) : null
       }
     />
-  );
-}
-
-// 안내문 아래 동의 문구. onChange가 없으면(제출된 계약서 보기) 체크된 모습으로만 보여준다
-export function NoticeAgreeLine({
-  checked = true,
-  onChange,
-}: {
-  checked?: boolean;
-  onChange?: (checked: boolean) => void;
-}) {
-  return (
-    <label className="notice-agree">
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={!onChange}
-        onChange={(event) => onChange?.(event.target.checked)}
-      />
-      위 배송·교환·반품 등 안내사항을 모두 확인하였습니다.
-    </label>
   );
 }

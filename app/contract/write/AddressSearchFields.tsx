@@ -67,6 +67,7 @@ export default function AddressSearchFields({
               value={postalCode}
               readOnly
               className="contract-doc__cell-input contract-doc__cell-input--postal"
+              placeholder="우편번호"
               aria-label="우편번호"
             />
             <button
@@ -81,6 +82,7 @@ export default function AddressSearchFields({
               value={address}
               readOnly
               className="contract-doc__cell-input contract-doc__cell-input--full contract-doc__cell-input--readonly"
+              placeholder="주소 검색을 눌러 입력해주세요"
               aria-label="기본주소"
             />
           </div>

@@ -13,6 +13,8 @@
   --color-table-head: #f9fafb;
 
   --font-sans:
+    "Pretendard Variable",
+    Pretendard,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
@@ -42,6 +44,11 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
   line-height: 1.5;
+}
+
+/* 버튼은 브라우저 기본값이 폰트를 상속하지 않아 Pretendard로 맞춤 */
+button {
+  font-family: inherit;
 }
 
 a {

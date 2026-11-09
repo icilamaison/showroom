@@ -32,8 +32,7 @@ import "../../ui.css";
 import "../contract.css";
 import ContractCompanyFooter from "../ContractCompanyFooter";
 import NoticeAnnotator, { type NoticeAnnotatorHandle } from "../NoticeAnnotator";
-import { NoticeAgreeLine } from "../NoticeSheet";
-import ContractForm, { createInitialContractFormValues } from "./ContractForm";
+import ContractForm, { ContractAgreementBox, createInitialContractFormValues } from "./ContractForm";
 
 // 패드를 구매로 체크하고 수량을 넣으면 상품 표에 패드 행을 넣고(빈 행 우선), 미구매·수량 0이면 비운다.
 // 패드는 기타 카테고리 상품이라 개별·전체 할인에서 빠진다(contract-amount 참고)
@@ -83,6 +82,22 @@ function validatePadPurchase(values: ContractFormValues): Record<string, string>
   return {};
 }
 
+// 두 번째 페이지(안내 확인)에서 받는 동의·서명 항목
+const AGREEMENT_FIELDS = [
+  "termsAgreed",
+  "marketingConsentAgreed",
+  "agreementDate",
+  "signatureName",
+  "signatureDataUrl",
+];
+
+// 첫 페이지 검사용 임시값 (실제 값은 두 번째 페이지에서 받는다)
+const AGREEMENT_PLACEHOLDER = {
+  termsAgreed: true,
+  signatureName: "구매자",
+  signatureDataUrl: "pending",
+};
+
 export default function ContractWritePage() {
   const router = useRouter();
   const [values, setValues] = useState<ContractFormValues>(
@@ -97,9 +112,8 @@ export default function ContractWritePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // 계약서 작성 → 배송·교환·반품 안내 동의 → 제출 순서
+  // 계약서 작성 → 배송·교환·반품 안내 확인 + 동의·서명 → 제출 순서
   const [step, setStep] = useState<"form" | "notice">("form");
-  const [noticeAgreed, setNoticeAgreed] = useState(false);
   const noticeAnnotatorRef = useRef<NoticeAnnotatorHandle>(null);
   // 관리자 상세의 "수정"으로 들어오면(?edit=계약서ID) 저장된 내용을 채우고, 저장 시 같은 계약서를 고친다
   const [editId, setEditId] = useState<number | null>(null);
@@ -532,17 +546,31 @@ export default function ContractWritePage() {
     event.preventDefault();
     setFormError("");
 
-    const validation = validateContractForm(values);
+    // 새 작성은 동의·서명이 아직 비어 있다. 그대로 검사하면 기본 검사에서 멈춰
+    // 러그 동의 같은 세부 검사(superRefine)가 돌지 않으므로 임시값을 채워 검사한다
+    const validation = validateContractForm(
+      editId ? values : { ...values, ...AGREEMENT_PLACEHOLDER },
+    );
     const padErrors = validatePadPurchase(values);
+    const formErrors = validation.valid ? {} : validation.errors;
 
-    if (!validation.valid || Object.keys(padErrors).length) {
-      setErrors({ ...(validation.valid ? {} : validation.errors), ...padErrors });
+    // 새 작성은 동의·서명을 두 번째 페이지에서 받으므로 여기서는 그 항목 오류를 보지 않는다
+    if (!editId) {
+      for (const field of Object.keys(formErrors)) {
+        if (AGREEMENT_FIELDS.some((name) => field.startsWith(name))) {
+          delete formErrors[field];
+        }
+      }
+    }
+
+    if (Object.keys(formErrors).length || Object.keys(padErrors).length) {
+      setErrors({ ...formErrors, ...padErrors });
       return;
     }
 
     setErrors({});
 
-    if (editId) {
+    if (editId && validation.valid) {
       void handleEditSave(editId, validation.data);
       return;
     }
@@ -582,9 +610,11 @@ export default function ContractWritePage() {
     const validation = validateContractForm(values);
 
     if (!validation.valid) {
+      setErrors(validation.errors);
       return;
     }
 
+    setErrors({});
     setFormError("");
     setIsSubmitting(true);
 
@@ -646,18 +676,18 @@ export default function ContractWritePage() {
               </p>
             ) : null}
 
-            {/* 동의 문구에도 펜으로 표시할 수 있게 필기 영역 안에 둔다 */}
-            <NoticeAnnotator
-              ref={noticeAnnotatorRef}
-              extra={<NoticeAgreeLine checked={noticeAgreed} onChange={setNoticeAgreed} />}
-            />
+            <NoticeAnnotator ref={noticeAnnotatorRef} />
 
             <div className="contract-doc-flow__actions">
+              {/* 안내문을 읽은 뒤 동의·서명하도록 안내문 아래에 둔다 (필기 캔버스 밖이라 입력 가능) */}
+              <div className="contract-doc">
+                <ContractAgreementBox values={values} errors={errors} onChange={handleChange} />
+              </div>
 
               <button
                 type="button"
                 className="app-button app-button--block"
-                disabled={!noticeAgreed || isSubmitting}
+                disabled={!values.termsAgreed || isSubmitting}
                 onClick={handleNoticeSubmit}
               >
                 {isSubmitting ? "제출 중..." : "계약서 제출"}
@@ -681,6 +711,7 @@ export default function ContractWritePage() {
             errors={errors}
             isSubmitting={isSubmitting}
             submitLabel={editId ? "수정 저장" : undefined}
+            showAgreement={editId !== null}
             productSelections={productSelections}
             setComponentSelections={setComponentSelections}
             onChange={handleChange}

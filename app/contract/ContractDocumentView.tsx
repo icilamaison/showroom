@@ -91,7 +91,7 @@ function DocCheckboxDisplay({
   return (
     <span className="contract-doc__checkbox contract-doc__checkbox--readonly">
       <span className="contract-doc__checkbox-box" aria-hidden="true">
-        [{checked ? "✓" : " "}]
+        [<span className="contract-doc__checkbox-mark">{checked ? "✓" : ""}</span>]
       </span>
       <span>{label}</span>
     </span>
@@ -287,7 +287,7 @@ export default function ContractDocumentView({
 
       <section className="contract-doc__section">
         <div className="contract-doc__section-heading">
-          <h2 className="contract-doc__section-title">수령자 정보 :</h2>
+          <h2 className="contract-doc__section-title">수령자 정보</h2>
           <div className="contract-doc__option-group">
             <DocCheckboxDisplay
               checked={values.recipientSameAsBuyer === true}
@@ -578,13 +578,12 @@ export default function ContractDocumentView({
             ) : null}
           </tbody>
         </table>
-      </section>
-
-      <section className="contract-doc__section">
         <p className="contract-doc__notice">
           ※ 운송장번호는 상품 배송이 완료된 후 카카오톡으로 별도 안내드립니다.
         </p>
+      </section>
 
+      <section className="contract-doc__section">
         <div className="contract-doc__agreement-box">
           <p className="contract-doc__agreement-text">
             본인은 위 상품·결제·배송 정보 및 별첨 안내문(배송·교환·반품 등 안내)의

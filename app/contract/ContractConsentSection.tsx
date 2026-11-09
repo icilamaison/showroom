@@ -19,7 +19,7 @@ function DocCheckbox({
         className="contract-doc__checkbox-input"
       />
       <span className="contract-doc__checkbox-box" aria-hidden="true">
-        [{checked ? "✓" : " "}]
+        [<span className="contract-doc__checkbox-mark">{checked ? "✓" : ""}</span>]
       </span>
       <span>{label}</span>
     </label>
@@ -36,7 +36,7 @@ function DocCheckboxDisplay({
   return (
     <span className="contract-doc__checkbox contract-doc__checkbox--readonly">
       <span className="contract-doc__checkbox-box" aria-hidden="true">
-        [{checked ? "✓" : " "}]
+        [<span className="contract-doc__checkbox-mark">{checked ? "✓" : ""}</span>]
       </span>
       <span>{label}</span>
     </span>
