@@ -260,7 +260,7 @@ export default function AdminContractsPage() {
               void handleBulkDownload();
             }}
           >
-            {isDownloading ? "다운로드 중..." : "주문 엑셀 다운로드"}
+            {isDownloading ? "다운로드 중..." : "전체 다운로드"}
           </button>
         </div>
 
