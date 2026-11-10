@@ -5,6 +5,7 @@ import {
   downloadAdminOrderExcel,
   fetchAdminContractById,
   reissueAdminContractViewToken,
+  sendAdminContractSms,
   updateAdminContractApprovalNumber,
   updateAdminContractStatus,
   type ContractDetail,
@@ -34,6 +35,25 @@ function formatAmount(amount: number) {
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString("ko-KR");
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("ko-KR");
+}
+
+/** 고객용 링크 남은 일수. 만료면 음수 */
+function getLinkDaysRemaining(expiresAt: string | null | undefined) {
+  if (!expiresAt) {
+    return null;
+  }
+
+  const end = new Date(expiresAt);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  return Math.round(
+    (startOfEnd.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24),
+  );
 }
 
 function DetailItem({
@@ -156,58 +176,42 @@ function PurchaseContractDetails({ payload }: { payload: PurchaseContractPayload
   return (
     <>
       <section className="admin-detail-card">
-        <h2 className="app-section-title">구매 계약서 정보</h2>
+        <h2 className="app-section-title">고객 정보</h2>
         <div className="admin-detail-card__body">
-          <DetailItem label="담당자" value={payload.managerName || "-"} />
-          <DetailItem label="작성일자" value={payload.writtenDate} />
-          <DetailItem label="동의 일자" value={payload.agreementDate} />
-        </div>
-      </section>
-
-      <section className="admin-detail-card admin-detail-card--full">
-        <h2 className="app-section-title">구매자 / 수령자</h2>
-        <div className="admin-detail-card__body">
-          <DetailItem label="구매자 성명" value={payload.buyerName} />
-          <DetailItem label="구매자 연락처" value={payload.buyerPhone} />
+          <DetailItem label="구매자" value={payload.buyerName} />
+          <DetailItem label="연락처" value={payload.buyerPhone} />
           <DetailItem
             label="수령자"
-            value={payload.recipientSameAsBuyer ? "구매자와 동일" : "별도 입력"}
+            value={
+              payload.recipientSameAsBuyer
+                ? "구매자와 동일"
+                : payload.recipientName || "-"
+            }
           />
           {!payload.recipientSameAsBuyer ? (
-            <>
-              <DetailItem label="수령자 성명" value={payload.recipientName || "-"} />
-              <DetailItem
-                label="수령자 연락처"
-                value={payload.recipientPhone || "-"}
-              />
-            </>
+            <DetailItem
+              label="수령자 연락처"
+              value={payload.recipientPhone || "-"}
+            />
           ) : null}
           <DetailItem
-            label="우편번호"
-            value={payload.recipientPostalCode || "-"}
-          />
-          <DetailItem
-            label="기본주소"
-            value={payload.recipientAddress || "-"}
-          />
-          <DetailItem
-            label="상세주소"
-            value={payload.recipientAddressDetail || "-"}
-          />
-          <DetailItem
-            label="배송지 전체"
+            label="배송지"
             value={
               formatFullAddress(
                 payload.recipientAddress || "",
                 payload.recipientAddressDetail || "",
               ) || "-"
             }
+            stacked
           />
+          <DetailItem label="담당자" value={payload.managerName || "-"} />
+          <DetailItem label="작성일자" value={payload.writtenDate} />
+          <DetailItem label="동의 일자" value={payload.agreementDate} />
         </div>
       </section>
 
-      <section className="admin-detail-card admin-detail-card--full">
-        <h2 className="app-section-title">상품 정보</h2>
+      <section className="admin-detail-card">
+        <h2 className="app-section-title">계약 상품</h2>
         <div className="admin-detail-card__body">
           <ProductTable products={payload.products} />
         </div>
@@ -274,6 +278,7 @@ export default function AdminContractDetailPage() {
   const [savedApprovalNumber, setSavedApprovalNumber] = useState("");
   const [isSavingApprovalNumber, setIsSavingApprovalNumber] = useState(false);
   const [isReissuingLink, setIsReissuingLink] = useState(false);
+  const [isSendingSms, setIsSendingSms] = useState(false);
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -393,6 +398,41 @@ export default function AdminContractDetailPage() {
     }
   }
 
+  async function handleSendSms() {
+    if (!contract) {
+      return;
+    }
+
+    if (!window.confirm(`${contract.customerPhone} 번호로 계약서 링크를 문자로 보낼까요?`)) {
+      return;
+    }
+
+    setIsSendingSms(true);
+    setError("");
+
+    try {
+      const { result } = await sendAdminContractSms(contract.id);
+      window.alert(
+        result === "sent"
+          ? "문자를 발송했습니다."
+          : "발송 기능이 꺼져 있어 문자를 보내지 않았습니다.",
+      );
+    } catch (smsError) {
+      if (smsError instanceof ApiClientError && smsError.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
+
+      setError(
+        smsError instanceof ApiClientError
+          ? smsError.message
+          : "문자 발송 중 오류가 발생했습니다.",
+      );
+    } finally {
+      setIsSendingSms(false);
+    }
+  }
+
   async function handleApprovalNumberSave() {
     if (!contract) {
       return;
@@ -444,14 +484,13 @@ export default function AdminContractDetailPage() {
           ← 목록으로
         </Link>
 
-        <header className="app-header app-header--page">
+        <header className="app-header app-header--page admin-page-header">
           <img
             className="app-brand"
             src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
             alt="이씨라메종"
           />
           <h1 className="app-title app-title--page">계약서 상세</h1>
-          <p className="app-description">제출된 계약 정보 및 처리 상태</p>
         </header>
 
         {error ? <p className="app-alert app-alert--error">{error}</p> : null}
@@ -461,310 +500,203 @@ export default function AdminContractDetailPage() {
         ) : contract ? (
           <>
             <div className="admin-detail-content">
-            <section className="admin-detail-hero">
-              <div className="admin-detail-hero__main">
-                <p className="admin-detail-hero__eyebrow">계약번호</p>
-                <h2 className="admin-detail-hero__title">
-                  {contract.contractNumber}
-                </h2>
-                <p className="admin-detail-hero__meta">
-                  {contract.customerName} · {contract.customerPhone}
-                </p>
-                <p className="admin-detail-hero__meta">
-                  작성 {formatDateTime(contract.createdAt)}
-                </p>
-              </div>
-              <div className="admin-detail-hero__aside">
-                <span className="admin-status">
-                  {getContractStatusLabel(contract.status)}
-                </span>
-                <p className="admin-detail-hero__amount">
-                  {formatAmount(contract.contractAmount)}
-                </p>
-              </div>
-            </section>
-
-            <div className="admin-detail-grid">
-              <section className="admin-detail-card">
-                <h2 className="app-section-title">관리 정보</h2>
-                <div className="admin-detail-card__body">
-                  <DetailItem
-                    label="최종 수정일"
-                    value={formatDateTime(contract.updatedAt)}
-                  />
-                  <DetailItem
-                    label="작성자 계정"
-                    value={
-                      contract.createdByUsername
-                        ? contract.createdByName
-                          ? `${contract.createdByName} (${contract.createdByUsername})`
-                          : contract.createdByUsername
-                        : "-"
-                    }
-                  />
-                  <DetailItem
-                    label="수정 이력"
-                    stacked={Boolean(contract.edits?.length)}
-                    value={
-                      contract.edits?.length ? (
-                        <span className="admin-edit-history">
-                          {contract.edits.map((edit) => (
-                            <span key={edit.editedAt}>
-                              {formatDateTime(edit.editedAt)} · {edit.editorName ?? "-"}
-                              {edit.changedFields.length
-                                ? ` · ${edit.changedFields.join(", ")}`
-                                : ""}
-                            </span>
-                          ))}
-                        </span>
-                      ) : (
-                        "-"
-                      )
-                    }
-                  />
-                  {purchasePayload ? (
-                    <div className="admin-detail-actions admin-detail-actions--start">
+              <section className="admin-detail-hero">
+                <div className="admin-detail-hero__main">
+                  <div className="admin-detail-hero__title-row">
+                    <h2 className="admin-detail-hero__title">
+                      {contract.customerName}
+                    </h2>
+                    <span className={`admin-status admin-status--${contract.status}`}>
+                      {getContractStatusLabel(contract.status)}
+                    </span>
+                  </div>
+                  <p className="admin-detail-hero__meta-row">
+                    <span>{contract.contractNumber}</span>
+                    <span>작성 {formatDate(contract.createdAt)}</span>
+                    <span>
+                      담당{" "}
+                      {contract.createdByName ||
+                        contract.createdByUsername ||
+                        "-"}
+                    </span>
+                  </p>
+                  <p className="admin-detail-hero__amount">
+                    {formatAmount(contract.contractAmount)}
+                  </p>
+                </div>
+                <div className="admin-detail-hero__aside">
+                  <div className="admin-detail-hero__actions">
+                    {purchasePayload ? (
                       <button
                         type="button"
                         className="app-button app-button--secondary"
-                        onClick={() => router.push(`/contract/write?edit=${contract.id}`)}
+                        onClick={() =>
+                          router.push(`/contract/write?edit=${contract.id}`)
+                        }
                       >
                         계약서 수정
                       </button>
-                    </div>
-                  ) : null}
+                    ) : null}
+                    {purchasePayload ? (
+                      <button
+                        type="button"
+                        className="app-button app-button--secondary"
+                        onClick={() => {
+                          window.open(
+                            `/admin/contracts/${contract.id}/view`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
+                        }}
+                      >
+                        관리자용 웹 보기
+                      </button>
+                    ) : null}
+                    {purchasePayload && documentValues ? (
+                      <button
+                        type="button"
+                        className="app-button"
+                        disabled={isDownloadingPdf}
+                        onClick={() => {
+                          if (!contract || !pdfCaptureRef.current) {
+                            return;
+                          }
+
+                          void (async () => {
+                            setIsDownloadingPdf(true);
+                            setError("");
+
+                            try {
+                              await exportContractDocumentToPdf(
+                                pdfCaptureRef.current as HTMLElement,
+                                buildContractPdfFilename(contract.contractNumber),
+                              );
+                            } catch {
+                              setError("PDF 다운로드에 실패했습니다.");
+                            } finally {
+                              setIsDownloadingPdf(false);
+                            }
+                          })();
+                        }}
+                      >
+                        {isDownloadingPdf
+                          ? "다운로드 중..."
+                          : "PDF 다운로드"}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </section>
 
-              {purchasePayload ? (
-                <PurchaseContractDetails payload={purchasePayload} />
-              ) : (
-                <>
-                  <section className="admin-detail-card">
-                    <h2 className="app-section-title">고객 정보</h2>
-                    <div className="admin-detail-card__body">
-                      <DetailItem label="고객명" value={contract.customerName} />
-                      <DetailItem label="연락처" value={contract.customerPhone} />
-                      <DetailItem label="주소" value={contract.customerAddress} />
-                      <DetailItem label="서명명" value={contract.signatureName} />
-                    </div>
-                  </section>
+              <div className="admin-detail-layout">
+                <div className="admin-detail-main">
+                  {purchasePayload ? (
+                    <PurchaseContractDetails payload={purchasePayload} />
+                  ) : (
+                    <>
+                      <section className="admin-detail-card">
+                        <h2 className="app-section-title">고객 정보</h2>
+                        <div className="admin-detail-card__body">
+                          <DetailItem label="고객명" value={contract.customerName} />
+                          <DetailItem label="연락처" value={contract.customerPhone} />
+                          <DetailItem label="주소" value={contract.customerAddress} />
+                          <DetailItem label="서명명" value={contract.signatureName} />
+                        </div>
+                      </section>
+                      <section className="admin-detail-card">
+                        <h2 className="app-section-title">계약 내용</h2>
+                        <div className="admin-detail-card__body">
+                          <DetailItem label="상품명/서비스명" value={contract.productName} />
+                          <DetailItem label="계약 금액" value={formatAmount(contract.contractAmount)} />
+                          <DetailItem label="계약 시작일" value={contract.contractStartDate} />
+                          <DetailItem label="계약 종료일" value={contract.contractEndDate} />
+                          <DetailItem label="특약사항" value={contract.specialTerms || "-"} />
+                          <DetailItem label="약관 동의" value={contract.termsAgreed ? "동의함" : "미동의"} />
+                        </div>
+                      </section>
+                    </>
+                  )}
 
-                  <section className="admin-detail-card">
-                    <h2 className="app-section-title">계약 내용</h2>
-                    <div className="admin-detail-card__body">
-                      <DetailItem
-                        label="상품명/서비스명"
-                        value={contract.productName}
-                      />
-                      <DetailItem
-                        label="계약 금액"
-                        value={formatAmount(contract.contractAmount)}
-                      />
-                      <DetailItem
-                        label="계약 시작일"
-                        value={contract.contractStartDate}
-                      />
-                      <DetailItem
-                        label="계약 종료일"
-                        value={contract.contractEndDate}
-                      />
-                      <DetailItem
-                        label="특약사항"
-                        value={contract.specialTerms || "-"}
-                      />
-                      <DetailItem
-                        label="약관 동의"
-                        value={contract.termsAgreed ? "동의함" : "미동의"}
-                      />
-                    </div>
-                  </section>
-                </>
-              )}
-
-              {purchasePayload ? (
-                <section className="admin-detail-card">
-                  <h2 className="app-section-title">서명 / 동의</h2>
-                  <div className="admin-detail-card__body">
-                    <DetailItem label="서명명" value={contract.signatureName} />
-                    <DetailItem
-                      label="서명"
-                      value={
-                        purchasePayload.signatureDataUrl ? (
-                          <img
-                            className="admin-signature-image"
-                            src={purchasePayload.signatureDataUrl}
-                            alt="구매자 서명"
-                          />
-                        ) : (
-                          "-"
-                        )
-                      }
-                    />
-                    <DetailItem
-                      label="약관 동의"
-                      value={contract.termsAgreed ? "동의함" : "미동의"}
-                    />
-                    <DetailItem
-                      label="마케팅 동의"
-                      value={purchasePayload.marketingConsentAgreed ? "동의함" : "미동의"}
-                    />
-                    {/* 러그 3·4호를 고른 계약서만 받는 동의 */}
-                    {getRugNoticeChecks(purchasePayload.products).map(({ field }) => (
-                      <DetailItem
-                        key={field}
-                        label={RUG_CHECK_LABELS[field]}
-                        value={purchasePayload[field] ? "확인함" : "미확인"}
-                      />
-                    ))}
-                    {purchasePayload.padPurchased != null ? (
-                      <DetailItem
-                        label="미끄럼방지 패드"
-                        value={
-                          purchasePayload.padPurchased
-                            ? `구매 (${purchasePayload.padQuantity || 1}개)`
-                            : "미구매"
-                        }
-                      />
-                    ) : null}
-                  </div>
-                </section>
-              ) : null}
-            </div>
-
-            {purchasePayload && documentValues ? (
-              <div
-                ref={pdfCaptureRef}
-                className="contract-doc__pdf-capture"
-                aria-hidden="true"
-              >
-                <ContractPdfDocument values={documentValues} />
-              </div>
-            ) : null}
-
-            <div className="admin-detail-stack">
-              {purchasePayload ? (
-                <section className="admin-detail-card">
-                  {/* 다른 카드(상태 변경 등)와 같은 섹션 제목 */}
-                  <h2 className="app-section-title">계약서 및 파일 관리</h2>
-
-                  <ul className="admin-file-list">
-                    {/* 관리자용 계약서 */}
-                    <li className="admin-file-item">
-                      <div className="admin-file-item__text">
-                        <p className="admin-file-item__title">관리자용 계약서</p>
-                        <p className="admin-file-item__description">
-                          링크 유효기간과 상관없이 확인할 수 있습니다.
-                        </p>
-                      </div>
-                      <div className="admin-file-item__actions">
-                        {/* 관리자 전용 보기: 고객용 링크 유효기간과 상관없이 열린다 */}
-                        <button
-                          type="button"
-                          className="app-button app-button--secondary"
-                          onClick={() => {
-                            window.open(
-                              `/admin/contracts/${contract.id}/view`,
-                              "_blank",
-                              "noopener,noreferrer",
-                            );
-                          }}
-                        >
-                          계약서 웹으로 보기
-                        </button>
-                        <button
-                          type="button"
-                          className="app-button"
-                          disabled={isDownloadingPdf}
-                          onClick={() => {
-                            if (!contract || !pdfCaptureRef.current) {
-                              return;
+                  {purchasePayload ? (
+                    <section className="admin-detail-card">
+                      <h2 className="app-section-title">동의</h2>
+                      <div className="admin-detail-card__body">
+                        <DetailItem
+                          label="약관 동의"
+                          value={contract.termsAgreed ? "동의함" : "미동의"}
+                        />
+                        <DetailItem
+                          label="마케팅 동의"
+                          value={
+                            purchasePayload.marketingConsentAgreed
+                              ? "동의함"
+                              : "미동의"
+                          }
+                        />
+                        {getRugNoticeChecks(purchasePayload.products).map(
+                          ({ field }) => (
+                            <DetailItem
+                              key={field}
+                              label={RUG_CHECK_LABELS[field]}
+                              value={purchasePayload[field] ? "확인함" : "미확인"}
+                            />
+                          ),
+                        )}
+                        {purchasePayload.padPurchased != null ? (
+                          <DetailItem
+                            label="미끄럼방지 패드"
+                            value={
+                              purchasePayload.padPurchased
+                                ? `구매 (${purchasePayload.padQuantity || 1}개)`
+                                : "미구매"
                             }
-
-                            void (async () => {
-                              setIsDownloadingPdf(true);
-                              setError("");
-
-                              try {
-                                await exportContractDocumentToPdf(
-                                  pdfCaptureRef.current as HTMLElement,
-                                  buildContractPdfFilename(contract.contractNumber),
-                                );
-                              } catch {
-                                setError("PDF 다운로드에 실패했습니다.");
-                              } finally {
-                                setIsDownloadingPdf(false);
-                              }
-                            })();
-                          }}
-                        >
-                          {isDownloadingPdf ? "다운로드 중..." : "계약서 PDF 다운로드"}
-                        </button>
-                      </div>
-                    </li>
-
-                    {/* 고객용 계약서 */}
-                    <li className="admin-file-item">
-                      <div className="admin-file-item__text">
-                        <p className="admin-file-item__title">고객용 계약서</p>
-                        <p className="admin-file-item__description">
-                          발급일부터 90일간 열립니다. 재발급하면 이전 링크는 열리지 않습니다.
-                        </p>
-                        <p className={`admin-link-expiry${isCustomerLinkExpired ? " is_expired" : ""}`}>
-                          {contract.viewTokenExpiresAt
-                            ? `유효기간 ${new Date(contract.viewTokenExpiresAt).toLocaleDateString("ko-KR")} 까지${isCustomerLinkExpired ? " (만료됨)" : ""}`
-                            : "발급된 링크 없음"}
-                        </p>
-                      </div>
-                      <div className="admin-file-item__actions">
-                        {contract.viewToken && !isCustomerLinkExpired ? (
-                          <>
-                            {/* 고객이 받는 화면 그대로 확인 (만료되면 고객과 같이 안 열리므로 숨김) */}
-                            <button
-                              type="button"
-                              className="app-button app-button--secondary"
-                              onClick={() => {
-                                window.open(customerLinkUrl, "_blank", "noopener,noreferrer");
-                              }}
-                            >
-                              계약서 웹으로 보기
-                            </button>
-                            <button
-                              type="button"
-                              className="app-button app-button--secondary"
-                              onClick={() => {
-                                void handleCopyCustomerLink();
-                              }}
-                            >
-                              링크 복사
-                            </button>
-                          </>
+                          />
                         ) : null}
-                        <button
-                          type="button"
-                          className="app-button app-button--secondary"
-                          disabled={isReissuingLink}
-                          onClick={() => {
-                            void handleReissueCustomerLink();
-                          }}
-                        >
-                          {isReissuingLink ? "발급 중..." : "링크 재발급"}
-                        </button>
                       </div>
-                    </li>
+                    </section>
+                  ) : null}
+                </div>
 
-                    {/* PlayAuto 주문 엑셀 */}
-                    <li className="admin-file-item admin-file-item--stacked">
-                      <div className="admin-file-item__text">
-                        <p className="admin-file-item__title">PlayAuto 주문 엑셀</p>
-                        <p className="admin-file-item__description">
-                          승인번호를 저장해야 다운로드할 수 있습니다.
+                <aside className="admin-detail-rail">
+                  <section className="admin-detail-card">
+                    <h2 className="app-section-title">상태 변경</h2>
+                    <div className="admin-status-form">
+                      <div className="app-field">
+                        <label htmlFor="status" className="app-label">상태</label>
+                        <select
+                          id="status"
+                          value={selectedStatus}
+                          onChange={(event) => setSelectedStatus(event.target.value)}
+                          className="app-input"
+                        >
+                          {CONTRACT_STATUSES.map((status) => (
+                            <option key={status} value={status}>
+                              {getContractStatusLabel(status)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        className="app-button"
+                        disabled={isSaving || selectedStatus === contract.status}
+                        onClick={() => void handleStatusSave()}
+                      >
+                        {isSaving ? "저장 중..." : "상태 저장"}
+                      </button>
+                    </div>
+                  </section>
+
+                  {purchasePayload ? (
+                    <>
+                      <section className="admin-detail-card">
+                        <h2 className="app-section-title">SR 승인번호</h2>
+                        <p className="admin-rail-hint">
+                          입력해야 PlayAuto 주문 엑셀을 받을 수 있어요
                         </p>
-                        <div className="admin-detail-actions admin-file-item__form">
-                          <div className="app-field">
-                            <label htmlFor="approval-number" className="app-label">
-                              승인번호
-                            </label>
+                        <div className="admin-detail-actions">
+                          <div className="app-field" style={{ flex: "1 1 140px" }}>
+                            <label htmlFor="approval-number" className="app-label">승인번호</label>
                             <div className="admin-approval-input">
                               <span aria-hidden="true">SR</span>
                               <input
@@ -773,9 +705,7 @@ export default function AdminContractDetailPage() {
                                 inputMode="numeric"
                                 value={approvalNumber}
                                 onChange={(event) =>
-                                  setApprovalNumber(
-                                    event.target.value.replace(/\D/g, ""),
-                                  )
+                                  setApprovalNumber(event.target.value.replace(/\D/g, ""))
                                 }
                                 className="app-input"
                                 placeholder="ex) 30033857"
@@ -792,11 +722,17 @@ export default function AdminContractDetailPage() {
                           >
                             {isSavingApprovalNumber ? "저장 중..." : "저장"}
                           </button>
+                        </div>
+                        <div className="admin-rail-actions" style={{ marginTop: "0.75rem" }}>
                           <button
                             type="button"
                             className="app-button"
                             disabled={isDownloading || !isApprovalNumberSaved}
-                            title={isApprovalNumberSaved ? undefined : "승인번호를 저장해야 다운로드할 수 있습니다."}
+                            title={
+                              isApprovalNumberSaved
+                                ? undefined
+                                : "승인번호를 저장해야 다운로드할 수 있습니다."
+                            }
                             onClick={() => {
                               if (!contract || !isApprovalNumberSaved) {
                                 return;
@@ -805,12 +741,8 @@ export default function AdminContractDetailPage() {
                               void (async () => {
                                 setIsDownloading(true);
                                 setError("");
-
                                 try {
-                                  await downloadAdminOrderExcel(
-                                    contract.id,
-                                    approvalNumber,
-                                  );
+                                  await downloadAdminOrderExcel(contract.id, approvalNumber);
                                 } catch (downloadError) {
                                   if (
                                     downloadError instanceof ApiClientError &&
@@ -819,7 +751,6 @@ export default function AdminContractDetailPage() {
                                     router.push("/admin/login");
                                     return;
                                   }
-
                                   setError(
                                     downloadError instanceof ApiClientError
                                       ? downloadError.message
@@ -831,46 +762,169 @@ export default function AdminContractDetailPage() {
                               })();
                             }}
                           >
-                            {isDownloading ? "다운로드 중..." : "주문 엑셀 다운로드"}
+                            {isDownloading ? "다운로드 중..." : "PlayAuto 주문 엑셀"}
                           </button>
                         </div>
-                      </div>
-                    </li>
-                  </ul>
-                </section>
-              ) : null}
+                      </section>
 
-              <section className="admin-detail-card">
-                <h2 className="app-section-title">상태 변경</h2>
-                <div className="admin-status-form">
-                  <div className="app-field">
-                    <label htmlFor="status" className="app-label">
-                      상태
-                    </label>
-                    <select
-                      id="status"
-                      value={selectedStatus}
-                      onChange={(event) => setSelectedStatus(event.target.value)}
-                      className="app-input"
-                    >
-                      {CONTRACT_STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {getContractStatusLabel(status)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <button
-                    type="button"
-                    className="app-button"
-                    disabled={isSaving || selectedStatus === contract.status}
-                    onClick={() => void handleStatusSave()}
-                  >
-                    {isSaving ? "저장 중..." : "저장"}
-                  </button>
+                      <section className="admin-detail-card">
+                        <h2 className="app-section-title">
+                          고객 계약서 링크
+                          {(() => {
+                            const days = getLinkDaysRemaining(
+                              contract.viewTokenExpiresAt,
+                            );
+                            if (days == null) return null;
+                            return (
+                              <span
+                                className={`admin-d-day${days < 0 ? " is-expired" : ""}`}
+                              >
+                                {days < 0 ? "만료" : `D-${days}`}
+                              </span>
+                            );
+                          })()}
+                        </h2>
+                        <p className="admin-rail-hint">
+                          {contract.viewToken
+                            ? isCustomerLinkExpired
+                              ? "링크가 만료됐어요. 아래에서 다시 발급해 주세요."
+                              : contract.viewTokenExpiresAt
+                                ? `${formatDate(contract.viewTokenExpiresAt)}까지`
+                                : "고객에게 보낼 수 있는 링크가 있어요."
+                            : "아직 링크가 없어요. 발급하면 90일간 쓸 수 있어요."}
+                        </p>
+
+                        {contract.viewToken && !isCustomerLinkExpired && customerLinkUrl ? (
+                          <div className="admin-share-link">
+                            <input
+                              className="app-input admin-input-compact"
+                              type="text"
+                              readOnly
+                              value={customerLinkUrl}
+                              aria-label="고객 계약서 링크"
+                              onFocus={(event) => event.currentTarget.select()}
+                            />
+                          </div>
+                        ) : null}
+
+                        {contract.viewToken && !isCustomerLinkExpired ? (
+                          <>
+                            <div className="admin-rail-actions">
+                              <button
+                                type="button"
+                                className="app-button"
+                                disabled={isSendingSms}
+                                onClick={() => {
+                                  void handleSendSms();
+                                }}
+                              >
+                                {isSendingSms ? "발송 중..." : "문자로 보내기"}
+                              </button>
+                              <button
+                                type="button"
+                                className="app-button app-button--secondary"
+                                onClick={() => {
+                                  void handleCopyCustomerLink();
+                                }}
+                              >
+                                링크 복사
+                              </button>
+                              <button
+                                type="button"
+                                className="app-button app-button--secondary"
+                                onClick={() => {
+                                  window.open(
+                                    customerLinkUrl,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                  );
+                                }}
+                              >
+                                고객 화면 열기
+                              </button>
+                            </div>
+                            <div className="admin-rail-links">
+                              <button
+                                type="button"
+                                disabled={isReissuingLink}
+                                onClick={() => {
+                                  void handleReissueCustomerLink();
+                                }}
+                              >
+                                {isReissuingLink ? "발급 중..." : "링크 재발급"}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="admin-rail-actions">
+                            <button
+                              type="button"
+                              className="app-button"
+                              disabled={isReissuingLink}
+                              onClick={() => {
+                                void handleReissueCustomerLink();
+                              }}
+                            >
+                              {isReissuingLink
+                                ? "발급 중..."
+                                : contract.viewToken
+                                  ? "링크 재발급"
+                                  : "링크 발급하기"}
+                            </button>
+                          </div>
+                        )}
+                      </section>
+                    </>
+                  ) : null}
+
+                  <section className="admin-detail-card">
+                    <h2 className="app-section-title">수정 이력</h2>
+                    <div className="admin-detail-card__body">
+                      <DetailItem label="최종 수정" value={formatDateTime(contract.updatedAt)} />
+                      <DetailItem
+                        label="작성자"
+                        value={
+                          contract.createdByUsername
+                            ? contract.createdByName
+                              ? `${contract.createdByName} (${contract.createdByUsername})`
+                              : contract.createdByUsername
+                            : "-"
+                        }
+                      />
+                      <DetailItem
+                        label="이력"
+                        stacked={Boolean(contract.edits?.length)}
+                        value={
+                          contract.edits?.length ? (
+                            <span className="admin-edit-history">
+                              {contract.edits.map((edit) => (
+                                <span key={edit.editedAt}>
+                                  {formatDateTime(edit.editedAt)} · {edit.editorName ?? "-"}
+                                  {edit.changedFields.length
+                                    ? ` · ${edit.changedFields.join(", ")}`
+                                    : ""}
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            "-"
+                          )
+                        }
+                      />
+                    </div>
+                  </section>
+                </aside>
+              </div>
+
+              {purchasePayload && documentValues ? (
+                <div
+                  ref={pdfCaptureRef}
+                  className="contract-doc__pdf-capture"
+                  aria-hidden="true"
+                >
+                  <ContractPdfDocument values={documentValues} />
                 </div>
-              </section>
-            </div>
+              ) : null}
             </div>
           </>
         ) : null}

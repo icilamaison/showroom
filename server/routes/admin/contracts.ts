@@ -16,6 +16,7 @@ import {
 } from "../../services/admin-contract.service";
 import { parseContractInput } from "../../schemas/contract.schema";
 import { updateContract } from "../../services/contract.service";
+import { sendContractLinkSms } from "../../services/notify.service";
 import {
   buildBulkOrderExcelFilename,
   buildOrderExcelFilename,
@@ -256,6 +257,43 @@ contractsRouter.post("/:id/view-token", async (req, res) => {
   } catch (error) {
     console.error("[admin/contracts] Failed to reissue view token:", error);
     return sendError(res, "서버 오류가 발생했습니다.", 500);
+  }
+});
+
+// 알림톡 대신 문자를 원하는 고객에게 현재 링크를 문자로 재발송
+contractsRouter.post("/:id/sms", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
+  }
+
+  try {
+    const contract = await getContractById(id);
+
+    if (!contract) {
+      return sendError(res, "계약서를 찾을 수 없습니다.", 404);
+    }
+
+    if (
+      !contract.viewToken ||
+      !contract.viewTokenExpiresAt ||
+      new Date(contract.viewTokenExpiresAt) < new Date()
+    ) {
+      return sendError(res, "유효한 고객용 링크가 없습니다. 링크 재발급 후 보내주세요.", 400);
+    }
+
+    const result = await sendContractLinkSms({
+      contractNumber: contract.contractNumber,
+      customerName: contract.customerName,
+      customerPhone: contract.customerPhone,
+      viewToken: contract.viewToken,
+    });
+
+    return sendSuccess(res, { result });
+  } catch (error) {
+    console.error("[admin/contracts] Failed to send sms:", error);
+    return sendError(res, "문자 발송 중 오류가 발생했습니다.", 500);
   }
 });
 

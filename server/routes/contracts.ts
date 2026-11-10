@@ -4,6 +4,7 @@ import { requireAdminAuth } from "../middleware/auth";
 import { parseContractInput } from "../schemas/contract.schema";
 import { createContract } from "../services/contract.service";
 import { getContractByNumberAndToken } from "../services/admin-contract.service";
+import { sendContractLinkAlimtalk } from "../services/notify.service";
 
 const contractsRouter = Router();
 
@@ -43,6 +44,17 @@ contractsRouter.post("/", requireAdminAuth, async (req, res) => {
 
   try {
     const result = await createContract(parsed.data, req.body, req.admin!.adminId);
+
+    // 발송 실패가 계약서 저장 응답을 막지 않도록 기다리지 않는다
+    sendContractLinkAlimtalk({
+      contractNumber: result.contractNumber,
+      customerName: parsed.data.customerName,
+      customerPhone: parsed.data.customerPhone,
+      viewToken: result.viewToken,
+    }).catch((notifyError) => {
+      console.error("[contracts] Failed to send alimtalk:", notifyError);
+    });
+
     return sendSuccess(res, result, 201);
   } catch (error) {
     console.error("[contracts] Failed to create contract:", error);

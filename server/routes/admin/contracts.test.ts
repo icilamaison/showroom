@@ -263,7 +263,7 @@ describe("Admin API", () => {
       const agent = await loginAgent();
       await agent
         .patch(`/api/admin/contracts/${contractId}/status`)
-        .send({ status: "REVIEWING" })
+        .send({ status: "ON_HOLD" })
         .expect(200);
 
       const listResponse = await agent
@@ -271,7 +271,7 @@ describe("Admin API", () => {
         .query({ customerName: "목록반영" })
         .expect(200);
 
-      expect(listResponse.body.data.items[0].status).toBe("REVIEWING");
+      expect(listResponse.body.data.items[0].status).toBe("ON_HOLD");
     });
 
     it("returns 400 for invalid status values", async () => {

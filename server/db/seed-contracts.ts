@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { getSizeOptionName, getSizeSalePrice, type CatalogProduct } from "../../lib/product-catalog";
@@ -13,15 +14,28 @@ import {
 import { parseContractInput } from "../schemas/contract.schema";
 import { pool } from "./pool";
 
-const COUNT = 10;
+const COUNT = 30;
 const SEED_PHONE_PREFIX = "010-9000";
 const NAMES = [
   "김민지", "이수현", "박지훈", "최유진", "정하은",
   "한소율", "오지민", "강서준", "윤다연", "임태양",
   "송하늘", "배은우", "조아린", "홍성민", "신예린",
   "권도현", "문서연", "나윤호", "유채원", "장현우",
+  "서형이", "김수지", "오세린", "배수아", "문지호",
+  "한가은", "노윤서", "진예원", "류도윤", "안서준",
 ];
-const STATUSES = ["SUBMITTED", "REVIEWING", "CONFIRMED"] as const;
+const STATUSES = [
+  "DRAFTING",
+  "SUBMITTED",
+  "ON_HOLD",
+  "CONFIRMED",
+  "CANCEL_PENDING",
+  "CANCELED",
+  "SUBMITTED",
+  "CONFIRMED",
+  "ON_HOLD",
+  "DRAFTING",
+] as const;
 const ADDRESSES = [
   { postal: "06234", address: "서울특별시 강남구 테헤란로 1", detail: "101호" },
   { postal: "04157", address: "서울특별시 마포구 월드컵북로 396", detail: "1203호" },
@@ -105,10 +119,11 @@ function buildContractFormValues(
   const no = index + 1;
   const primary = seedProducts[index];
   const secondary = catalog[(index * 17 + 11) % catalog.length];
-  const day = pad(no);
-  const writtenDate = `2026-07-${day}`;
+  const day = pad(((no - 1) % 28) + 1);
+  const month = pad(10 + Math.floor((no - 1) / 28));
+  const writtenDate = `2026-${month}-${day}`;
   const address = ADDRESSES[index % ADDRESSES.length];
-  const buyerName = NAMES[index];
+  const buyerName = NAMES[index % NAMES.length];
   const useBankTransfer = index % 4 === 0;
   const status = STATUSES[index % STATUSES.length];
 
@@ -119,11 +134,21 @@ function buildContractFormValues(
     products[1] = buildProductRow(secondary, index + 1);
   }
 
+  if (index % 5 === 0 && catalog.length > 2) {
+    const tertiary = catalog[(index * 23 + 5) % catalog.length];
+    if (
+      tertiary.productCode !== primary.productCode &&
+      tertiary.productCode !== secondary.productCode
+    ) {
+      products[2] = buildProductRow(tertiary, index + 2);
+    }
+  }
+
   return {
-    managerName: ["이서연", "박준호", "최다은"][index % 3],
+    managerName: ["이서연", "박준호", "최다은", "showroom"][index % 4],
     writtenDateYear: "2026",
-    writtenDateMonth: "7",
-    writtenDateDay: String(no),
+    writtenDateMonth: String(Number(month)),
+    writtenDateDay: String(Number(day)),
     buyerName,
     buyerPhone: `${SEED_PHONE_PREFIX}-${pad(no, 4)}`,
     recipientSameAsBuyer: index % 5 !== 0,
@@ -140,11 +165,16 @@ function buildContractFormValues(
     taxInvoiceRequested: false,
     taxInvoiceEmail: "",
     agreementDateYear: "2026",
-    agreementDateMonth: "7",
-    agreementDateDay: String(no),
+    agreementDateMonth: String(Number(month)),
+    agreementDateDay: String(Number(day)),
     signatureName: buyerName,
     signatureDataUrl: "data:image/png;base64,seed-signature",
     termsAgreed: true as const,
+    marketingConsentAgreed: index % 3 !== 0,
+    largeRugNoticeAgreed: true,
+    size4DeliveryAgreed: true,
+    padPurchased: index % 4 === 0,
+    padQuantity: index % 4 === 0 ? String((index % 3) + 1) : "",
     writtenDate,
     agreementDate: writtenDate,
     createdAt: `${writtenDate}T${pad(9 + (index % 8))}:30:00+09:00`,
@@ -179,21 +209,25 @@ export async function seedSampleContracts(options: { reset?: boolean } = {}) {
       }
 
       const mapped = parsed.data;
-      const contractNumber = `CT-202607${pad(index + 1)}-${pad(index + 1, 4)}`;
+      const contractNumber = `CT-202611${pad(index + 1)}-${pad(index + 1, 4)}`;
       const payload = {
         ...row,
         writtenDate: mapped.writtenDate,
         agreementDate: mapped.agreementDate,
       };
 
+      const approvalNumber = String(
+        30000000 + Math.floor(Math.random() * 69999999),
+      );
+
       await client.query(
         `INSERT INTO contracts (
           contract_number, customer_name, customer_phone, customer_address,
           product_name, contract_amount, contract_start_date, contract_end_date,
-          special_terms, terms_agreed, signature_name, status, payload,
-          created_at, updated_at
+          special_terms, terms_agreed, signature_name, status, approval_number,
+          view_token, view_token_issued_at, payload, created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14, $14
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb, $15, $15
         )`,
         [
           contractNumber,
@@ -208,8 +242,10 @@ export async function seedSampleContracts(options: { reset?: boolean } = {}) {
           mapped.termsAgreed,
           mapped.signatureName,
           row.status,
-          JSON.stringify(payload),
+          approvalNumber,
+          randomBytes(24).toString("hex"),
           row.createdAt,
+          JSON.stringify(payload),
         ],
       );
     }

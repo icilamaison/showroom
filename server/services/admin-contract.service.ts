@@ -40,6 +40,8 @@ export type ContractListResult = {
   page: number;
   limit: number;
   total: number;
+  /** 현재 검색 조건(상태 제외) 기준 상태별 건수 */
+  statusCounts: Record<string, number>;
 };
 
 export type ContractDetail = {
@@ -248,6 +250,21 @@ export async function listContracts(
     values,
   );
 
+  // 상태 탭 건수: 같은 검색·기간 조건에서 상태만 제외하고 집계
+  const { whereClause: statusWhereClause, values: statusValues } =
+    buildListQuery({ ...filters, status: undefined });
+  const statusCountResult = await pool.query<{ status: string; total: string }>(
+    `SELECT status, COUNT(*)::text AS total
+     FROM contracts
+     ${statusWhereClause}
+     GROUP BY status`,
+    statusValues,
+  );
+  const statusCounts: Record<string, number> = {};
+  for (const row of statusCountResult.rows) {
+    statusCounts[row.status] = Number(row.total);
+  }
+
   const listValues = [...values, limit, offset];
   const limitParamIndex = values.length + 1;
   const offsetParamIndex = values.length + 2;
@@ -275,6 +292,7 @@ export async function listContracts(
     page,
     limit,
     total: Number(countResult.rows[0]?.total ?? 0),
+    statusCounts,
   };
 }
 
@@ -379,12 +397,16 @@ export async function getContractById(
     return null;
   }
 
+  const viewToken = result.rows[0].view_token ?? null;
+
   return {
     ...mapContractDetail(result.rows[0]),
-    viewToken: result.rows[0].view_token ?? null,
-    viewTokenExpiresAt: result.rows[0].view_token_issued_at
-      ? getViewTokenExpiresAt(result.rows[0].view_token_issued_at).toISOString()
-      : null,
+    viewToken,
+    // 토큰이 없는데 issued_at 기본값만 있으면 D-day가 거짓으로 뜬다
+    viewTokenExpiresAt:
+      viewToken && result.rows[0].view_token_issued_at
+        ? getViewTokenExpiresAt(result.rows[0].view_token_issued_at).toISOString()
+        : null,
     edits: await getContractEdits(id),
   };
 }

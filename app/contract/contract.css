@@ -1068,6 +1068,23 @@
   width: 100%;
 }
 
+/* PDF는 화면과 같은 흐름. 동의·서명은 다음 장으로 넘어가도 된다 */
+.contract-doc__pdf-notice-section .contract-doc-flow--attached .contract-doc-flow__actions {
+  padding-top: 1.25rem;
+}
+
+.contract-doc__pdf-notice-section .notice-document.contract-doc--sheet {
+  padding-bottom: 1rem;
+}
+
+/* html2canvas + Variable 폰트면 한글 자간이 벌어질 수 있어 PDF 캡처용으로 고정 폰트 */
+.contract-doc__pdf-capture,
+.contract-doc__pdf-capture * {
+  font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
+    sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
 /* 배송·교환·반품 안내문 (계약서와 동일한 문서 스타일) */
 .contract-doc__section-title--divider {
   padding-bottom: 0.5rem;

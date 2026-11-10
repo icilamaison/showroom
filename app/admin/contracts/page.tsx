@@ -8,25 +8,25 @@ import {
   type ContractListResult,
 } from "@/lib/api-client";
 import {
-  CONTRACT_STATUS_OPTIONS,
+  CONTRACT_STATUSES,
+  CONTRACT_STATUS_LABELS,
   getContractStatusLabel,
+  type ContractStatus,
 } from "@/lib/constants/contract-status";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../admin.css";
 
 type FilterState = {
-  customerName: string;
-  customerPhone: string;
+  keyword: string;
   status: string;
   dateFrom: string;
   dateTo: string;
 };
 
 const initialFilters: FilterState = {
-  customerName: "",
-  customerPhone: "",
+  keyword: "",
   status: "",
   dateFrom: "",
   dateTo: "",
@@ -37,7 +37,33 @@ function formatAmount(amount: number) {
 }
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleString("ko-KR");
+  return new Date(value).toLocaleDateString("ko-KR");
+}
+
+/** 검색어가 숫자 위주면 연락처, 아니면 고객명으로 보낸다 */
+function keywordToNamePhone(keyword: string) {
+  const trimmed = keyword.trim();
+  if (!trimmed) {
+    return { customerName: "", customerPhone: "" };
+  }
+
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length >= 3 && digits.length >= trimmed.replace(/[\s-]/g, "").length * 0.6) {
+    return { customerName: "", customerPhone: digits };
+  }
+
+  return { customerName: trimmed, customerPhone: "" };
+}
+
+function toApiFilters(filters: FilterState) {
+  const { customerName, customerPhone } = keywordToNamePhone(filters.keyword);
+  return {
+    customerName,
+    customerPhone,
+    status: filters.status,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+  };
 }
 
 export default function AdminContractsPage() {
@@ -57,11 +83,7 @@ export default function AdminContractsPage() {
 
       try {
         const result = await fetchAdminContracts({
-          customerName: appliedFilters.customerName,
-          customerPhone: appliedFilters.customerPhone,
-          status: appliedFilters.status,
-          dateFrom: appliedFilters.dateFrom,
-          dateTo: appliedFilters.dateTo,
+          ...toApiFilters(appliedFilters),
           page,
           limit: 20,
         });
@@ -93,14 +115,27 @@ export default function AdminContractsPage() {
     setPage(1);
   }
 
+  function handleStatusTab(status: string) {
+    const next = { ...filters, status };
+    setFilters(next);
+    setAppliedFilters(next);
+    setPage(1);
+  }
+
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
+
+  const statusCounts = data?.statusCounts ?? {};
+  const allCount = useMemo(
+    () => Object.values(statusCounts).reduce((sum, count) => sum + count, 0),
+    [statusCounts],
+  );
 
   async function handleBulkDownload() {
     setIsDownloading(true);
     setError("");
 
     try {
-      await downloadAdminBulkOrderExcel(appliedFilters);
+      await downloadAdminBulkOrderExcel(toApiFilters(appliedFilters));
     } catch (downloadError) {
       if (downloadError instanceof ApiClientError && downloadError.status === 401) {
         router.push("/admin/login");
@@ -117,6 +152,10 @@ export default function AdminContractsPage() {
     }
   }
 
+  function openDetail(id: number) {
+    router.push(`/admin/contracts/${id}`);
+  }
+
   return (
     <main className="app-page">
       <div className="app-container app-container--wide">
@@ -124,82 +163,80 @@ export default function AdminContractsPage() {
           ← 홈
         </Link>
 
-        <header className="app-header app-header--page">
+        <header className="app-header app-header--page admin-page-header">
           <img
             className="app-brand"
             src="https://icilamaison.com/26renewer/resource/image/logo_black.svg"
             alt="이씨라메종"
           />
-          <h1 className="app-title app-title--page">계약서 목록</h1>
-          <p className="app-description">
-            접수된 계약서를 조회하고 PlayAuto 주문 엑셀로 내려받을 수 있습니다.
-          </p>
+          <div className="admin-list-toolbar">
+            <h1 className="app-title app-title--page">
+              계약서 목록
+              <span>
+                {data ? `총 ${allCount.toLocaleString("ko-KR")}건` : ""}
+              </span>
+            </h1>
+            <div className="admin-list-toolbar__actions">
+              <button
+                type="button"
+                className="app-button app-button--secondary admin-btn-compact"
+                disabled={isDownloading}
+                onClick={() => {
+                  void handleBulkDownload();
+                }}
+              >
+                {isDownloading ? "다운로드 중..." : "엑셀 전체 다운로드"}
+              </button>
+              <Link href="/contract/write" className="app-button admin-btn-compact">
+                + 새 계약서
+              </Link>
+            </div>
+          </div>
         </header>
 
-        <form className="admin-filters" onSubmit={handleSearch}>
-          <div className="app-field">
-            <label htmlFor="customerName" className="app-label">
-              고객명
-            </label>
-            <input
-              id="customerName"
-              type="text"
-              value={filters.customerName}
-              onChange={(event) =>
-                setFilters((current) => ({
-                  ...current,
-                  customerName: event.target.value,
-                }))
-              }
-              className="app-input"
-              placeholder="고객명 검색"
-            />
-          </div>
-
-          <div className="app-field">
-            <label htmlFor="customerPhone" className="app-label">
-              연락처
-            </label>
-            <input
-              id="customerPhone"
-              type="text"
-              value={filters.customerPhone}
-              onChange={(event) =>
-                setFilters((current) => ({
-                  ...current,
-                  customerPhone: event.target.value,
-                }))
-              }
-              className="app-input"
-              placeholder="연락처 검색"
-            />
-          </div>
-
-          <div className="app-field">
-            <label htmlFor="status" className="app-label">
-              상태
-            </label>
-            <select
-              id="status"
-              value={filters.status}
-              onChange={(event) =>
-                setFilters((current) => ({
-                  ...current,
-                  status: event.target.value,
-                }))
-              }
-              className="app-input"
+        <div className="admin-status-tabs" role="tablist" aria-label="상태 필터">
+          <button
+            type="button"
+            className={`admin-status-tab${appliedFilters.status === "" ? " is-active" : ""}`}
+            onClick={() => handleStatusTab("")}
+          >
+            전체 <em>{allCount}</em>
+          </button>
+          {CONTRACT_STATUSES.map((status) => (
+            <button
+              key={status}
+              type="button"
+              className={`admin-status-tab${appliedFilters.status === status ? " is-active" : ""}`}
+              onClick={() => handleStatusTab(status)}
             >
-              {CONTRACT_STATUS_OPTIONS.map((option) => (
-                <option key={option.value || "all"} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              {CONTRACT_STATUS_LABELS[status as ContractStatus]}{" "}
+              <em>{statusCounts[status] ?? 0}</em>
+            </button>
+          ))}
+        </div>
+
+        <form className="admin-searchbar" onSubmit={handleSearch}>
+          <div className="app-field">
+            <label htmlFor="keyword" className="admin-sr-only">
+              검색
+            </label>
+            <input
+              id="keyword"
+              type="text"
+              value={filters.keyword}
+              onChange={(event) =>
+                setFilters((current) => ({
+                  ...current,
+                  keyword: event.target.value,
+                }))
+              }
+              className="app-input admin-input-compact"
+              placeholder="고객명 또는 연락처로 검색"
+            />
           </div>
 
           <div className="app-field">
-            <label htmlFor="dateFrom" className="app-label">
+            <label htmlFor="dateFrom" className="admin-sr-only">
               시작일
             </label>
             <input
@@ -212,12 +249,12 @@ export default function AdminContractsPage() {
                   dateFrom: event.target.value,
                 }))
               }
-              className="app-input"
+              className="app-input admin-input-compact"
             />
           </div>
 
           <div className="app-field">
-            <label htmlFor="dateTo" className="app-label">
+            <label htmlFor="dateTo" className="admin-sr-only">
               종료일
             </label>
             <input
@@ -230,39 +267,21 @@ export default function AdminContractsPage() {
                   dateTo: event.target.value,
                 }))
               }
-              className="app-input"
+              className="app-input admin-input-compact"
             />
           </div>
 
-          <div className="admin-filters__actions">
-            <button type="submit" className="app-button">
-              검색
-            </button>
-            <button
-              type="button"
-              className="app-button app-button--secondary"
-              onClick={handleReset}
-            >
-              초기화
-            </button>
-          </div>
-        </form>
-
-        <div className="admin-list-toolbar">
-          <p className="admin-list-toolbar__info">
-            {data ? `검색 결과 ${data.total.toLocaleString("ko-KR")}건` : "검색 결과"}
-          </p>
+          <button type="submit" className="app-button admin-btn-compact">
+            검색
+          </button>
           <button
             type="button"
-            className="app-button"
-            disabled={isDownloading}
-            onClick={() => {
-              void handleBulkDownload();
-            }}
+            className="app-button app-button--secondary admin-btn-compact"
+            onClick={handleReset}
           >
-            {isDownloading ? "다운로드 중..." : "전체 다운로드"}
+            초기화
           </button>
-        </div>
+        </form>
 
         {error ? <p className="app-alert app-alert--error">{error}</p> : null}
 
@@ -272,45 +291,99 @@ export default function AdminContractsPage() {
           ) : !data || data.items.length === 0 ? (
             <p className="app-empty">조회된 계약서가 없습니다.</p>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>계약번호</th>
-                  <th>고객명</th>
-                  <th>연락처</th>
-                  <th>상품명</th>
-                  <th>계약금액</th>
-                  <th>상태</th>
-                  <th>작성일</th>
-                  <th>상세보기</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((item: ContractListItem) => (
-                  <tr key={item.id}>
-                    <td>{item.contractNumber}</td>
-                    <td>{item.customerName}</td>
-                    <td>{item.customerPhone}</td>
-                    <td>{item.productName}</td>
-                    <td>{formatAmount(item.contractAmount)}</td>
-                    <td>
-                      <span className="admin-status">
+            <>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>계약번호</th>
+                    <th>고객</th>
+                    <th>상품명</th>
+                    <th>계약금액</th>
+                    <th>상태</th>
+                    <th>작성일</th>
+                    <th aria-hidden="true" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.items.map((item: ContractListItem) => (
+                    <tr
+                      key={item.id}
+                      onClick={() => openDetail(item.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openDetail(item.id);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="link"
+                    >
+                      <td>{item.contractNumber}</td>
+                      <td>
+                        <div className="admin-table__customer-name">
+                          {item.customerName}
+                        </div>
+                        <div className="admin-table__customer-phone">
+                          {item.customerPhone}
+                        </div>
+                      </td>
+                      <td>{item.productName}</td>
+                      <td>{formatAmount(item.contractAmount)}</td>
+                      <td>
+                        <span className={`admin-status admin-status--${item.status}`}>
+                          {getContractStatusLabel(item.status)}
+                        </span>
+                      </td>
+                      <td>{formatDate(item.createdAt)}</td>
+                      <td className="admin-table__chevron">›</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="admin-mobile-list">
+                {data.items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="admin-mobile-item"
+                    onClick={() => openDetail(item.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openDetail(item.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="link"
+                  >
+                    <div className="admin-mobile-item__top">
+                      <div>
+                        <div className="admin-mobile-item__name">
+                          {item.customerName}
+                        </div>
+                        <div className="admin-mobile-item__phone">
+                          {item.customerPhone}
+                        </div>
+                      </div>
+                      <span className={`admin-status admin-status--${item.status}`}>
                         {getContractStatusLabel(item.status)}
                       </span>
-                    </td>
-                    <td>{formatDate(item.createdAt)}</td>
-                    <td>
-                      <Link
-                        href={`/admin/contracts/${item.id}`}
-                        className="admin-link"
-                      >
-                        상세보기
-                      </Link>
-                    </td>
-                  </tr>
+                    </div>
+                    <div className="admin-mobile-item__product">
+                      {item.productName}
+                    </div>
+                    <div className="admin-mobile-item__meta">
+                      <span>
+                        {item.contractNumber} · {formatDate(item.createdAt)}
+                      </span>
+                      <span className="admin-mobile-item__amount">
+                        {formatAmount(item.contractAmount)}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
 

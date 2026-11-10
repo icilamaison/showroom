@@ -124,6 +124,7 @@ export type ContractListResult = {
   page: number;
   limit: number;
   total: number;
+  statusCounts?: Record<string, number>;
 };
 
 export type AdminContractListFilters = {
@@ -297,6 +298,15 @@ export async function reissueAdminContractViewToken(
 ): Promise<{ viewToken: string; viewTokenExpiresAt: string }> {
   return adminFetch<{ viewToken: string; viewTokenExpiresAt: string }>(
     `/api/admin/contracts/${id}/view-token`,
+    { method: "POST" },
+  );
+}
+
+export async function sendAdminContractSms(
+  id: number,
+): Promise<{ result: "sent" | "skipped" }> {
+  return adminFetch<{ result: "sent" | "skipped" }>(
+    `/api/admin/contracts/${id}/sms`,
     { method: "POST" },
   );
 }

@@ -30,7 +30,6 @@ export function parseAdminLoginInput(body: unknown):
 export const CONTRACT_STATUSES = [
   "DRAFTING",
   "SUBMITTED",
-  "REVIEWING",
   "ON_HOLD",
   "CONFIRMED",
   "CANCEL_PENDING",
@@ -43,7 +42,7 @@ export const contractStatusUpdateSchema = z.object({
   status: z.enum(CONTRACT_STATUSES, {
     errorMap: () => ({
       message:
-        "상태는 DRAFTING, SUBMITTED, REVIEWING, ON_HOLD, CONFIRMED, CANCEL_PENDING, CANCELED 중 하나여야 합니다.",
+        "상태는 DRAFTING, SUBMITTED, ON_HOLD, CONFIRMED, CANCEL_PENDING, CANCELED 중 하나여야 합니다.",
     }),
   }),
 });

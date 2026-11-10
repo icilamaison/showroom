@@ -16,12 +16,24 @@ const CAPTURE_SCALE = 2;
 // PNG 무압축이면 3쪽에 25MB가 넘는다. JPEG로 넣어 글씨는 선명하게 유지하면서 용량을 줄인다
 const PAGE_IMAGE_QUALITY = 0.92;
 // 페이지를 나눌 수 있는 경계(이 요소들의 아래쪽). 글줄·표 행이 반으로 잘리지 않게 한다
-const PAGE_BREAK_SELECTOR =
-  "section, header, footer, tr, p, li, h2, .contract-doc__agreement-sign";
+const PAGE_BREAK_SELECTOR = [
+  "section",
+  "header",
+  "footer",
+  "tr",
+  "p",
+  "li",
+  "h2",
+  ".contract-doc__agreement-box",
+  ".contract-doc__agreement-text",
+  ".contract-doc__agreement-sign",
+  ".contract-doc-flow__actions",
+  ".contract-doc__consent",
+].join(", ");
 // 경계가 이보다 위에 있으면 페이지가 너무 비므로 그냥 잘라서 넘긴다
-const MIN_PAGE_FILL_RATIO = 0.5;
-// 한 장보다 이 비율 이내로 넘치면(푸터 몇 줄 등) 다음 장으로 넘기지 않고 한 장에 맞게 살짝 축소한다
-const FIT_ONE_PAGE_MAX_RATIO = 1.15;
+const MIN_PAGE_FILL_RATIO = 0.45;
+// 살짝 넘쳐도 축소하지 않고 다음 장으로 보낸다(동의 문구 등). 웹과 같은 비율 유지
+const FIT_ONE_PAGE_MAX_RATIO = 1;
 
 type CapturedElement = {
   canvas: HTMLCanvasElement;
@@ -43,7 +55,12 @@ function appendCanvasToPdf(pdf: jsPDF, { canvas, breakPoints }: CapturedElement)
   const scale = contentWidth / canvas.width;
   const pageHeightPx = contentHeightPerPage / scale;
 
-  if (canvas.height > pageHeightPx && canvas.height <= pageHeightPx * FIT_ONE_PAGE_MAX_RATIO) {
+  // 한 장을 아주 조금 넘는 경우만 축소. 그 외에는 다음 장으로 넘긴다
+  if (
+    FIT_ONE_PAGE_MAX_RATIO > 1 &&
+    canvas.height > pageHeightPx &&
+    canvas.height <= pageHeightPx * FIT_ONE_PAGE_MAX_RATIO
+  ) {
     const fitScale = contentHeightPerPage / canvas.height;
     const fitWidth = canvas.width * fitScale;
     pdf.addImage(
@@ -132,9 +149,24 @@ async function captureElement(element: HTMLElement): Promise<CapturedElement> {
     const top = element.getBoundingClientRect().top;
     const breakPoints = Array.from(
       new Set(
-        Array.from(element.querySelectorAll(PAGE_BREAK_SELECTOR)).map((node) =>
-          Math.round((node.getBoundingClientRect().bottom - top) * CAPTURE_SCALE),
-        ),
+        [
+          ...Array.from(element.querySelectorAll(PAGE_BREAK_SELECTOR)).flatMap(
+            (node) => {
+              const rect = node.getBoundingClientRect();
+              return [
+                Math.round((rect.bottom - top) * CAPTURE_SCALE),
+              ];
+            },
+          ),
+          // 동의·서명은 중간에 잘리지 않게 블록 시작에서도 자를 수 있게 한다
+          ...Array.from(
+            element.querySelectorAll(
+              ".contract-doc-flow__actions, .contract-doc__agreement-box",
+            ),
+          ).map((node) =>
+            Math.round((node.getBoundingClientRect().top - top) * CAPTURE_SCALE),
+          ),
+        ].filter((point) => point > 0),
       ),
     ).sort((a, b) => a - b);
 
