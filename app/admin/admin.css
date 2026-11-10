@@ -531,6 +531,8 @@ a.app-button {
 .admin-detail-main .admin-detail-item:has(.admin-edit-history) {
   grid-column: 1 / -1;
   width: 100%;
+  /* 그리드 아이템 기본 min-width:auto 때문에 표 min-width만큼 늘어나 가로 스크롤이 안 생기는 것 방지 */
+  min-width: 0;
   align-self: stretch;
 }
 
