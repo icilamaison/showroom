@@ -10,7 +10,7 @@ export default function ContractPdfDocument({ values }: ContractPdfDocumentProps
     <div className="contract-doc__pdf-document">
       {/* 작성 화면 순서: 계약서 → 안내문 + 동의·서명 */}
       <div className="contract-doc__pdf-contract-section">
-        <ContractDocumentView values={values} hideEmptyRows />
+        <ContractDocumentView values={values} />
       </div>
       <div className="contract-doc__pdf-notice-section">
         <ContractNoticePage
