@@ -131,32 +131,19 @@ set -e
   grep -v '^\[products\]' "$OPTIONS_LOG" | tail -n 120
   echo '```'
   echo
-  echo "## 다음 단계 (로컬에서 전체 반영)"
+  echo "## 다음 단계"
   echo
-  echo "CI는 dry-run만 한다. product.json에 쓰려면 로컬에서 아래 순서로 실행한다."
+  echo "품절·가격·옵션은 이 실행이 product.json에 반영해 PR(\`catalog-sync/auto\`)로 올린다. PR을 확인하고 머지한다."
+  echo
+  echo "신규 상품 후보(2단계)는 자동 반영하지 않는다. 필요할 때만 로컬에서 추가한다."
+  echo "이 실행의 artifacts에서 \`cafe24-products.json\`을 받아 루트에 두면 토큰 없이 머지할 수 있다."
   echo
   echo '```bash'
-  echo 'cd /path/to/showroom   # 또는 play-auto'
-  echo
-  echo '# 1) 카페24 덤프 (없으면/오래됐으면)'
-  echo 'npx tsx scripts/sync-products-from-cafe24.ts --dump'
-  echo
-  echo '# 2) 상품명·가격·옵션·세트·신규 반영'
   echo 'npx tsx scripts/merge-cafe24-dump.ts --write --add-new'
-  echo
-  echo '# 3) 품절 (일반 상품)'
-  echo 'npx tsx scripts/sync-stock-from-variants.ts --write'
-  echo
-  echo '# 4) 품절 (세트 구성품)'
-  echo 'npx tsx scripts/sync-stock-from-cafe24.ts --write'
-  echo
-  echo '# 5) 사이즈·TYPE 가격 (옵션 추가금)'
-  echo 'npx tsx scripts/sync-options-from-variants.ts --write'
   echo '```'
   echo
-  echo "- 신규 상품은 \`internalCode\` / \`category\`가 비어 있을 수 있으니 확인한다."
+  echo "- 비판매 상품(룩북·공동구매·개인결제창 등)은 지우고, 남긴 상품은 \`internalCode\` / \`category\`를 채운다."
   echo "- 세트 구성품 색이 비면: \`npx tsx scripts/merge-cafe24-dump.ts --write --refresh-sets\`"
-  echo "- 반영 후 product.json을 커밋한다."
 } >> "$SUMMARY"
 
 # dump 외 merge/stock/options 실패도 job 실패로 보이게 한다.

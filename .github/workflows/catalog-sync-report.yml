@@ -1,5 +1,6 @@
-# 카탈로그 동기화 1단계: 매일 dump + dry-run 리포트만.
-# product.json은 CI에서 쓰지 않는다. 사람이 리포트를 보고 로컬/PR로 반영한다.
+# 카탈로그 동기화: 매일 dump + dry-run 리포트 → 품절·가격·옵션을 product.json에 반영해 PR 생성.
+# 신규 상품(--add-new)은 룩북·공동구매 등 비판매 상품이 섞여 자동 반영하지 않는다. 리포트의 후보를 보고 로컬에서 추가한다.
+# PR 생성에는 저장소 설정 Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests" 체크가 필요하다.
 #
 # 필요 Secrets
 #   CAFE24_MALL_ID
@@ -29,7 +30,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 concurrency:
   # 매출 리포트와 Cafe24 refresh_token 을 같이 쓴다. 동시에 돌리면 토큰이 죽는다.
@@ -81,6 +83,27 @@ jobs:
           # dump 중 토큰 갱신되면 스크립트가 Secret까지 맞춘다 (값 자체는 로그에 안 남김)
           CAFE24_SYNC_PAT: ${{ secrets.CAFE24_SYNC_PAT }}
         run: bash scripts/ci/catalog-sync-report.sh
+
+      - name: Apply catalog sync to product.json
+        # 신규 추가(--add-new)는 빼고 기존 상품의 값만 반영한다.
+        run: |
+          npx tsx scripts/merge-cafe24-dump.ts --write
+          npx tsx scripts/sync-stock-from-variants.ts --write
+          npx tsx scripts/sync-stock-from-cafe24.ts --write
+          npx tsx scripts/sync-options-from-variants.ts --write
+
+      - name: Create pull request
+        # 같은 브랜치를 매일 덮어써서 PR은 하나만 열려 있다. 변경이 없으면 PR을 만들지 않는다.
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: product.json
+          branch: catalog-sync/auto
+          delete-branch: true
+          commit-message: "chore: 카페24 동기화로 품절·가격·옵션 변경"
+          title: "chore: 카페24 동기화로 품절·가격·옵션 변경"
+          body: |
+            매일 09:00 카탈로그 동기화로 product.json을 갱신했습니다.
+            변경 상세와 신규 상품 후보는 실행 요약을 확인하세요: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Persist refreshed Cafe24 refresh_token
         id: persist_token
