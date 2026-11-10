@@ -101,11 +101,16 @@ export async function loginAdmin(
   return body.data;
 }
 
+// 관리자 목록 캐시(고객명·연락처 포함)를 보관하는 localStorage 키
+export const ADMIN_QUERY_CACHE_KEY = "admin-query-cache";
+
 export async function logoutAdmin(): Promise<void> {
   await fetch("/api/admin/logout", {
     method: "POST",
     credentials: "include",
   });
+  // 다음 사람이 같은 브라우저에서 이전 목록을 보지 않도록 지운다
+  localStorage.removeItem(ADMIN_QUERY_CACHE_KEY);
 }
 
 export type ContractListItem = {

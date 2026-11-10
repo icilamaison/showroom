@@ -12,7 +12,7 @@ import {
   getContractStatusLabel,
   type ContractStatus,
 } from "@/lib/constants/contract-status";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useIsRestoring, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -83,6 +83,8 @@ export default function AdminContractsPage() {
   });
   const data = listQuery.data ?? null;
   const isLoading = listQuery.isPending;
+  // 저장된 캐시를 복원하는 동안(서버 렌더 포함)은 "불러오는 중"이 깜빡이지 않도록 비워 둔다
+  const isRestoring = useIsRestoring();
   const isUnauthorized =
     listQuery.error instanceof ApiClientError && listQuery.error.status === 401;
   const listError =
@@ -277,7 +279,7 @@ export default function AdminContractsPage() {
         ) : null}
 
         <div className="admin-table-wrap">
-          {isLoading ? (
+          {isRestoring ? null : isLoading ? (
             <p className="app-empty">목록을 불러오는 중...</p>
           ) : !data || data.items.length === 0 ? (
             <p className="app-empty">조회된 계약서가 없습니다.</p>
