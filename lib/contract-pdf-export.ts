@@ -30,6 +30,9 @@ const PAGE_BREAK_SELECTOR = [
   ".contract-doc-flow__actions",
   ".contract-doc__consent",
 ].join(", ");
+// 이 요소는 항상 새 페이지에서 시작한다(동의 문구·서명). 러그 확인 박스는 계약서 본문이라 제외
+const FORCE_PAGE_BREAK_SELECTOR =
+  ".contract-doc__agreement-box:not(.contract-doc__agreement-box--rug)";
 // 경계가 이보다 위에 있으면 페이지가 너무 비므로 그냥 잘라서 넘긴다
 const MIN_PAGE_FILL_RATIO = 0.45;
 // 살짝 넘쳐도 축소하지 않고 다음 장으로 보낸다(동의 문구 등). 웹과 같은 비율 유지
@@ -39,6 +42,8 @@ type CapturedElement = {
   canvas: HTMLCanvasElement;
   // 캔버스 픽셀 기준, 페이지를 나눠도 되는 y 위치(오름차순)
   breakPoints: number[];
+  // 캔버스 픽셀 기준, 반드시 페이지를 넘겨야 하는 y 위치
+  forcedBreakPoints: number[];
 };
 
 function waitForNextFrame(): Promise<void> {
@@ -47,7 +52,10 @@ function waitForNextFrame(): Promise<void> {
   });
 }
 
-function appendCanvasToPdf(pdf: jsPDF, { canvas, breakPoints }: CapturedElement): void {
+function appendCanvasToPdf(
+  pdf: jsPDF,
+  { canvas, breakPoints, forcedBreakPoints }: CapturedElement,
+): void {
   const contentWidth =
     A4_WIDTH_MM - MARGIN_LEFT_MM - MARGIN_RIGHT_MM;
   const contentHeightPerPage =
@@ -83,12 +91,16 @@ function appendCanvasToPdf(pdf: jsPDF, { canvas, breakPoints }: CapturedElement)
     }
 
     const pageEnd = sourceY + pageHeightPx;
+    const forcedBreakPoint = forcedBreakPoints.find(
+      (point) => point > sourceY && point < Math.min(pageEnd, canvas.height),
+    );
     const breakPoint =
-      pageEnd >= canvas.height
+      forcedBreakPoint ??
+      (pageEnd >= canvas.height
         ? canvas.height
         : breakPoints.filter(
             (point) => point <= pageEnd && point >= sourceY + pageHeightPx * MIN_PAGE_FILL_RATIO,
-          ).pop() ?? pageEnd;
+          ).pop() ?? pageEnd);
     const sliceHeightPx = Math.min(breakPoint, canvas.height) - sourceY;
     const sliceHeightMm = sliceHeightPx * scale;
 
@@ -169,6 +181,11 @@ async function captureElement(element: HTMLElement): Promise<CapturedElement> {
         ].filter((point) => point > 0),
       ),
     ).sort((a, b) => a - b);
+    const forcedBreakPoints = Array.from(
+      element.querySelectorAll(FORCE_PAGE_BREAK_SELECTOR),
+    )
+      .map((node) => Math.round((node.getBoundingClientRect().top - top) * CAPTURE_SCALE))
+      .sort((a, b) => a - b);
 
     const canvas = await html2canvas(element, {
       scale: CAPTURE_SCALE,
@@ -176,7 +193,7 @@ async function captureElement(element: HTMLElement): Promise<CapturedElement> {
       backgroundColor: "#ffffff",
       logging: false,
     });
-    return { canvas, breakPoints };
+    return { canvas, breakPoints, forcedBreakPoints };
   } finally {
     element.style.width = previousWidth;
     element.style.maxWidth = previousMaxWidth;
