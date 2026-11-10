@@ -655,6 +655,11 @@
   overflow-wrap: break-word;
 }
 
+/* 첫 페이지 러그 동의 박스: 위 표와 같은 회색 테두리 */
+.contract-doc__agreement-box--rug {
+  border-color: var(--contract-line);
+}
+
 /* 첫 페이지 러그 동의 박스: 박스 테두리가 있으니 첫 항목 구분선·마지막 여백 제거 */
 .contract-doc__agreement-box--rug > .contract-doc__consent:first-child {
   padding-top: 0;
