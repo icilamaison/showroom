@@ -1185,6 +1185,7 @@
             "솔리드나이트 200X280": "#ffffff"
         },
         "soldOutColors": [
+            "솔리드러스트 200X280",
             "나이트 200X280"
         ]
     },
@@ -2492,9 +2493,6 @@
                 "name": "50X120",
                 "salePrice": 76800
             }
-        ],
-        "soldOutSizes": [
-            "40X60"
         ]
     },
     {
@@ -3022,6 +3020,9 @@
                 "name": "50X50",
                 "salePrice": 33600
             }
+        ],
+        "soldOutSizes": [
+            "30X50"
         ]
     },
     {
@@ -4760,7 +4761,10 @@
         "colors": {
             "딥블루": "#0f509e",
             "옐로우": "#fcc351"
-        }
+        },
+        "soldOutColors": [
+            "옐로우"
+        ]
     },
     {
         "productCode": "P0000BEY",
@@ -5285,7 +5289,11 @@
             "브라운 반호 133X190": "#ffffff",
             "차콜 반호 133X190": "#ffffff",
             "오트밀 반호 133X190": "#ffffff"
-        }
+        },
+        "soldOutColors": [
+            "아이보리 반호 133X190",
+            "차콜 반호 133X190"
+        ]
     },
     {
         "productCode": "P0000BDP",
@@ -5323,6 +5331,7 @@
             "오트밀 3호 240X330": "#ffffff"
         },
         "soldOutColors": [
+            "브라운 3호 240X330",
             "오트밀 3호 240X330"
         ]
     },
@@ -5342,7 +5351,11 @@
             "브라운 2호 200X290": "#ffffff",
             "차콜 2호 200X290": "#ffffff",
             "오트밀 2호 200X290": "#ffffff"
-        }
+        },
+        "soldOutColors": [
+            "브릭 2호 200X290",
+            "오트밀 2호 200X290"
+        ]
     },
     {
         "productCode": "P0000BDM",
@@ -5360,7 +5373,11 @@
             "브라운 1호 160X240": "#ffffff",
             "차콜 1호 160X240": "#ffffff",
             "오트밀 1호 160X240": "#ffffff"
-        }
+        },
+        "soldOutColors": [
+            "아이보리 1호 160X240",
+            "오트밀 1호 160X240"
+        ]
     },
     {
         "productCode": "P0000BDL",
@@ -5768,9 +5785,6 @@
                 "name": "50X120",
                 "salePrice": 76800
             }
-        ],
-        "soldOutSizes": [
-            "40X60"
         ]
     },
     {
@@ -6164,6 +6178,9 @@
                 "name": "M 48X120",
                 "salePrice": 67200
             }
+        ],
+        "soldOutSizes": [
+            "M 48X120"
         ]
     },
     {
@@ -6342,7 +6359,8 @@
             }
         ],
         "soldOutSizes": [
-            "S 48X60"
+            "S 48X60",
+            "L 48X180"
         ]
     },
     {
@@ -6401,6 +6419,9 @@
         "productPrice": 61091,
         "salePrice": 67200,
         "sizes": [
+            "M 48X120"
+        ],
+        "soldOutSizes": [
             "M 48X120"
         ]
     },
