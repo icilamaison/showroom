@@ -5,7 +5,6 @@ import {
   downloadAdminBulkOrderExcel,
   fetchAdminContracts,
   type ContractListItem,
-  type ContractListResult,
 } from "@/lib/api-client";
 import {
   CONTRACT_STATUSES,
@@ -13,6 +12,7 @@ import {
   getContractStatusLabel,
   type ContractStatus,
 } from "@/lib/constants/contract-status";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -71,37 +71,26 @@ export default function AdminContractsPage() {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>(initialFilters);
   const [page, setPage] = useState(1);
-  const [data, setData] = useState<ContractListResult | null>(null);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // 한 번 본 탭·페이지는 캐시로 바로 보여주고 뒤에서 갱신한다. 새 조건은 응답 전까지 이전 목록을 유지한다.
+  const listQuery = useQuery({
+    queryKey: ["adminContracts", appliedFilters, page],
+    queryFn: () =>
+      fetchAdminContracts({ ...toApiFilters(appliedFilters), page, limit: 20 }),
+    placeholderData: keepPreviousData,
+  });
+  const data = listQuery.data ?? null;
+  const isLoading = listQuery.isPending;
+  const isUnauthorized =
+    listQuery.error instanceof ApiClientError && listQuery.error.status === 401;
+  const listError =
+    listQuery.isError && !isUnauthorized ? "계약서 목록을 불러오지 못했습니다." : "";
+
   useEffect(() => {
-    async function loadContracts() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const result = await fetchAdminContracts({
-          ...toApiFilters(appliedFilters),
-          page,
-          limit: 20,
-        });
-        setData(result);
-      } catch (loadError) {
-        if (loadError instanceof ApiClientError && loadError.status === 401) {
-          router.push("/admin/login");
-          return;
-        }
-
-        setError("계약서 목록을 불러오지 못했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    void loadContracts();
-  }, [appliedFilters, page, router]);
+    if (isUnauthorized) router.push("/admin/login");
+  }, [isUnauthorized, router]);
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -283,7 +272,9 @@ export default function AdminContractsPage() {
           </button>
         </form>
 
-        {error ? <p className="app-alert app-alert--error">{error}</p> : null}
+        {error || listError ? (
+          <p className="app-alert app-alert--error">{error || listError}</p>
+        ) : null}
 
         <div className="admin-table-wrap">
           {isLoading ? (
