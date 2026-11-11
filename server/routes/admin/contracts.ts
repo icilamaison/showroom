@@ -19,6 +19,7 @@ import { updateContract } from "../../services/contract.service";
 import {
   sendContractLinkAlimtalk,
   sendContractLinkSms,
+  isAllowedPhone,
   type NotifyResult,
 } from "../../services/notify.service";
 import {
@@ -289,6 +290,10 @@ function sendCustomerLink(
         new Date(contract.viewTokenExpiresAt) < new Date()
       ) {
         return sendError(res, "유효한 고객용 링크가 없습니다. 링크 재발급 후 보내주세요.", 400);
+      }
+
+      if (!isAllowedPhone(contract.customerPhone)) {
+        return sendError(res, "테스트 기간에는 010-8933-3150 번호로만 발송할 수 있습니다.", 400);
       }
 
       const result = await send(contract);

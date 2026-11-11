@@ -15,6 +15,10 @@ const ALIMTALK_BUTTON_NAME = "계약서 확인";
 // 템플릿 버튼 링크가 이 도메인으로 등록되어 있어 CLIENT_ORIGIN과 무관하게 고정
 const ALIMTALK_LINK_ORIGIN = "https://showroom.icilamaison.com";
 
+// 테스트 기간 안전장치: 이 번호 외에는 어떤 경우에도 발송하지 않는다
+// ponytail: 운영 오픈 시 이 상수와 isAllowedPhone 검사를 삭제
+const ALLOWED_TEST_PHONES = ["01089333150"];
+
 const SMS_TITLE = "계약서 안내";
 const SUCCESS_CODE = "A000";
 
@@ -84,8 +88,17 @@ function toDigits(phone: string) {
   return phone.replace(/\D/g, "");
 }
 
+export function isAllowedPhone(phone: string) {
+  return ALLOWED_TEST_PHONES.includes(toDigits(phone));
+}
+
 // messageFlow 순서대로 시도하고 앞 채널이 실패하면 다음 채널로 대체발송된다
 async function sendOmni(target: ContractLinkTarget, messageFlow: object[]) {
+  // 모든 발송이 이 함수를 거치므로 여기서 한 번 더 막는다
+  if (!isAllowedPhone(target.customerPhone)) {
+    throw new Error(`[bizgo] 허용되지 않은 번호라 발송 차단 (${target.contractNumber})`);
+  }
+
   const { baseUrl, apiKey } = getConfig();
 
   const res = await fetch(`${baseUrl}/api/comm/v1/send/omni`, {
