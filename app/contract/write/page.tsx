@@ -298,6 +298,12 @@ export default function ContractWritePage() {
 
     setValues((current) => ({
       ...current,
+      // 상품 표에서 패드 행 수량을 바꾸면 아래 미끄럼방지 패드 수량도 맞춘다(반대 방향은 syncSlipPadRow)
+      ...(field === "quantity" &&
+      SLIP_PAD_PRODUCT &&
+      current.products[index]?.name.trim() === SLIP_PAD_PRODUCT.productName
+        ? { padQuantity: value }
+        : {}),
       products: current.products.map((product, productIndex) => {
         if (productIndex !== index) {
           return product;
