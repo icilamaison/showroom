@@ -16,7 +16,7 @@ const ALIMTALK_LINK_ORIGIN = "https://showroom.icilamaison.com";
 
 // 테스트 기간 안전장치: 이 번호 외에는 어떤 경우에도 발송하지 않는다
 // ponytail: 운영 오픈 시 이 상수와 isAllowedPhone 검사를 삭제
-const ALLOWED_TEST_PHONES = ["01089333150"];
+const ALLOWED_TEST_PHONES = ["01089333150", "01083941028", "01047409770"];
 
 const SMS_TITLE = "계약서 안내";
 const SUCCESS_CODE = "A000";

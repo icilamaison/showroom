@@ -293,7 +293,7 @@ function sendCustomerLink(
       }
 
       if (!isAllowedPhone(contract.customerPhone)) {
-        return sendError(res, "테스트 기간에는 010-8933-3150 번호로만 발송할 수 있습니다.", 400);
+        return sendError(res, "테스트 기간에는 등록된 테스트 번호로만 발송할 수 있습니다.", 400);
       }
 
       const result = await send(contract);
