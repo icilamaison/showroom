@@ -790,16 +790,6 @@ export default function AdminContractDetailPage() {
                               </button>
                               <button
                                 type="button"
-                                className="app-button"
-                                disabled={sendingChannel !== null}
-                                onClick={() => {
-                                  void handleSendLink("sms");
-                                }}
-                              >
-                                {sendingChannel === "sms" ? "발송 중..." : "문자로 보내기"}
-                              </button>
-                              <button
-                                type="button"
                                 className="app-button app-button--secondary"
                                 onClick={() => {
                                   void handleCopyCustomerLink();
