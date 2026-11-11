@@ -3020,9 +3020,6 @@
                 "name": "50X50",
                 "salePrice": 33600
             }
-        ],
-        "soldOutSizes": [
-            "30X50"
         ]
     },
     {
@@ -4610,7 +4607,8 @@
             }
         ],
         "soldOutSizes": [
-            "S 48X60"
+            "S 48X60",
+            "M 48X120"
         ]
     },
     {
@@ -5427,12 +5425,12 @@
         "productPrice": 22455,
         "salePrice": 24700,
         "colors": {
-            "세레니티": "",
-            "미드나잇": "",
-            "에스프레소": "",
             "크림화이트": "#ffffff",
             "누디베이지": "#d1bfa3",
-            "소프트블랙": "#404040"
+            "소프트블랙": "#404040",
+            "세레니티": "#A0A8C0",
+            "미드나잇": "#22222B",
+            "에스프레소": "#3C2E2A"
         },
         "sizes": [
             "50X70",
@@ -5881,7 +5879,10 @@
         "colors": {
             "아이보리 반호 150X200": "#ffffff",
             "웜그레이 반호 150X200": "#ffffff"
-        }
+        },
+        "soldOutColors": [
+            "아이보리 반호 150X200"
+        ]
     },
     {
         "productCode": "P0000BCI",
@@ -5896,7 +5897,10 @@
         "colors": {
             "아이보리 미니 100X150": "#ffffff",
             "웜그레이 미니 100X150": "#ffffff"
-        }
+        },
+        "soldOutColors": [
+            "아이보리 미니 100X150"
+        ]
     },
     {
         "productCode": "P0000BCH",
@@ -5911,7 +5915,10 @@
         "colors": {
             "아이보리 75X100": "#f5f3e2",
             "웜그레이 75X100": "#b3b1aa"
-        }
+        },
+        "soldOutColors": [
+            "아이보리 75X100"
+        ]
     },
     {
         "productCode": "P0000BCG",
@@ -5926,7 +5933,10 @@
         "colors": {
             "아이보리 2호 200X300": "#ffffff",
             "웜그레이 2호 200X300": "#ffffff"
-        }
+        },
+        "soldOutColors": [
+            "아이보리 2호 200X300"
+        ]
     },
     {
         "productCode": "P0000BCF",
@@ -5941,7 +5951,10 @@
         "colors": {
             "아이보리 1호 160X240": "#ffffff",
             "웜그레이 1호 160X240": "#ffffff"
-        }
+        },
+        "soldOutColors": [
+            "아이보리 1호 160X240"
+        ]
     },
     {
         "productCode": "P0000BCE",
@@ -6423,7 +6436,8 @@
         ],
         "soldOutSizes": [
             "M 48X120"
-        ]
+        ],
+        "hidden": true
     },
     {
         "productCode": "P0000BAU",
