@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import { parseContractListQuery } from "../../lib/contract-list-query";
 import { sendError, sendSuccess } from "../../lib/api-response";
 import { formatShoppingMallOrderNumber } from "../../../lib/order-excel";
@@ -16,7 +16,11 @@ import {
 } from "../../services/admin-contract.service";
 import { parseContractInput } from "../../schemas/contract.schema";
 import { updateContract } from "../../services/contract.service";
-import { sendContractLinkSms } from "../../services/notify.service";
+import {
+  sendContractLinkAlimtalk,
+  sendContractLinkSms,
+  type NotifyResult,
+} from "../../services/notify.service";
 import {
   buildBulkOrderExcelFilename,
   buildOrderExcelFilename,
@@ -260,41 +264,64 @@ contractsRouter.post("/:id/view-token", async (req, res) => {
   }
 });
 
-// 알림톡 대신 문자를 원하는 고객에게 현재 링크를 문자로 재발송
-contractsRouter.post("/:id/sms", async (req, res) => {
-  const id = Number(req.params.id);
+// 관리자가 버튼을 눌렀을 때만 현재 링크를 알림톡/문자로 발송 (저장 시 자동 발송 없음)
+function sendCustomerLink(
+  send: (contract: NonNullable<Awaited<ReturnType<typeof getContractById>>>) => Promise<NotifyResult>,
+  label: string,
+) {
+  return async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
 
-  if (!Number.isInteger(id) || id <= 0) {
-    return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
-  }
-
-  try {
-    const contract = await getContractById(id);
-
-    if (!contract) {
-      return sendError(res, "계약서를 찾을 수 없습니다.", 404);
+    if (!Number.isInteger(id) || id <= 0) {
+      return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
     }
 
-    if (
-      !contract.viewToken ||
-      !contract.viewTokenExpiresAt ||
-      new Date(contract.viewTokenExpiresAt) < new Date()
-    ) {
-      return sendError(res, "유효한 고객용 링크가 없습니다. 링크 재발급 후 보내주세요.", 400);
+    try {
+      const contract = await getContractById(id);
+
+      if (!contract) {
+        return sendError(res, "계약서를 찾을 수 없습니다.", 404);
+      }
+
+      if (
+        !contract.viewToken ||
+        !contract.viewTokenExpiresAt ||
+        new Date(contract.viewTokenExpiresAt) < new Date()
+      ) {
+        return sendError(res, "유효한 고객용 링크가 없습니다. 링크 재발급 후 보내주세요.", 400);
+      }
+
+      const result = await send(contract);
+
+      return sendSuccess(res, { result });
+    } catch (error) {
+      console.error(`[admin/contracts] Failed to send ${label}:`, error);
+      return sendError(res, `${label} 발송 중 오류가 발생했습니다.`, 500);
     }
+  };
+}
 
-    const result = await sendContractLinkSms({
-      contractNumber: contract.contractNumber,
-      customerName: contract.customerName,
-      customerPhone: contract.customerPhone,
-      viewToken: contract.viewToken,
-    });
+function toLinkTarget(contract: NonNullable<Awaited<ReturnType<typeof getContractById>>>) {
+  return {
+    contractNumber: contract.contractNumber,
+    customerName: contract.customerName,
+    customerPhone: contract.customerPhone,
+    viewToken: contract.viewToken!,
+  };
+}
 
-    return sendSuccess(res, { result });
-  } catch (error) {
-    console.error("[admin/contracts] Failed to send sms:", error);
-    return sendError(res, "문자 발송 중 오류가 발생했습니다.", 500);
-  }
-});
+contractsRouter.post(
+  "/:id/alimtalk",
+  sendCustomerLink(
+    (contract) =>
+      sendContractLinkAlimtalk({ ...toLinkTarget(contract), productName: contract.productName }),
+    "알림톡",
+  ),
+);
+
+contractsRouter.post(
+  "/:id/sms",
+  sendCustomerLink((contract) => sendContractLinkSms(toLinkTarget(contract)), "문자"),
+);
 
 export default contractsRouter;

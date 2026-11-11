@@ -5,7 +5,7 @@ import {
   downloadAdminOrderExcel,
   fetchAdminContractById,
   reissueAdminContractViewToken,
-  sendAdminContractSms,
+  sendAdminContractLink,
   updateAdminContractApprovalNumber,
   updateAdminContractStatus,
   type ContractDetail,
@@ -302,7 +302,7 @@ export default function AdminContractDetailPage() {
   const [savedApprovalNumber, setSavedApprovalNumber] = useState("");
   const [isSavingApprovalNumber, setIsSavingApprovalNumber] = useState(false);
   const [isReissuingLink, setIsReissuingLink] = useState(false);
-  const [isSendingSms, setIsSendingSms] = useState(false);
+  const [sendingChannel, setSendingChannel] = useState<"alimtalk" | "sms" | null>(null);
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -389,29 +389,32 @@ export default function AdminContractDetailPage() {
     }
   }
 
-  async function handleSendSms() {
+  // 알림톡·문자는 저장 시 자동 발송하지 않고 이 버튼으로만 보낸다
+  async function handleSendLink(channel: "alimtalk" | "sms") {
     if (!contract) {
       return;
     }
 
-    if (!window.confirm(`${contract.customerPhone} 번호로 계약서 링크를 문자로 보낼까요?`)) {
+    const label = channel === "alimtalk" ? "알림톡" : "문자";
+
+    if (!window.confirm(`${contract.customerPhone} 번호로 계약서를 ${label}으로 보낼까요?`)) {
       return;
     }
 
-    setIsSendingSms(true);
+    setSendingChannel(channel);
     setError("");
 
     try {
-      const { result } = await sendAdminContractSms(contract.id);
+      const { result } = await sendAdminContractLink(contract.id, channel);
       window.alert(
         result === "sent"
-          ? "문자를 발송했습니다."
-          : "발송 기능이 꺼져 있어 문자를 보내지 않았습니다.",
+          ? `${label}을 발송했습니다.`
+          : `발송 기능이 꺼져 있어 ${label}을 보내지 않았습니다.`,
       );
-    } catch (smsError) {
-      handleActionError(smsError, "문자 발송 중 오류가 발생했습니다.");
+    } catch (sendError) {
+      handleActionError(sendError, `${label} 발송 중 오류가 발생했습니다.`);
     } finally {
-      setIsSendingSms(false);
+      setSendingChannel(null);
     }
   }
 
@@ -778,12 +781,22 @@ export default function AdminContractDetailPage() {
                               <button
                                 type="button"
                                 className="app-button"
-                                disabled={isSendingSms}
+                                disabled={sendingChannel !== null}
                                 onClick={() => {
-                                  void handleSendSms();
+                                  void handleSendLink("alimtalk");
                                 }}
                               >
-                                {isSendingSms ? "발송 중..." : "문자로 보내기"}
+                                {sendingChannel === "alimtalk" ? "발송 중..." : "알림톡 발송하기"}
+                              </button>
+                              <button
+                                type="button"
+                                className="app-button"
+                                disabled={sendingChannel !== null}
+                                onClick={() => {
+                                  void handleSendLink("sms");
+                                }}
+                              >
+                                {sendingChannel === "sms" ? "발송 중..." : "문자로 보내기"}
                               </button>
                               <button
                                 type="button"

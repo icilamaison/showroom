@@ -307,11 +307,12 @@ export async function reissueAdminContractViewToken(
   );
 }
 
-export async function sendAdminContractSms(
+export async function sendAdminContractLink(
   id: number,
+  channel: "alimtalk" | "sms",
 ): Promise<{ result: "sent" | "skipped" }> {
   return adminFetch<{ result: "sent" | "skipped" }>(
-    `/api/admin/contracts/${id}/sms`,
+    `/api/admin/contracts/${id}/${channel}`,
     { method: "POST" },
   );
 }
