@@ -103,7 +103,9 @@ export default function ContractNoticeDocument({
         </h2>
         <p className="notice-text">
           울 러그를 제외한 모든 러그는 러그 전문 세탁 업체를 통해 [습식 세탁]을,
-          울 러그는 [드라이클리닝]을 권장드립니다. (Tel : 010-5495-6706)
+          울 러그는 [드라이클리닝]을 권장드립니다.
+          <br />
+          (Tel : 010-5495-6706)
         </p>
       </section>
 
