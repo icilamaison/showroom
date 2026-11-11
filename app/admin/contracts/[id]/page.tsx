@@ -319,6 +319,16 @@ export default function AdminContractDetailPage() {
     setSavedApprovalNumber(contract.approvalNumber ?? "");
   }, [contract]);
 
+  // 401이면 로그인으로 보내고, 그 외에는 서버 메시지(없으면 기본 문구)를 보여준다
+  function handleActionError(actionError: unknown, fallbackMessage: string) {
+    if (actionError instanceof ApiClientError && actionError.status === 401) {
+      router.push("/admin/login");
+      return;
+    }
+
+    setError(actionError instanceof ApiClientError ? actionError.message : fallbackMessage);
+  }
+
   async function handleStatusSave() {
     if (!isValidId || !contract) {
       return;
@@ -333,16 +343,7 @@ export default function AdminContractDetailPage() {
       setContract({ ...contract, status: selectedStatus });
       window.alert("저장되었습니다.");
     } catch (saveError) {
-      if (saveError instanceof ApiClientError) {
-        if (saveError.status === 401) {
-          router.push("/admin/login");
-          return;
-        }
-
-        setError(saveError.message);
-      } else {
-        setError("상태 저장 중 오류가 발생했습니다.");
-      }
+      handleActionError(saveError, "상태 저장 중 오류가 발생했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -382,16 +383,7 @@ export default function AdminContractDetailPage() {
       setContract({ ...contract, ...reissued });
       window.alert("새 링크를 발급했습니다. 링크 복사로 고객에게 다시 보내주세요.");
     } catch (reissueError) {
-      if (reissueError instanceof ApiClientError && reissueError.status === 401) {
-        router.push("/admin/login");
-        return;
-      }
-
-      setError(
-        reissueError instanceof ApiClientError
-          ? reissueError.message
-          : "링크 재발급 중 오류가 발생했습니다.",
-      );
+      handleActionError(reissueError, "링크 재발급 중 오류가 발생했습니다.");
     } finally {
       setIsReissuingLink(false);
     }
@@ -417,16 +409,7 @@ export default function AdminContractDetailPage() {
           : "발송 기능이 꺼져 있어 문자를 보내지 않았습니다.",
       );
     } catch (smsError) {
-      if (smsError instanceof ApiClientError && smsError.status === 401) {
-        router.push("/admin/login");
-        return;
-      }
-
-      setError(
-        smsError instanceof ApiClientError
-          ? smsError.message
-          : "문자 발송 중 오류가 발생했습니다.",
-      );
+      handleActionError(smsError, "문자 발송 중 오류가 발생했습니다.");
     } finally {
       setIsSendingSms(false);
     }
@@ -451,16 +434,7 @@ export default function AdminContractDetailPage() {
       setContract({ ...contract, approvalNumber });
       window.alert("저장되었습니다.");
     } catch (saveError) {
-      if (saveError instanceof ApiClientError) {
-        if (saveError.status === 401) {
-          router.push("/admin/login");
-          return;
-        }
-
-        setError(saveError.message);
-      } else {
-        setError("승인번호 저장 중 오류가 발생했습니다.");
-      }
+      handleActionError(saveError, "승인번호 저장 중 오류가 발생했습니다.");
     } finally {
       setIsSavingApprovalNumber(false);
     }
@@ -746,18 +720,7 @@ export default function AdminContractDetailPage() {
                                 try {
                                   await downloadAdminOrderExcel(contract.id, approvalNumber);
                                 } catch (downloadError) {
-                                  if (
-                                    downloadError instanceof ApiClientError &&
-                                    downloadError.status === 401
-                                  ) {
-                                    router.push("/admin/login");
-                                    return;
-                                  }
-                                  setError(
-                                    downloadError instanceof ApiClientError
-                                      ? downloadError.message
-                                      : "엑셀 다운로드에 실패했습니다.",
-                                  );
+                                  handleActionError(downloadError, "엑셀 다운로드에 실패했습니다.");
                                 } finally {
                                   setIsDownloading(false);
                                 }
