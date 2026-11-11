@@ -1,6 +1,5 @@
 // 비즈고(인포뱅크) 통합메시지 API로 고객용 계약서 링크를 보낸다.
 // BIZGO_SEND_ENABLED=true 가 아니면 비즈고를 호출하지 않고 로그만 남긴다.
-import { VIEW_TOKEN_VALID_DAYS } from "./admin-contract.service";
 
 // 알림톡 본문·타이틀·버튼은 카카오 승인 템플릿(showroom_contract)과 글자 하나까지 같아야 발송된다.
 const ALIMTALK_TITLE = "작성 완료";
@@ -28,6 +27,8 @@ export type ContractLinkTarget = {
   customerPhone: string;
   viewToken: string;
 };
+
+type AlimtalkTarget = ContractLinkTarget & { productName: string; viewTokenExpiresAt: string };
 
 export type NotifyResult = "sent" | "skipped";
 
@@ -66,14 +67,12 @@ function summarizeProducts(productName: string) {
   return `${names[0]} 외 ${names.length - 1}건`;
 }
 
-function buildAlimtalkText(target: ContractLinkTarget, productName: string) {
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + VIEW_TOKEN_VALID_DAYS * 24 * 60 * 60 * 1000);
-
+// 만료일은 DB의 실제 링크 만료일을 쓴다 (재발급 후 늦게 보내도 날짜가 어긋나지 않게)
+function buildAlimtalkText(target: AlimtalkTarget) {
   return ALIMTALK_TEMPLATE.replace("#{고객명}", target.customerName)
-    .replace("#{상품요약}", summarizeProducts(productName))
-    .replace("#{작성일}", formatKstDate(now))
-    .replace("#{만료일}", formatKstDate(expiresAt));
+    .replace("#{상품요약}", summarizeProducts(target.productName))
+    .replace("#{작성일}", formatKstDate(new Date()))
+    .replace("#{만료일}", formatKstDate(new Date(target.viewTokenExpiresAt)));
 }
 
 function buildSmsText(target: ContractLinkTarget) {
@@ -123,9 +122,7 @@ function lmsFlow(text: string) {
 }
 
 // 계약서 발행 시 알림톡 발송 (발신번호가 등록돼 있으면 실패 시 문자 대체발송)
-export async function sendContractLinkAlimtalk(
-  target: ContractLinkTarget & { productName: string },
-): Promise<NotifyResult> {
+export async function sendContractLinkAlimtalk(target: AlimtalkTarget): Promise<NotifyResult> {
   if (!isSendEnabled()) {
     console.info(`[notify] 발송 꺼짐 - 알림톡 생략 (${target.contractNumber})`);
     return "skipped";
@@ -140,7 +137,7 @@ export async function sendContractLinkAlimtalk(
         senderKey,
         templateCode,
         title: ALIMTALK_TITLE,
-        text: buildAlimtalkText(target, target.productName),
+        text: buildAlimtalkText(target),
         attachment: {
           button: [{ type: "WL", name: ALIMTALK_BUTTON_NAME, urlMobile: link, urlPc: link }],
         },

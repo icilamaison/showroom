@@ -319,7 +319,11 @@ contractsRouter.post(
   "/:id/alimtalk",
   sendCustomerLink(
     (contract) =>
-      sendContractLinkAlimtalk({ ...toLinkTarget(contract), productName: contract.productName }),
+      sendContractLinkAlimtalk({
+        ...toLinkTarget(contract),
+        productName: contract.productName,
+        viewTokenExpiresAt: contract.viewTokenExpiresAt!,
+      }),
     "알림톡",
   ),
 );
