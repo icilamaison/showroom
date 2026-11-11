@@ -1259,6 +1259,12 @@
 }
 
 /* 계약서 조회 — 모바일도 PDF처럼 세로 스크롤 (view 페이지 viewport width=860으로 화면 폭에 맞춰 축소) */
+/* 축소 표시 시 iOS가 일부 문단(주소·푸터·동의문)만 글자를 키우는 자동 확대를 끈다 */
+.app-page--contract-view {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 .contract-doc-viewer {
   width: 100%;
   max-width: var(--doc-width);
