@@ -24,7 +24,11 @@ export type ContractLinkTarget = {
   viewToken: string;
 };
 
-type AlimtalkTarget = ContractLinkTarget & { productName: string; viewTokenExpiresAt: string };
+type AlimtalkTarget = ContractLinkTarget & {
+  productName: string;
+  writtenDate: string; // 계약서 작성일 YYYY-MM-DD (발송일이 아님)
+  viewTokenExpiresAt: string;
+};
 
 export type NotifyResult = "sent" | "skipped";
 
@@ -67,7 +71,7 @@ function summarizeProducts(productName: string) {
 function buildAlimtalkText(target: AlimtalkTarget) {
   return ALIMTALK_TEMPLATE.replace("#{고객명}", target.customerName)
     .replace("#{상품요약}", summarizeProducts(target.productName))
-    .replace("#{작성일}", formatKstDate(new Date()))
+    .replace("#{작성일}", target.writtenDate)
     .replace("#{만료일}", formatKstDate(new Date(target.viewTokenExpiresAt)));
 }
 

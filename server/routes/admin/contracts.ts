@@ -322,6 +322,7 @@ contractsRouter.post(
       sendContractLinkAlimtalk({
         ...toLinkTarget(contract),
         productName: contract.productName,
+        writtenDate: contract.contractStartDate,
         viewTokenExpiresAt: contract.viewTokenExpiresAt!,
       }),
     "알림톡",
