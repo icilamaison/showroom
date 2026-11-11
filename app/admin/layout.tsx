@@ -2,7 +2,7 @@
 
 import { ADMIN_QUERY_CACHE_KEY } from "@/lib/api-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { QueryClient } from "@tanstack/react-query";
+import { defaultShouldDehydrateQuery, QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { useState } from "react";
 
@@ -36,7 +36,15 @@ export default function AdminLayout({
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: CACHE_MAX_AGE }}
+      persistOptions={{
+        persister,
+        maxAge: CACHE_MAX_AGE,
+        dehydrateOptions: {
+          // 목록만 저장한다. 상세(주소 등 개인정보)는 메모리 캐시로만 두고 새로고침하면 다시 불러온다
+          shouldDehydrateQuery: (query) =>
+            query.queryKey[0] === "adminContracts" && defaultShouldDehydrateQuery(query),
+        },
+      }}
     >
       {children}
     </PersistQueryClientProvider>

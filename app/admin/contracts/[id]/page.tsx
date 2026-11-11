@@ -20,6 +20,7 @@ import { formatSetOptionLabel } from "@/lib/set-product";
 import { getRugNoticeChecks, type PurchaseContractPayload } from "@/lib/validation/contract";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import ContractPdfDocument from "@/app/contract/ContractPdfDocument";
 import {
@@ -266,10 +267,33 @@ export default function AdminContractDetailPage() {
   const contractId = Number(params.id);
   const isValidId = Number.isInteger(contractId) && contractId > 0;
 
-  const [contract, setContract] = useState<ContractDetail | null>(null);
+  const queryClient = useQueryClient();
+  const detailQueryKey = ["adminContract", contractId];
+  // 한 번 본 계약서는 캐시로 바로 보여주고 뒤에서 갱신한다 (개인정보가 많아 localStorage에는 저장하지 않음, layout 참고)
+  const detailQuery = useQuery({
+    queryKey: detailQueryKey,
+    queryFn: () => fetchAdminContractById(contractId),
+    enabled: isValidId,
+  });
+  const contract = detailQuery.data ?? null;
+  const isLoading = isValidId && detailQuery.isPending;
+  const isUnauthorized =
+    detailQuery.error instanceof ApiClientError && detailQuery.error.status === 401;
+  const loadError = !isValidId
+    ? "유효하지 않은 계약서 ID입니다."
+    : !detailQuery.isError || isUnauthorized
+      ? ""
+      : detailQuery.error instanceof ApiClientError && detailQuery.error.status === 404
+        ? "계약서를 찾을 수 없습니다."
+        : "계약서 상세 정보를 불러오지 못했습니다.";
+
+  // 저장·재발급 결과를 캐시에 바로 반영해 다시 들어와도 최신 값이 보이게 한다
+  function setContract(next: ContractDetail) {
+    queryClient.setQueryData(detailQueryKey, next);
+  }
+
   const [selectedStatus, setSelectedStatus] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -282,43 +306,18 @@ export default function AdminContractDetailPage() {
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isValidId) {
-      setIsLoading(false);
-      setError("유효하지 않은 계약서 ID입니다.");
-      return;
-    }
+    if (isUnauthorized) router.push("/admin/login");
+  }, [isUnauthorized, router]);
 
-    async function loadContract() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const result = await fetchAdminContractById(contractId);
-        setContract(result);
-        setSelectedStatus(result.status);
-        setApprovalNumber(result.approvalNumber ?? "");
-        setSavedApprovalNumber(result.approvalNumber ?? "");
-      } catch (loadError) {
-        if (loadError instanceof ApiClientError) {
-          if (loadError.status === 401) {
-            router.push("/admin/login");
-            return;
-          }
-
-          if (loadError.status === 404) {
-            setError("계약서를 찾을 수 없습니다.");
-            return;
-          }
-        }
-
-        setError("계약서 상세 정보를 불러오지 못했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    void loadContract();
-  }, [contractId, isValidId, router]);
+  // 입력칸은 계약서별로 처음 한 번만 채운다. 뒤에서 갱신될 때 입력 중인 값을 덮어쓰지 않기 위함
+  const filledContractIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!contract || filledContractIdRef.current === contract.id) return;
+    filledContractIdRef.current = contract.id;
+    setSelectedStatus(contract.status);
+    setApprovalNumber(contract.approvalNumber ?? "");
+    setSavedApprovalNumber(contract.approvalNumber ?? "");
+  }, [contract]);
 
   async function handleStatusSave() {
     if (!isValidId || !contract) {
@@ -449,6 +448,7 @@ export default function AdminContractDetailPage() {
     try {
       await updateAdminContractApprovalNumber(contract.id, approvalNumber);
       setSavedApprovalNumber(approvalNumber);
+      setContract({ ...contract, approvalNumber });
       window.alert("저장되었습니다.");
     } catch (saveError) {
       if (saveError instanceof ApiClientError) {
@@ -493,7 +493,9 @@ export default function AdminContractDetailPage() {
           <h1 className="app-title app-title--page">계약서 상세</h1>
         </header>
 
-        {error ? <p className="app-alert app-alert--error">{error}</p> : null}
+        {error || loadError ? (
+          <p className="app-alert app-alert--error">{error || loadError}</p>
+        ) : null}
 
         {isLoading ? (
           <p className="app-empty">상세 정보를 불러오는 중...</p>

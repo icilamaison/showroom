@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  ApiClientError,
-  fetchAdminContractById,
-  type ContractDetail,
-} from "@/lib/api-client";
+import { ApiClientError, fetchAdminContractById } from "@/lib/api-client";
 import { isPurchaseContractPayload } from "@/lib/order-excel";
 import { purchasePayloadToFormValues } from "@/lib/contract-document";
 import ContractDocumentViewer from "@/app/contract/ContractDocumentViewer";
@@ -16,21 +13,21 @@ import "@/app/contract/contract.css";
 export default function AdminContractViewPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const [contract, setContract] = useState<ContractDetail | null>(null);
-  const [error, setError] = useState("");
+  const contractId = Number(params.id);
+  // 상세 화면과 같은 캐시를 써서 상세 ↔ 보기 이동 시 바로 보여준다
+  const detailQuery = useQuery({
+    queryKey: ["adminContract", contractId],
+    queryFn: () => fetchAdminContractById(contractId),
+  });
+  const contract = detailQuery.data ?? null;
+  const isUnauthorized =
+    detailQuery.error instanceof ApiClientError && detailQuery.error.status === 401;
+  const error =
+    detailQuery.isError && !isUnauthorized ? "계약서를 불러오지 못했습니다." : "";
 
   useEffect(() => {
-    fetchAdminContractById(Number(params.id))
-      .then(setContract)
-      .catch((loadError) => {
-        if (loadError instanceof ApiClientError && loadError.status === 401) {
-          router.push("/admin/login");
-          return;
-        }
-
-        setError("계약서를 불러오지 못했습니다.");
-      });
-  }, [params.id, router]);
+    if (isUnauthorized) router.push("/admin/login");
+  }, [isUnauthorized, router]);
 
   const documentValues =
     contract && isPurchaseContractPayload(contract.payload)
