@@ -1,4 +1,6 @@
 import catalogData from "../product.json";
+// 쇼룸 직접 판매 상품(카페24 미등록). 카페24 동기화 스크립트 대상에서 빠지도록 파일을 나눴다
+import showroomCatalogData from "../showroom-product.json";
 
 export type CatalogSizeOption =
   | string
@@ -213,7 +215,7 @@ export function getVariantComponents(
 }
 
 // 미진열·판매 안 함(hidden) 상품은 검색에서 빼고, 컬러·사이즈 그룹에 묶이면 전 옵션 품절로 보이게 한다
-const catalog = (catalogData as CatalogProduct[]).map((product) =>
+const catalog = ([...catalogData, ...showroomCatalogData] as CatalogProduct[]).map((product) =>
   product.hidden
     ? {
         ...product,

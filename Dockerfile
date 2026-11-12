@@ -9,7 +9,7 @@ RUN npm ci
 COPY tsconfig.json tsconfig.server.json ./
 COPY server ./server
 COPY lib ./lib
-COPY product.json ./
+COPY product.json showroom-product.json ./
 RUN npx tsc -p tsconfig.server.json
 
 ENV NODE_ENV=production
