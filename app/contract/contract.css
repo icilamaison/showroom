@@ -281,6 +281,21 @@
   font-weight: 600;
 }
 
+/* 행 삭제 버튼 — 번호 아래에 작게 둔다 (열을 늘리지 않음) */
+.contract-doc__row-clear {
+  display: block;
+  margin: 0.2rem auto 0;
+  border: 1px solid var(--contract-line);
+  background: #fff;
+  padding: 0.1rem 0.2rem;
+  white-space: nowrap; /* No 칸이 좁아 글자가 세로로 쪼개지지 않게 */
+  color: #b91c1c;
+  font-size: 0.65rem;
+  font-weight: 400;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
 .contract-doc__cell-input,
 .contract-doc__cell-select,
 .contract-doc__inline-input {
