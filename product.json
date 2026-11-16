@@ -1990,11 +1990,11 @@
         "internalCode": "코지",
         "category": "ACC",
         "productNo": 975,
-        "productName": "코지 양모 룸슈즈 크로스밴드",
+        "productName": "코지 천연양모 룸슈즈 크로스밴드",
         "consumerPrice": 92000,
         "supplyPrice": 0,
-        "productPrice": 62727,
-        "salePrice": 69000,
+        "productPrice": 44545,
+        "salePrice": 49000,
         "sizes": [
             "크로스밴드 M (권장사이즈 220-250mm)"
         ]
@@ -2004,11 +2004,11 @@
         "internalCode": "코지",
         "category": "ACC",
         "productNo": 974,
-        "productName": "코지 양모 룸슈즈 오픈토",
+        "productName": "코지 천연양모 룸슈즈 오픈토",
         "consumerPrice": 92000,
         "supplyPrice": 0,
-        "productPrice": 62727,
-        "salePrice": 69000,
+        "productPrice": 44545,
+        "salePrice": 49000,
         "sizes": [
             "오픈토 M (권장사이즈 220-250mm)",
             "오픈토 L (권장사이즈 255-280mm)"
@@ -2019,11 +2019,11 @@
         "internalCode": "코지",
         "category": "ACC",
         "productNo": 973,
-        "productName": "코지 양모 룸슈즈 베이직",
+        "productName": "코지 천연양모 룸슈즈 베이직",
         "consumerPrice": 97000,
         "supplyPrice": 0,
-        "productPrice": 66136,
-        "salePrice": 72750,
+        "productPrice": 44545,
+        "salePrice": 49000,
         "sizes": [
             "베이직 M (권장사이즈 220-250mm)",
             "베이직 L (권장사이즈 255-280mm)"
@@ -2091,9 +2091,6 @@
                 "name": "K 180X200",
                 "salePrice": 232500
             }
-        ],
-        "soldOutSizes": [
-            "SS 110X200"
         ]
     },
     {
@@ -2304,6 +2301,7 @@
         "soldOutColors": [
             "러스트 150X200",
             "솔리드러스트 150X200",
+            "나이트 150X200",
             "솔리드나이트 150X200"
         ]
     },
@@ -6024,7 +6022,8 @@
             }
         ],
         "soldOutSizes": [
-            "S 45X60"
+            "S 45X60",
+            "M 45X120"
         ]
     },
     {
