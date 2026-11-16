@@ -106,6 +106,7 @@ type ContractFormProps = {
   ) => void;
   onProductSelect: (index: number, product: CatalogProduct) => void;
   onAddProductRow: () => void;
+  onClearProductRow: (index: number) => void;
   onRemoveLastProductRow: () => void;
   onSetComponentChange: (
     index: number,
@@ -456,6 +457,7 @@ export default function ContractForm({
   onProductChange,
   onProductSelect,
   onAddProductRow,
+  onClearProductRow,
   onRemoveLastProductRow,
   onSetComponentChange,
   onSubmit,
@@ -700,7 +702,20 @@ export default function ContractForm({
               return (
               <Fragment key={index}>
               <tr>
-                <td className="contract-doc__row-no">{index + 1}</td>
+                <td className="contract-doc__row-no">
+                  {index + 1}
+                  {/* 상품명이 없어도 컬러·단가 등 수기 입력이 있으면 지울 수 있게 한다 */}
+                  {Object.values(product).some((value) => String(value ?? "").trim()) ? (
+                    <button
+                      type="button"
+                      className="contract-doc__row-clear"
+                      onClick={() => onClearProductRow(index)}
+                      aria-label={`${index + 1}번 행 삭제`}
+                    >
+                      삭제
+                    </button>
+                  ) : null}
+                </td>
                 <td>
                   <ProductNameAutocomplete
                     value={product.name}

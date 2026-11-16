@@ -123,6 +123,15 @@ function clearDraft() {
   } catch {}
 }
 
+// 작성 중 행 삭제는 행 번호가 밀리지 않게 내용만 비운다. 고객용 계약서 No가 건너뛰지 않도록
+// 저장할 때 빈 행을 뒤로 모은다 (행 수는 그대로)
+function moveEmptyRowsToEnd<T extends { name: string }>(products: T[]): T[] {
+  return [
+    ...products.filter((product) => product.name.trim()),
+    ...products.filter((product) => !product.name.trim()),
+  ];
+}
+
 // 저장된 상품 행으로 상품 드롭다운·세트 구성품 선택을 되돌린다 (수정 모드·임시저장 복원 공용)
 function restoreProductSelections(products: ProductRow[]) {
   const selections: Record<number, CatalogProduct | null> = {};
@@ -584,6 +593,43 @@ export default function ContractWritePage() {
     }));
   }
 
+  function handleClearProductRow(index: number) {
+    if (!window.confirm(`${index + 1}번 행을 삭제할까요?`)) {
+      return;
+    }
+
+    setValues((current) => {
+      const isPadRow =
+        SLIP_PAD_PRODUCT &&
+        current.products[index]?.name.trim() === SLIP_PAD_PRODUCT.productName;
+
+      return {
+        ...current,
+        // 패드 행을 지우면 아래 패드 구매 여부를 다시 고르게 한다
+        ...(isPadRow ? { padPurchased: null, padQuantity: "" } : {}),
+        products: current.products.map((product, productIndex) =>
+          productIndex === index ? createEmptyProductRow() : product,
+        ),
+      };
+    });
+
+    setProductSelections((current) => {
+      const next = { ...current };
+      delete next[index];
+      return next;
+    });
+    setSetComponentSelections((current) => {
+      const next = { ...current };
+      delete next[index];
+      return next;
+    });
+    setErrors((current) =>
+      Object.fromEntries(
+        Object.entries(current).filter(([field]) => !field.startsWith(`products.${index}.`)),
+      ),
+    );
+  }
+
   function handleRemoveLastProductRow() {
     setValues((current) => {
       if (current.products.length <= PRODUCT_ROW_COUNT) {
@@ -639,7 +685,7 @@ export default function ContractWritePage() {
     setIsSubmitting(true);
 
     try {
-      await updateAdminContract(id, data);
+      await updateAdminContract(id, { ...data, products: moveEmptyRowsToEnd(data.products) });
       router.push(`/admin/contracts/${id}`);
     } catch (error) {
       if (error instanceof ApiClientError) {
@@ -677,6 +723,7 @@ export default function ContractWritePage() {
       const noticeAnnotation = noticeAnnotatorRef.current?.getAnnotation();
       const result = await submitContract({
         ...validation.data,
+        products: moveEmptyRowsToEnd(validation.data.products),
         ...(noticeAnnotation ? { noticeAnnotation } : {}),
       });
       clearDraft();
@@ -774,6 +821,7 @@ export default function ContractWritePage() {
             onProductChange={handleProductChange}
             onProductSelect={handleProductSelect}
             onAddProductRow={handleAddProductRow}
+            onClearProductRow={handleClearProductRow}
             onRemoveLastProductRow={handleRemoveLastProductRow}
             onSetComponentChange={handleSetComponentChange}
             onSubmit={handleSubmit}
