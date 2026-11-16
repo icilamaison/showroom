@@ -98,6 +98,60 @@ const AGREEMENT_PLACEHOLDER = {
   signatureDataUrl: "pending",
 };
 
+// 작성 중 뒤로 가기·탭 이동(사파리가 백그라운드 탭을 새로고침)으로 입력값이 날아가지 않게 임시저장한다.
+// 고객 개인정보라 탭을 닫으면 사라지는 sessionStorage에만 두고, 제출하면 지운다
+const DRAFT_STORAGE_KEY = "contract-write-draft";
+
+function readDraft(): ContractFormValues | null {
+  try {
+    const saved = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+    return saved ? (JSON.parse(saved) as ContractFormValues) : null;
+  } catch {
+    return null; // 저장소 접근 불가·손상 시 새로 작성
+  }
+}
+
+function writeDraft(values: ContractFormValues) {
+  try {
+    sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(values));
+  } catch {} // 저장 실패해도 작성은 계속
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch {}
+}
+
+// 저장된 상품 행으로 상품 드롭다운·세트 구성품 선택을 되돌린다 (수정 모드·임시저장 복원 공용)
+function restoreProductSelections(products: ProductRow[]) {
+  const selections: Record<number, CatalogProduct | null> = {};
+  const setSelections: Record<number, SetComponentSelection[]> = {};
+  products.forEach((product, index) => {
+    const name = product.name.trim();
+    if (!name) {
+      return;
+    }
+
+    // 묶음 상품은 검색 결과에만 있고, 미진열 상품은 검색에서 빠지므로 이름 조회로 한 번 더 찾는다
+    const catalogProduct =
+      searchProducts(name, 50).find((candidate) => candidate.productName === name) ??
+      findCatalogProductByName(name);
+    if (!catalogProduct) {
+      return;
+    }
+
+    selections[index] = withSizeSiblings(catalogProduct);
+    if (isSetProduct(catalogProduct)) {
+      setSelections[index] = buildSetSelectionsFromColor(
+        catalogProduct.components ?? [],
+        product.color,
+      );
+    }
+  });
+  return { selections, setSelections };
+}
+
 export default function ContractWritePage() {
   const router = useRouter();
   const [values, setValues] = useState<ContractFormValues>(
@@ -118,10 +172,21 @@ export default function ContractWritePage() {
   // 관리자 상세의 "수정"으로 들어오면(?edit=계약서ID) 저장된 내용을 채우고, 저장 시 같은 계약서를 고친다
   const [editId, setEditId] = useState<number | null>(null);
   const [editContractNumber, setEditContractNumber] = useState("");
+  // 첫 렌더의 빈 값으로 임시저장을 덮어쓰지 않도록 복원이 끝난 뒤부터 저장한다
+  const [isDraftReady, setIsDraftReady] = useState(false);
 
   useEffect(() => {
     const id = Number(new URLSearchParams(window.location.search).get("edit"));
     if (!Number.isInteger(id) || id <= 0) {
+      // 새 작성: 임시저장이 있으면 이어서 작성
+      const draft = readDraft();
+      if (draft) {
+        const { selections, setSelections } = restoreProductSelections(draft.products);
+        setValues({ ...createInitialContractFormValues(), ...draft });
+        setProductSelections(selections);
+        setSetComponentSelections(setSelections);
+      }
+      setIsDraftReady(true);
       return;
     }
 
@@ -134,34 +199,11 @@ export default function ContractWritePage() {
         }
 
         // 상품 드롭다운·세트 구성품 선택도 저장된 값으로 되돌린다
-        const nextSelections: Record<number, CatalogProduct | null> = {};
-        const nextSetSelections: Record<number, SetComponentSelection[]> = {};
-        products.forEach((product, index) => {
-          const name = product.name.trim();
-          if (!name) {
-            return;
-          }
-
-          // 묶음 상품은 검색 결과에만 있고, 미진열 상품은 검색에서 빠지므로 이름 조회로 한 번 더 찾는다
-          const catalogProduct =
-            searchProducts(name, 50).find((candidate) => candidate.productName === name) ??
-            findCatalogProductByName(name);
-          if (!catalogProduct) {
-            return;
-          }
-
-          nextSelections[index] = withSizeSiblings(catalogProduct);
-          if (isSetProduct(catalogProduct)) {
-            nextSetSelections[index] = buildSetSelectionsFromColor(
-              catalogProduct.components ?? [],
-              product.color,
-            );
-          }
-        });
+        const { selections, setSelections } = restoreProductSelections(products);
 
         setValues({ ...createInitialContractFormValues(), ...payload, products });
-        setProductSelections(nextSelections);
-        setSetComponentSelections(nextSetSelections);
+        setProductSelections(selections);
+        setSetComponentSelections(setSelections);
         setEditId(id);
         setEditContractNumber(contract.contractNumber);
       })
@@ -174,6 +216,13 @@ export default function ContractWritePage() {
         setFormError("수정할 계약서를 불러오지 못했습니다.");
       });
   }, [router]);
+
+  // 수정 모드는 서버에 저장된 계약서를 고치는 것이라 임시저장하지 않는다
+  useEffect(() => {
+    if (isDraftReady) {
+      writeDraft(values);
+    }
+  }, [isDraftReady, values]);
 
   function clearFieldError(field: string) {
     if (!errors[field]) {
@@ -630,6 +679,7 @@ export default function ContractWritePage() {
         ...validation.data,
         ...(noticeAnnotation ? { noticeAnnotation } : {}),
       });
+      clearDraft();
       router.push(
         `/contract/complete?contractNumber=${encodeURIComponent(result.contractNumber)}&viewToken=${encodeURIComponent(result.viewToken)}`,
       );
