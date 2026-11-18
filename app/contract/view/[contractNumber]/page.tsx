@@ -95,6 +95,14 @@ export default function ContractViewPage() {
                     return;
                   }
 
+                  // 안드로이드 카카오톡 인앱 브라우저는 blob 다운로드를 처리하지 못해
+                  // "지원하지 않는 파일 형식"이 뜬다. 외부 브라우저로 같은 페이지를 연다
+                  const ua = navigator.userAgent;
+                  if (/Android/i.test(ua) && /KAKAOTALK/i.test(ua)) {
+                    window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(window.location.href)}`;
+                    return;
+                  }
+
                   void (async () => {
                     setIsDownloadingPdf(true);
                     setError("");
