@@ -11,7 +11,7 @@ export default function ContractNoticeDocument({
         <div className="contract-doc__brand">
           <img
             className="contract-doc__brand-name"
-            src="/logo_black.svg"
+            src="/logo_black.png"
             alt="이씨라메종"
           />
           <span className="contract-doc__brand-contact">
