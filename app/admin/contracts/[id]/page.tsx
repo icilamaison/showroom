@@ -397,7 +397,13 @@ export default function AdminContractDetailPage() {
 
     const label = channel === "alimtalk" ? "알림톡" : "문자";
 
-    if (!window.confirm(`${contract.customerPhone} 번호로 계약서를 ${label}으로 보낼까요?`)) {
+    // 알림톡 버튼 링크는 템플릿에 등록된 운영 도메인으로 고정이라 테스트 계약서는 열리지 않는다
+    const testNotice =
+      channel === "alimtalk" && window.location.hostname.startsWith("test-")
+        ? "\n\n※ 테스트 사이트입니다. 알림톡 링크는 운영 사이트로 연결되어 계약서가 열리지 않을 수 있습니다.\n링크의 showroom을 test-showroom으로 바꿔 확인해 주세요."
+        : "";
+
+    if (!window.confirm(`${contract.customerPhone} 번호로 계약서를 ${label}으로 보낼까요?${testNotice}`)) {
       return;
     }
 
