@@ -4527,16 +4527,13 @@
         "category": "매트",
         "productNo": 816,
         "productName": "케이드 매트 블루",
-        "consumerPrice": 56000,
+        "consumerPrice": 96000,
         "supplyPrice": 0,
-        "productPrice": 35636,
-        "salePrice": 39200,
+        "productPrice": 61091,
+        "salePrice": 67200,
         "sizes": [
             "S 48X60",
-            {
-                "name": "M 48X120",
-                "salePrice": 67200
-            }
+            "M 48X120"
         ],
         "soldOutSizes": [
             "S 48X60"
@@ -4548,16 +4545,13 @@
         "category": "매트",
         "productNo": 815,
         "productName": "케이드 매트 버터스카치",
-        "consumerPrice": 56000,
+        "consumerPrice": 96000,
         "supplyPrice": 0,
-        "productPrice": 35636,
-        "salePrice": 39200,
+        "productPrice": 61091,
+        "salePrice": 67200,
         "sizes": [
             "S 48X60",
-            {
-                "name": "M 48X120",
-                "salePrice": 67200
-            }
+            "M 48X120"
         ],
         "soldOutSizes": [
             "S 48X60"
@@ -4615,16 +4609,13 @@
         "category": "매트",
         "productNo": 812,
         "productName": "핀 매트 블루",
-        "consumerPrice": 56000,
+        "consumerPrice": 96000,
         "supplyPrice": 0,
-        "productPrice": 35636,
-        "salePrice": 39200,
+        "productPrice": 61091,
+        "salePrice": 67200,
         "sizes": [
             "S 48X60",
-            {
-                "name": "M 48X120",
-                "salePrice": 67200
-            }
+            "M 48X120"
         ],
         "soldOutSizes": [
             "S 48X60"
@@ -4659,16 +4650,13 @@
         "category": "매트",
         "productNo": 810,
         "productName": "핀 매트 문라이트화이트",
-        "consumerPrice": 56000,
+        "consumerPrice": 96000,
         "supplyPrice": 0,
-        "productPrice": 35636,
-        "salePrice": 39200,
+        "productPrice": 61091,
+        "salePrice": 67200,
         "sizes": [
             "S 48X60",
-            {
-                "name": "M 48X120",
-                "salePrice": 67200
-            }
+            "M 48X120"
         ],
         "soldOutSizes": [
             "S 48X60"
@@ -4822,16 +4810,13 @@
         "category": "매트",
         "productNo": 801,
         "productName": "유니드 매트 퍼플네이비",
-        "consumerPrice": 56000,
+        "consumerPrice": 96000,
         "supplyPrice": 0,
-        "productPrice": 35636,
-        "salePrice": 39200,
+        "productPrice": 61091,
+        "salePrice": 67200,
         "sizes": [
             "S 48X60",
-            {
-                "name": "M 48X120",
-                "salePrice": 67200
-            }
+            "M 48X120"
         ],
         "soldOutSizes": [
             "S 48X60"
@@ -4927,16 +4912,13 @@
         "category": "매트",
         "productNo": 795,
         "productName": "코트 매트 퍼플네이비",
-        "consumerPrice": 56000,
+        "consumerPrice": 96000,
         "supplyPrice": 0,
-        "productPrice": 35636,
-        "salePrice": 39200,
+        "productPrice": 61091,
+        "salePrice": 67200,
         "sizes": [
             "S 48X60",
-            {
-                "name": "M 48X120",
-                "salePrice": 67200
-            }
+            "M 48X120"
         ],
         "soldOutSizes": [
             "S 48X60"
@@ -5373,7 +5355,8 @@
         },
         "soldOutColors": [
             "아이보리 1호 160X240",
-            "브릭 1호 160X240"
+            "브릭 1호 160X240",
+            "오트밀 1호 160X240"
         ]
     },
     {
@@ -8409,7 +8392,10 @@
         "salePrice": 784000,
         "colors": {
             "샌드 3호 240X330": "#BFACA1"
-        }
+        },
+        "soldOutColors": [
+            "샌드 3호 240X330"
+        ]
     },
     {
         "productCode": "P0000BYU",
