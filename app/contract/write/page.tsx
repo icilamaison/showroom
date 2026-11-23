@@ -289,7 +289,7 @@ export default function ContractWritePage() {
 
   function handleChange(
     field: keyof ContractFormValues,
-    value: string | boolean | null,
+    value: string | boolean | null | Record<string, string>,
   ) {
     const nextValue =
       typeof value === "string" && PHONE_FORM_FIELDS.has(field)

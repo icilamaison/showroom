@@ -29,6 +29,7 @@ const PAGE_BREAK_SELECTOR = [
   ".contract-doc__agreement-sign",
   ".contract-doc-flow__actions",
   ".contract-doc__consent",
+  ".contract-doc__size4-question", // 4호 동의서 문항과 선택지가 쪽에 걸려 갈리지 않게
 ].join(", ");
 // 이 요소는 항상 새 페이지에서 시작한다(동의 문구·서명). 러그 확인 박스는 계약서 본문이라 제외
 const FORCE_PAGE_BREAK_SELECTOR =

@@ -61,13 +61,17 @@ function hasRugSize(products: ProductRow[], sizes: string, boxes: string[]): boo
   );
 }
 
+const isMonoVivendi = (product: ProductRow) => /모노\s*비벤디/.test(product.name);
+
 // 사이즈는 반호~4호까지만 있어 3호 이상 = 3호·4호
 export function getRugSizeNotices(products: ProductRow[]) {
   return {
     noReturn: hasRugSize(products, "34", [RUG_SIZE_3_BOX, RUG_SIZE_4_BOX, RUG_ROUND_300]),
     // 주문 제작은 러그·침구 상관없이 사이즈와 무관하게 반품 불가
     orderMade: products.some((product) => /ORDER-?MADE/i.test(product.name)),
-    size4Delivery: hasRugSize(products, "4", [RUG_SIZE_4_BOX]),
+    // 모노 비벤디 4호는 퀵 배송이라 일반 4호와 동의서가 다르다
+    size4Delivery: hasRugSize(products.filter((product) => !isMonoVivendi(product)), "4", [RUG_SIZE_4_BOX]),
+    size4Mono: hasRugSize(products.filter(isMonoVivendi), "4", [RUG_SIZE_4_BOX]),
   };
 }
 
@@ -98,9 +102,151 @@ export const RUG_NOTICE_TEXT = {
   },
 } as const;
 
-// 화면에 띄울 동의 체크 목록. 교환·반품 불가는 3호 이상·주문 제작 중 무엇이든 체크 하나(largeRugNoticeAgreed)
-export function getRugNoticeChecks(products: ProductRow[]) {
+/* ---------- 4호 러그 배송 안내 및 사전 동의 ---------- */
+// 4호를 고르면 팝업으로 받는다. 답은 size4DeliveryAnswers에 "general.freightElevator" 형태로 저장한다.
+// "동의하지 않음"·"확인 필요"도 제출은 된다(관리자가 보고 확인 후 제작). 취소·반품 확인은 largeRugNoticeAgreed를 같이 쓴다
+export type Size4DeliveryKind = "general" | "mono";
+
+const SIZE4_RETURN_TEXT = {
+  label:
+    "주문제작 상품 및 3호 사이즈 이상의 제품은 제작 진행 이후 단순 변심에 의한 취소 및 반품이 제한될 수 있음을 확인하였습니다.",
+  note: "※ 제품 하자 및 오배송 등 관계 법령에 따른 취소·교환·반품 권리는 별도로 적용됩니다.",
+};
+
+const SIZE4_FINAL_QUESTION = {
+  id: "final",
+  title: "최종 확인 및 동의",
+  question:
+    "본인은 주문한 제품에 해당하는 배송 방법, 배송 환경, 배송 완료 위치 및 추가 비용 발생 가능성에 대해 충분히 안내받고 확인하였으며, 관련 사항에 동의합니다.",
+  options: ["최종 확인 및 동의함", "동의하지 않음"],
+};
+
+export const SIZE4_DELIVERY_FORMS: Record<
+  Size4DeliveryKind,
+  {
+    title: string;
+    label: string;
+    notes: string[];
+    // 취소·반품 확인(체크박스)은 이 순서 뒤, 최종 동의 앞에 들어간다
+    questions: { id: string; title: string; question: string; options: string[]; note?: string }[];
+    footnote?: string;
+  }
+> = {
+  general: {
+    title: "4호 러그 배송 안내 및 사전 동의",
+    label:
+      "러그 4호 구매 시, 배송 전 엘리베이터 내부 규격 확인이 필요하며 해당 규격에 따른 배송 가능 여부를 반드시 확인해 주셔야 합니다.",
+    notes: [
+      "※ 본 항목은 4호 사이즈 러그 구매 고객에 한하여 적용됩니다.",
+      "※ 일반 4호 러그는 화물 택배로 무료배송되며, 모노 비벤디 4호는 별도의 퀵 배송 조건이 적용됩니다.",
+      "원활한 배송을 위해 아래 배송 환경을 사전에 확인하고 있으니, 각 항목을 확인하신 후 해당 사항을 선택해 주시기 바랍니다.",
+    ],
+    questions: [
+      {
+        id: "freightElevator",
+        title: "화물 엘리베이터 확인",
+        question: "수령하실 건물에 화물 엘리베이터가 있나요?",
+        options: ["있음", "없음", "확인 필요"],
+      },
+      {
+        id: "elevatorLoad",
+        title: "일반 엘리베이터 적재 가능 여부",
+        question:
+          "화물 엘리베이터가 없는 경우, 일반 엘리베이터에 약 3m 길이의 러그를 대각선으로 적재할 수 있는 충분한 공간이 있나요?",
+        options: ["적재 가능", "적재 불가능", "확인 필요"],
+      },
+      {
+        id: "ladderTruck",
+        title: "사다리차 이용 가능 여부",
+        question:
+          "고층 건물이거나 엘리베이터 규격이 맞지 않아 배송이 어려운 경우, 사다리차 이용이 필요할 수 있습니다. 수령하실 건물에 사다리차 이용이 가능한가요?",
+        options: ["이용 가능", "이용 불가능", "확인 필요"],
+        note: "※ 사다리차 이용이 필요한 경우 고객님께서 직접 섭외 및 비용을 부담해 주셔야 합니다.",
+      },
+      {
+        id: "customerHelp",
+        title: "배송 시 고객 협조 가능 여부",
+        question:
+          "배송 기사님 혼자 제품을 운반하거나 문 앞까지 배송하기 어려운 경우, 고객님께 도움을 요청드릴 수 있습니다. 배송 당일 제품 적재 및 이동에 필요한 도움을 주실 수 있나요?",
+        options: ["도움 가능", "도움 어려움"],
+      },
+      {
+        id: "dropOff",
+        title: "배송 완료 위치 관련 동의",
+        question:
+          "현장 상황에 따라 배송 기사님이 제품을 문 앞까지 운반하기 어려운 경우, 건물 로비 또는 엘리베이터 앞에 제품을 두고 배송이 완료될 수 있습니다. 해당 배송 방식에 동의하시나요?",
+        options: ["동의함", "동의하지 않음"],
+      },
+    ],
+  },
+  mono: {
+    title: "모노 비벤디 4호 추가 배송 안내 및 동의",
+    label:
+      "모노 비벤디 4호는 제품 규격상 일반 화물 택배 발송이 불가하여, 서울·경기 지역에 한해 퀵 서비스(착불)로 배송됩니다. 퀵 배송 비용은 고객님 부담이며, 배송지 및 현장 환경에 따라 추가 운반 비용이 발생할 수 있습니다.",
+    notes: [
+      "※ 배송 환경 및 배송 가능 여부에 대한 확인과 관련 사항에 대한 동의가 모두 완료되고, 고객님의 최종 제작 진행 의사를 확인한 후 제작이 진행됩니다.",
+      "※ 배송 가능 여부가 확인되지 않은 항목이 있는 경우, 확인 완료 후 제작이 진행됩니다.",
+      "※ 본 항목은 모노 비벤디 4호 구매 고객에 한하여 적용됩니다.",
+      "원활한 배송을 위해 아래 배송 환경을 사전에 확인하고 있으니, 각 항목을 확인하신 후 해당 사항을 선택해 주시기 바랍니다.",
+    ],
+    questions: [
+      {
+        id: "region",
+        title: "배송 가능 지역 및 수령지 확인",
+        question: "수령하실 배송지가 서울·경기 지역에 해당하시나요?",
+        options: ["해당함", "해당하지 않음", "확인 필요"],
+        note: "※ 서울·경기 외 지역은 퀵 배송이 불가하므로 주문 전 별도 확인이 필요합니다.",
+      },
+      {
+        id: "quickFee",
+        title: "퀵 배송 비용 관련 동의",
+        question:
+          "모노 비벤디 4호는 일반 화물 택배 발송이 불가하여 별도의 퀵 배송 비용이 발생하며, 해당 비용은 고객님께서 부담하셔야 합니다.",
+        options: ["확인 및 동의함", "동의하지 않음"],
+      },
+      {
+        id: "extraCost",
+        title: "추가 운반 및 비용 발생 관련 동의",
+        question:
+          "퀵 배송 가능 지역이더라도 제품 규격상 엘리베이터 적재가 어렵거나 건물 내 이동이 불가능한 경우, 계단 운반을 위한 추가 인력 또는 사다리차 이용이 필요할 수 있습니다. 이 경우 발생하는 추가 인력 및 사다리차 이용 비용은 고객님 부담이며, 현장 상황에 따라 배송이 제한될 수 있습니다.",
+        options: ["확인 및 동의함", "동의하지 않음"],
+      },
+    ],
+    footnote:
+      "※ 배송 가능 지역, 건물 진입 및 운반 환경, 추가 비용 부담 여부에 대한 확인과 동의가 모두 완료된 후 제작이 진행됩니다.",
+  },
+};
+
+export { SIZE4_FINAL_QUESTION, SIZE4_RETURN_TEXT };
+
+// 지금 상품에 필요한 4호 동의서. 모노 비벤디 4호만 있으면 모노 동의서만 뜬다
+export function getSize4DeliveryKinds(products: ProductRow[]): Size4DeliveryKind[] {
   const notices = getRugSizeNotices(products);
+  return [notices.size4Delivery && "general", notices.size4Mono && "mono"].filter(
+    (kind): kind is Size4DeliveryKind => Boolean(kind),
+  );
+}
+
+// 선택형 문항(최종 동의 포함)을 모두 골랐는지. 취소·반품 확인은 largeRugNoticeAgreed로 따로 본다
+export function isSize4DeliveryAnswered(
+  kind: Size4DeliveryKind,
+  answers: Record<string, string> | undefined,
+): boolean {
+  return [...SIZE4_DELIVERY_FORMS[kind].questions, SIZE4_FINAL_QUESTION].every((question) =>
+    Boolean(answers?.[`${kind}.${question.id}`]),
+  );
+}
+
+// 예전(동의서 이전) 계약서는 4호 체크 하나만 있다. 보기·관리자 화면은 그때 방식으로 보여준다
+export function isLegacySize4Delivery(values: Pick<ContractFormValues, "size4DeliveryAnswers" | "size4DeliveryAgreed">): boolean {
+  return !values.size4DeliveryAnswers && values.size4DeliveryAgreed === true;
+}
+
+// 화면에 띄울 동의 체크 목록. 교환·반품 불가는 3호 이상·주문 제작 중 무엇이든 체크 하나(largeRugNoticeAgreed)
+// 4호 동의서가 뜨면 교환·반품 확인은 동의서 안으로 들어가 여기서 뺀다(legacy는 예전 계약서용)
+export function getRugNoticeChecks(products: ProductRow[], legacy = false) {
+  const notices = getRugSizeNotices(products);
+  if (!legacy && (notices.size4Delivery || notices.size4Mono)) return [];
   const noReturnText =
     notices.noReturn && notices.orderMade
       ? RUG_NOTICE_TEXT.noReturnOrderMade
@@ -113,7 +259,7 @@ export function getRugNoticeChecks(products: ProductRow[]) {
       field: "largeRugNoticeAgreed" as const,
       ...noReturnText,
     },
-    notices.size4Delivery && {
+    legacy && notices.size4Delivery && {
       field: "size4DeliveryAgreed" as const,
       ...RUG_NOTICE_TEXT.size4Delivery,
     },
@@ -160,6 +306,8 @@ export type ContractFormValues = {
   // 러그 3호 이상 교환·반품 불가 / 4호 배송 동의 체크. 해당 사이즈를 고를 때만 받는다
   largeRugNoticeAgreed?: boolean;
   size4DeliveryAgreed?: boolean;
+  // 4호 러그 배송 사전 동의 답변 { "general.freightElevator": "있음" }
+  size4DeliveryAnswers?: Record<string, string>;
   termsAgreed: boolean;
   marketingConsentAgreed: boolean;
   // 배송·교환·반품 안내문에 펜으로 표시한 선(NoticeSheet 기준 좌표). 필기가 없으면 없음
@@ -246,6 +394,7 @@ const contractFormSchema = z
     signatureDataUrl: z.string().trim().min(1, "서명을 입력해주세요."),
     largeRugNoticeAgreed: z.boolean().optional(),
     size4DeliveryAgreed: z.boolean().optional(),
+    size4DeliveryAnswers: z.record(z.string()).optional(),
     // 필수 여부는 계약서 작성 화면에서 확인한다. 여기 없으면 제출 시 값이 빠져 저장되지 않는다
     padPurchased: z.boolean().nullable().optional(),
     padQuantity: z.string().trim().optional(),
@@ -382,18 +531,23 @@ const contractFormSchema = z
     }
 
     const rugNotices = getRugSizeNotices(data.products);
-    if ((rugNotices.noReturn || rugNotices.orderMade) && !data.largeRugNoticeAgreed) {
+    const size4Kinds = getSize4DeliveryKinds(data.products);
+    // 예전 계약서(4호 체크만 있음)를 수정할 때는 동의서를 다시 받지 않는다
+    const needsSize4Form = size4Kinds.length > 0 && !isLegacySize4Delivery(data);
+    if (needsSize4Form && !size4Kinds.every((kind) => isSize4DeliveryAnswered(kind, data.size4DeliveryAnswers))) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["largeRugNoticeAgreed"],
-        message: "교환·반품 불가 안내에 동의해주세요.",
+        path: ["size4DeliveryAnswers"],
+        message: "4호 러그 배송 안내 및 사전 동의 항목을 모두 선택해주세요.",
       });
-    }
-    if (rugNotices.size4Delivery && !data.size4DeliveryAgreed) {
+    } else if ((rugNotices.noReturn || rugNotices.orderMade) && !data.largeRugNoticeAgreed) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["size4DeliveryAgreed"],
-        message: "4호 러그 배송 안내에 동의해주세요.",
+        // 4호 동의서가 뜨면 취소·반품 확인은 동의서 안에 있다
+        path: [needsSize4Form ? "size4DeliveryAnswers" : "largeRugNoticeAgreed"],
+        message: needsSize4Form
+          ? "4호 러그 동의서의 취소·반품 관련 필수 확인에 체크해주세요."
+          : "교환·반품 불가 안내에 동의해주세요.",
       });
     }
 

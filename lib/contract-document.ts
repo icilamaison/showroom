@@ -32,6 +32,7 @@ export function purchasePayloadToFormValues(
     signatureDataUrl: payload.signatureDataUrl,
     largeRugNoticeAgreed: payload.largeRugNoticeAgreed,
     size4DeliveryAgreed: payload.size4DeliveryAgreed,
+    size4DeliveryAnswers: payload.size4DeliveryAnswers,
     padPurchased: payload.padPurchased,
     padQuantity: payload.padQuantity,
     giftProvided: payload.giftProvided,
