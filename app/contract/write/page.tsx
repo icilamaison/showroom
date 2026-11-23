@@ -420,6 +420,11 @@ export default function ContractWritePage() {
           };
         }
 
+        // 사은품 행은 사이즈로 이불커버 행을 구분한다. 아래처럼 사이즈를 비우면 사은품 동기화가 행을 새로 만들어 컬러가 날아간다
+        if (field === "color" && isGiftRow(product)) {
+          return { ...product, color: value };
+        }
+
         if (field === "color") {
           const selected = productSelections[index];
           // 사이즈·컬러 형제를 묶은 상품은 색상과 사이즈가 독립이라, 색상을 바꿔도 고른 사이즈·가격을 유지한다
