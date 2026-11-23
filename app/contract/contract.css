@@ -916,8 +916,7 @@
   line-height: 1.55;
 }
 
-.contract-doc__size4-modal p,
-.contract-doc__size4-doc p {
+.contract-doc__size4-modal p {
   margin: 0;
 }
 

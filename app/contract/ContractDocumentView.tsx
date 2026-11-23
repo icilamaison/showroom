@@ -19,10 +19,6 @@ import {
 } from "@/lib/set-product";
 import {
   getRugNoticeChecks,
-  getSize4DeliveryKinds,
-  SIZE4_DELIVERY_FORMS,
-  SIZE4_FINAL_QUESTION,
-  SIZE4_RETURN_TEXT,
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
@@ -85,8 +81,6 @@ function DateDisplay({
     </span>
   );
 }
-
-const SIZE4_NUMBERS = "①②③④⑤⑥⑦⑧";
 
 function DocCheckboxDisplay({
   checked,
@@ -637,50 +631,6 @@ function ContractAgreementDisplay({ values }: { values: ContractFormValues }) {
         termsAgreed={values.termsAgreed}
         marketingConsentAgreed={values.marketingConsentAgreed}
       />
-
-      {/* 4호 사전 동의서는 동의·서명 장에서 받으므로 여기 보여준다. 동의서 이전 계약서는 답이 없어 생략 */}
-      {(values.size4DeliveryAnswers ? getSize4DeliveryKinds(values.products) : []).map((kind) => {
-        const form = SIZE4_DELIVERY_FORMS[kind];
-        const renderQuestion = (question: (typeof form.questions)[number], number: number) => (
-          <div key={question.id} className="contract-doc__size4-question">
-            <p className="contract-doc__size4-question-title">
-              {SIZE4_NUMBERS[number]} {question.title}
-            </p>
-            <p className="contract-doc__size4-question-text">{question.question}</p>
-            <div className="contract-doc__size4-options">
-              {question.options.map((option) => (
-                <DocCheckboxDisplay
-                  key={option}
-                  checked={(values.size4DeliveryAnswers ?? {})[`${kind}.${question.id}`] === option}
-                  label={option}
-                />
-              ))}
-            </div>
-            {question.note ? <p className="contract-doc__size4-note">{question.note}</p> : null}
-          </div>
-        );
-        return (
-          <div key={kind} className="contract-doc__consent contract-doc__size4-doc">
-            <p className="contract-doc__consent-heading">{form.title}</p>
-            <p className="contract-doc__size4-label">{form.label}</p>
-            {form.notes.map((note) => (
-              <p key={note} className="contract-doc__size4-note">
-                {note}
-              </p>
-            ))}
-            {form.questions.map((question, index) => renderQuestion(question, index))}
-            {form.footnote ? <p className="contract-doc__size4-note">{form.footnote}</p> : null}
-            <div className="contract-doc__size4-question">
-              <p className="contract-doc__size4-question-title">
-                {SIZE4_NUMBERS[form.questions.length]} 취소·반품 관련 필수 확인
-              </p>
-              <DocCheckboxDisplay checked={values.largeRugNoticeAgreed === true} label={SIZE4_RETURN_TEXT.label} />
-              <p className="contract-doc__size4-note">{SIZE4_RETURN_TEXT.note}</p>
-            </div>
-            {renderQuestion(SIZE4_FINAL_QUESTION, form.questions.length + 1)}
-          </div>
-        );
-      })}
 
       <div className="contract-doc__agreement-sign">
         <DateDisplay
