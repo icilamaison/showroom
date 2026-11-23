@@ -35,11 +35,23 @@ describe("contract-gift", () => {
 
   it("구스 이불솜 사이즈별로 카페24 사은품 이불커버를 수량만큼 넣는다", () => {
     const goose = (size: string, quantity: string) => ({ ...row("폴란드 마더구스 이불솜", "300000", quantity), size });
-    const products = syncGiftRows([goose("SS 160X210", "2"), goose("Q 200X230", "1"), goose("K 230X240", "1"), goose("Q 200X230", "1")], "", true);
+    const products = syncGiftRows([goose("SS 160X210", "2"), goose("Q 200X230", "1"), goose("K 230X240", "1"), goose("Q 200X230", "1")], "", false, true);
     const quantityOf = (name: string) => products.find((product) => product.name === name)?.quantity;
     expect(quantityOf("본느윗 이불커버 6colors (사은품)")).toBe("2");
     expect(quantityOf("본느윗 이불커버 Q (사은품)")).toBe("2");
     expect(quantityOf("본느윗 이불커버 K (사은품)")).toBe("1");
+  });
+
+  it("이불커버는 금액별 사은품과 따로 증정을 골라야 들어간다", () => {
+    const goose = { ...row("폴란드 마더구스 이불솜", "600000"), size: "Q 200X230" };
+    const tierOnly = syncGiftRows([goose, createEmptyProductRow(), createEmptyProductRow()], "", true, false);
+    expect(tierOnly.map((product) => product.name)).toEqual([
+      "폴란드 마더구스 이불솜",
+      "(사은품) 브릭 쿠션커버 블루 30X50",
+      "(사은품) 쿠션솜 30X50",
+    ]);
+    const gooseOnly = syncGiftRows([goose, createEmptyProductRow()], "", false, true);
+    expect(gooseOnly.map((product) => product.name)).toEqual(["폴란드 마더구스 이불솜", "본느윗 이불커버 Q (사은품)"]);
   });
 
   it("고른 사은품 컬러는 다시 맞춰도 유지하고, 컬러 옵션에 사이즈가 붙는다", () => {
@@ -52,9 +64,9 @@ describe("contract-gift", () => {
     expect(getGiftColorOptions("(사은품) 쿠션솜 30X50")).toEqual([]);
 
     const goose = { ...row("폴란드 마더구스 이불솜", "300000"), size: "Q 200X230" };
-    const products = syncGiftRows([goose, createEmptyProductRow()], "", true).map((product) =>
+    const products = syncGiftRows([goose, createEmptyProductRow()], "", false, true).map((product) =>
       product.name.endsWith("(사은품)") ? { ...product, color: "누디베이지 Q 200X230" } : product,
     );
-    expect(syncGiftRows(products, "", true)).toBe(products);
+    expect(syncGiftRows(products, "", false, true)).toBe(products);
   });
 });

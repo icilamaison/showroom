@@ -10,7 +10,7 @@ import {
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
-import { getGiftColorOptions, getGiftQuantities } from "@/lib/contract-gift";
+import { getGiftColorOptions, getGiftQuantities, getGooseGiftQuantities } from "@/lib/contract-gift";
 import {
   getSizeOptionName,
   getVariantComponents,
@@ -59,6 +59,7 @@ export const emptyContractFormValues: ContractFormValues = {
   padPurchased: null,
   padQuantity: "",
   giftProvided: null,
+  gooseGiftProvided: null,
   paymentMethod: "card",
   cashReceiptType: "",
   cashReceiptPhone: "",
@@ -474,6 +475,9 @@ export default function ContractForm({
   const giftNames = [...getGiftQuantities(values.products, values.totalDiscountRate)].map(
     ([name, quantity]) =>
       `${name.startsWith(GIFT_PREFIX) ? name.slice(GIFT_PREFIX.length) : name}${quantity === "1" ? "" : ` ${quantity}개`}`,
+  );
+  const gooseGiftNames = [...getGooseGiftQuantities(values.products)].map(
+    ([name, quantity]) => `${name}${quantity === "1" ? "" : ` ${quantity}개`}`,
   );
   const showBankTransferFields = values.paymentMethod === "bank_transfer";
   const cashReceiptDisabled =
@@ -1009,6 +1013,32 @@ export default function ContractForm({
                 <FieldError message={errors.giftProvided} />
               </td>
             </tr>
+            {/* 구스 이불솜을 담았을 때만 이불커버 증정 여부를 따로 고른다 */}
+            {gooseGiftNames.length ? (
+              <tr className="contract-doc__total-row">
+                <td colSpan={6} className="contract-doc__total-label">
+                  이불커버 사은품
+                </td>
+                <td colSpan={3} className="contract-doc__pad-cell">
+                  <DocCheckbox
+                    name="gooseGiftProvided"
+                    checked={values.gooseGiftProvided === true}
+                    label="증정"
+                    onChange={() => onChange("gooseGiftProvided", true)}
+                  />
+                  <DocCheckbox
+                    name="gooseGiftNotProvided"
+                    checked={values.gooseGiftProvided === false}
+                    label="미증정"
+                    onChange={() => onChange("gooseGiftProvided", false)}
+                  />
+                  {values.gooseGiftProvided === true ? (
+                    <span className="contract-doc__gift-list">{gooseGiftNames.join(", ")}</span>
+                  ) : null}
+                  <FieldError message={errors.gooseGiftProvided} />
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
         <div className="contract-doc__row-actions">
