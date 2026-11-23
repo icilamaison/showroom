@@ -35,6 +35,7 @@ export function purchasePayloadToFormValues(
     padPurchased: payload.padPurchased,
     padQuantity: payload.padQuantity,
     giftProvided: payload.giftProvided,
+    gooseGiftProvided: payload.gooseGiftProvided,
     termsAgreed: payload.termsAgreed,
     marketingConsentAgreed: payload.marketingConsentAgreed ?? false,
     // 스키마에 없는 값이라 원본 payload에서 그대로 꺼낸다

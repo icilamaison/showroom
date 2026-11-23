@@ -37,7 +37,12 @@ function isEmptyRow(product: ProductRow): boolean {
   return Object.values(product).every((value) => !String(value ?? "").trim());
 }
 
-// 지금 상품·할인율에 맞는 사은품 { 상품명: 수량 }
+// 이불커버 사은품 행인지. 금액별 사은품과 증정 여부를 따로 고른다
+export function isGooseGiftName(name: string): boolean {
+  return GOOSE_GIFTS.some((item) => item.name === name);
+}
+
+// 지금 상품·할인율에 맞는 금액별 사은품 { 상품명: 수량 }
 export function getGiftQuantities(
   products: ProductRow[],
   totalDiscountRate: string,
@@ -52,7 +57,12 @@ export function getGiftQuantities(
     }
   }
 
-  // 이불솜 사이즈별로 이불커버 수량을 합친다
+  return gifts;
+}
+
+// 구스 이불솜 사이즈별로 이불커버 수량을 합친다 { 상품명: 수량 }
+export function getGooseGiftQuantities(products: ProductRow[]): Map<string, string> {
+  const gifts = new Map<string, string>();
   for (const product of products) {
     const quantity = Number(product.quantity) || 0;
     if (!GOOSE_PATTERN.test(product.name) || quantity <= 0) continue;
@@ -70,8 +80,12 @@ export function syncGiftRows(
   products: ProductRow[],
   totalDiscountRate: string,
   provided: boolean,
+  gooseProvided = false,
 ): ProductRow[] {
-  const pending = provided ? getGiftQuantities(products, totalDiscountRate) : new Map<string, string>();
+  const pending = new Map([
+    ...(provided ? getGiftQuantities(products, totalDiscountRate) : []),
+    ...(gooseProvided ? getGooseGiftQuantities(products) : []),
+  ]);
   let changed = false;
 
   const next = products.map((product) => {

@@ -14,7 +14,7 @@ import {
   resolveComponentPriceForSize,
   type SetComponentSelection,
 } from "@/lib/set-product";
-import { getGiftColorOptions, getGiftQuantities, syncGiftRows } from "@/lib/contract-gift";
+import { getGiftColorOptions, getGiftQuantities, getGooseGiftQuantities, isGooseGiftName, syncGiftRows } from "@/lib/contract-gift";
 import { formatPhoneInput, PHONE_FORM_FIELDS } from "@/lib/phone";
 import type {
   ContractFormValues,
@@ -91,11 +91,15 @@ function validateGiftChoice(values: ContractFormValues): Record<string, string> 
   if (hasGifts && typeof values.giftProvided !== "boolean") {
     return { giftProvided: "사은품 증정 여부를 선택해주세요." };
   }
+  const hasGooseGifts = getGooseGiftQuantities(values.products).size > 0;
+  if (hasGooseGifts && typeof values.gooseGiftProvided !== "boolean") {
+    return { gooseGiftProvided: "이불커버 증정 여부를 선택해주세요." };
+  }
   // 컬러를 고르는 사은품은 컬러가 없으면 플레이오토 출고 상품이 정해지지 않는다
   const needsColor = values.products.some(
     (product) => getGiftColorOptions(product.name).length > 0 && !product.color.trim(),
   );
-  return needsColor ? { giftProvided: "사은품 컬러를 선택해주세요." } : {};
+  return needsColor ? { gooseGiftProvided: "사은품 컬러를 선택해주세요." } : {};
 }
 
 // 두 번째 페이지(안내 확인)에서 받는 동의·서명 항목
@@ -253,13 +257,23 @@ export default function ContractWritePage() {
   // 증정 여부를 고르기 전(기능 이전 계약서 포함)에는 상품 표를 건드리지 않는다
   useEffect(() => {
     setValues((current) => {
-      if (typeof current.giftProvided !== "boolean") {
+      if (typeof current.giftProvided !== "boolean" && typeof current.gooseGiftProvided !== "boolean") {
         return current;
       }
-      const products = syncGiftRows(current.products, current.totalDiscountRate, current.giftProvided);
+      // 구스 이불솜이 빠지면 이불커버 줄이 숨는다. 선택이 남으면 다시 담을 때 커버가 바로 들어가므로 푼다
+      // (커버 행은 아래 동기화에서 이불솜이 없으니 빠진다)
+      if (current.gooseGiftProvided != null && getGooseGiftQuantities(current.products).size === 0) {
+        current = { ...current, gooseGiftProvided: null };
+      }
+      const products = syncGiftRows(
+        current.products,
+        current.totalDiscountRate,
+        current.giftProvided === true,
+        current.gooseGiftProvided === true,
+      );
       return products === current.products ? current : { ...current, products };
     });
-  }, [values.giftProvided, values.products, values.totalDiscountRate]);
+  }, [values.giftProvided, values.gooseGiftProvided, values.products, values.totalDiscountRate]);
 
   function clearFieldError(field: string) {
     if (!errors[field]) {
@@ -630,16 +644,21 @@ export default function ContractWritePage() {
       const isPadRow =
         SLIP_PAD_PRODUCT &&
         current.products[index]?.name.trim() === SLIP_PAD_PRODUCT.productName;
-      // 사은품 행을 지우면 증정 선택을 풀고 사은품 행을 모두 뺀다. 두면 동기화가 바로 다시 넣는다
-      const isGift = current.products[index] ? isGiftRow(current.products[index]) : false;
+      // 사은품 행을 지우면 그 증정 선택을 풀고 같은 종류 사은품 행을 모두 뺀다. 두면 동기화가 바로 다시 넣는다
+      // (금액별 사은품과 이불커버는 따로 고른다)
+      const target = current.products[index];
+      const isGift = target ? isGiftRow(target) : false;
+      const isGooseGift = isGift && isGooseGiftName(target.name);
+      const isSameGift = (product: ProductRow) =>
+        isGift && isGiftRow(product) && isGooseGiftName(product.name) === isGooseGift;
 
       return {
         ...current,
         // 패드 행을 지우면 아래 패드 구매 여부를 다시 고르게 한다
         ...(isPadRow ? { padPurchased: null, padQuantity: "" } : {}),
-        ...(isGift ? { giftProvided: null } : {}),
+        ...(isGift ? (isGooseGift ? { gooseGiftProvided: null } : { giftProvided: null }) : {}),
         products: current.products.map((product, productIndex) =>
-          productIndex === index || (isGift && isGiftRow(product)) ? createEmptyProductRow() : product,
+          productIndex === index || isSameGift(product) ? createEmptyProductRow() : product,
         ),
       };
     });
@@ -672,7 +691,9 @@ export default function ContractWritePage() {
         ...current,
         // 패드 행을 지우면 아래 패드 구매 여부를 다시 고르게 한다
         ...(hasPadRow ? { padPurchased: null, padQuantity: "" } : {}),
-        giftProvided: null, // 다음 상품 입력 때 사은품이 바로 들어가지 않게 증정 여부도 다시 고르게 한다
+        // 다음 상품 입력 때 사은품이 바로 들어가지 않게 증정 여부도 다시 고르게 한다
+        giftProvided: null,
+        gooseGiftProvided: null,
         products: createEmptyProductRows(),
       };
     });

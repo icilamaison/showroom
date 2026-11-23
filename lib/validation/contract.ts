@@ -144,6 +144,8 @@ export type ContractFormValues = {
   padQuantity?: string;
   // 프로모션 사은품 증정 여부. 증정이면 상품 표에 사은품 행이 들어간다(lib/contract-gift.ts)
   giftProvided?: boolean | null;
+  // 구스 이불솜 구매 시 이불커버 증정 여부. 금액별 사은품과 따로 고른다
+  gooseGiftProvided?: boolean | null;
   paymentMethod: "card" | "bank_transfer" | "";
   cashReceiptType: "income_deduction" | "expense_proof" | "";
   cashReceiptPhone: string;
@@ -248,6 +250,7 @@ const contractFormSchema = z
     padPurchased: z.boolean().nullable().optional(),
     padQuantity: z.string().trim().optional(),
     giftProvided: z.boolean().nullable().optional(),
+    gooseGiftProvided: z.boolean().nullable().optional(),
     termsAgreed: z.literal(true, {
       errorMap: () => ({
         message: "개인정보 수집·이용에 동의해야 합니다.",
