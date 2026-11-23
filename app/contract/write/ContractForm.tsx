@@ -5,7 +5,14 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import {
   createEmptyProductRows,
   getRugNoticeChecks,
+  getSize4DeliveryKinds,
   GIFT_PREFIX,
+  isLegacySize4Delivery,
+  isSize4DeliveryAnswered,
+  SIZE4_DELIVERY_FORMS,
+  SIZE4_FINAL_QUESTION,
+  SIZE4_RETURN_TEXT,
+  type Size4DeliveryKind,
   PRODUCT_ROW_COUNT,
   type ContractFormValues,
   type ProductRow,
@@ -101,7 +108,7 @@ type ContractFormProps = {
   setComponentSelections?: Record<number, SetComponentSelection[]>;
   onChange: (
     field: keyof ContractFormValues,
-    value: string | boolean | null,
+    value: string | boolean | null | Record<string, string>,
   ) => void;
   onProductChange: (
     index: number,
@@ -183,6 +190,83 @@ function DateFields({
       <span>일</span>
       <FieldError message={errors?.[`${prefix}Day`]} />
     </span>
+  );
+}
+
+const SIZE4_NUMBERS = "①②③④⑤⑥⑦⑧";
+
+// 4호 러그 배송 안내 및 사전 동의 팝업. 4호를 고르면 바로 뜨고, 아래 안내 박스에서 다시 열 수 있다
+function Size4DeliveryModal({
+  kind,
+  values,
+  onChange,
+  onClose,
+}: {
+  kind: Size4DeliveryKind;
+  values: ContractFormValues;
+  onChange: ContractFormProps["onChange"];
+  onClose: () => void;
+}) {
+  const form = SIZE4_DELIVERY_FORMS[kind];
+  const answers = values.size4DeliveryAnswers ?? {};
+  const returnNumber = SIZE4_NUMBERS[form.questions.length];
+
+  function renderQuestion(question: (typeof form.questions)[number], number: string) {
+    const key = `${kind}.${question.id}`;
+    return (
+      <div key={question.id} className="contract-doc__size4-question">
+        <p className="contract-doc__size4-question-title">
+          {number} {question.title}
+        </p>
+        <p className="contract-doc__size4-question-text">{question.question}</p>
+        <div className="contract-doc__size4-options">
+          {question.options.map((option) => (
+            <DocCheckbox
+              key={option}
+              name={key}
+              checked={answers[key] === option}
+              label={option}
+              onChange={() => onChange("size4DeliveryAnswers", { ...answers, [key]: option })}
+            />
+          ))}
+        </div>
+        {question.note ? <p className="contract-doc__size4-note">{question.note}</p> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">
+      <div className="contract-doc__size4-modal">
+        <p className="contract-doc__size4-title">[{form.title}]</p>
+        <p className="contract-doc__size4-label">{form.label}</p>
+        {form.notes.map((note) => (
+          <p key={note} className="contract-doc__size4-note">
+            {note}
+          </p>
+        ))}
+        <p className="contract-doc__size4-section">[배송 방법 및 배송 환경 확인]</p>
+        {form.questions.map((question, index) => renderQuestion(question, SIZE4_NUMBERS[index]))}
+        {form.footnote ? <p className="contract-doc__size4-note">{form.footnote}</p> : null}
+        {/* 취소·반품 확인은 3호 이상 교환·반품 불가 체크와 같은 값이다 */}
+        <div className="contract-doc__size4-question">
+          <p className="contract-doc__size4-question-title">{returnNumber} 취소·반품 관련 필수 확인</p>
+          <DocCheckbox
+            name={`${kind}.return`}
+            checked={values.largeRugNoticeAgreed === true}
+            label={SIZE4_RETURN_TEXT.label}
+            onChange={() => onChange("largeRugNoticeAgreed", !values.largeRugNoticeAgreed)}
+          />
+          <p className="contract-doc__size4-note">{SIZE4_RETURN_TEXT.note}</p>
+        </div>
+        {renderQuestion(SIZE4_FINAL_QUESTION, SIZE4_NUMBERS[form.questions.length + 1])}
+        <div className="contract-doc__signature-modal-actions">
+          <button type="button" onClick={onClose} className="contract-doc__signature-save">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -491,7 +575,25 @@ export default function ContractForm({
     ? values.buyerPhone
     : values.recipientPhone;
   // 러그 3호 이상·주문 제작 / 4호를 고르면 동의 체크를 추가로 받는다
-  const rugNoticeChecks = getRugNoticeChecks(values.products);
+  // 4호는 사전 동의서(팝업)로 받고, 예전 계약서 수정 때만 예전 체크를 그대로 보여준다
+  const isLegacySize4 = isLegacySize4Delivery(values);
+  const rugNoticeChecks = getRugNoticeChecks(values.products, isLegacySize4);
+  const size4Kinds = isLegacySize4 ? [] : getSize4DeliveryKinds(values.products);
+  const size4KindsKey = size4Kinds.join(",");
+  const [openSize4Kind, setOpenSize4Kind] = useState<Size4DeliveryKind | null>(null);
+  const previousSize4Kinds = useRef(size4KindsKey);
+
+  // 4호를 새로 고르면 동의서 팝업을 바로 띄운다. 임시저장 복원·수정 모드 첫 화면에서는 띄우지 않는다
+  useEffect(() => {
+    const before = previousSize4Kinds.current.split(",");
+    previousSize4Kinds.current = size4KindsKey;
+    const added = size4Kinds.find(
+      (kind) => !before.includes(kind) && !isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers),
+    );
+    if (added) setOpenSize4Kind(added);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 동의서 종류가 바뀔 때만 본다
+  }, [size4KindsKey]);
+
   return (
     <form
       onSubmit={onSubmit}
@@ -1231,9 +1333,43 @@ export default function ContractForm({
         </p>
       </section>
 
-      {rugNoticeChecks.length ? (
+      {rugNoticeChecks.length || size4Kinds.length ? (
         <section className="contract-doc__section">
           <div className="contract-doc__agreement-box contract-doc__agreement-box--rug">
+            {size4Kinds.map((kind) => {
+              const form = SIZE4_DELIVERY_FORMS[kind];
+              const answers = values.size4DeliveryAnswers ?? {};
+              const answered = isSize4DeliveryAnswered(kind, answers);
+              return (
+                <div key={kind} className="contract-doc__consent">
+                  <p className="contract-doc__consent-heading">{form.title}</p>
+                  <ul className="contract-doc__size4-summary">
+                    {[...form.questions, SIZE4_FINAL_QUESTION].map((question) => (
+                      <li key={question.id}>
+                        {question.title} : {answers[`${kind}.${question.id}`] || "미선택"}
+                      </li>
+                    ))}
+                    <li>취소·반품 관련 필수 확인 : {values.largeRugNoticeAgreed ? "확인함" : "미확인"}</li>
+                  </ul>
+                  <button
+                    type="button"
+                    className="contract-doc__row-action-button"
+                    onClick={() => setOpenSize4Kind(kind)}
+                  >
+                    {answered ? "다시 확인" : "작성하기"}
+                  </button>
+                </div>
+              );
+            })}
+            {size4Kinds.length ? <FieldError message={errors.size4DeliveryAnswers} /> : null}
+            {openSize4Kind && size4Kinds.includes(openSize4Kind) ? (
+              <Size4DeliveryModal
+                kind={openSize4Kind}
+                values={values}
+                onChange={onChange}
+                onClose={() => setOpenSize4Kind(null)}
+              />
+            ) : null}
             {rugNoticeChecks.map(({ field, title, label, detail }) => (
               <div key={field} className="contract-doc__consent">
                 <p className="contract-doc__consent-heading">{title}</p>

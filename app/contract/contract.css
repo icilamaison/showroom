@@ -904,6 +904,70 @@
   gap: 0.5rem;
 }
 
+/* 4호 러그 배송 사전 동의 팝업 */
+.contract-doc__size4-modal {
+  width: min(100%, 640px);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  padding: 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.contract-doc__size4-modal p,
+.contract-doc__size4-doc p {
+  margin: 0;
+}
+
+.contract-doc__size4-modal .contract-doc__size4-title {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.contract-doc__size4-label {
+  font-weight: 700;
+}
+
+.contract-doc__size4-note {
+  color: #6b7280;
+  font-size: 0.78rem;
+}
+
+.contract-doc__size4-modal .contract-doc__size4-section {
+  margin-top: 0.75rem;
+  font-weight: 700;
+}
+
+.contract-doc__size4-question {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.contract-doc__size4-question-title {
+  font-weight: 700;
+}
+
+.contract-doc__size4-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-top: 0.25rem;
+}
+
+.contract-doc__consent .contract-doc__row-action-button {
+  align-self: flex-start;
+}
+
+.contract-doc__size4-summary {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
 .contract-doc__signature-cancel,
 .contract-doc__signature-save {
   border: 1px solid #d1d5db;
