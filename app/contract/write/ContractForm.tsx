@@ -1000,10 +1000,12 @@ export default function ContractForm({
                   label="미증정"
                   onChange={() => onChange("giftProvided", false)}
                 />
-                {/* 지금 금액 기준으로 받을 수 있는 사은품을 미리 보여준다 */}
-                <span className="contract-doc__gift-list">
-                  {giftNames.length ? giftNames.join(", ") : "해당 사은품 없음"}
-                </span>
+                {/* 증정을 골라야 지금 금액 기준 사은품을 보여준다 */}
+                {values.giftProvided === true ? (
+                  <span className="contract-doc__gift-list">
+                    {giftNames.length ? giftNames.join(", ") : "해당 사은품 없음"}
+                  </span>
+                ) : null}
                 <FieldError message={errors.giftProvided} />
               </td>
             </tr>
