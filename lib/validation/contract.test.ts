@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   createEmptyProductRows,
+  getSize4DeliveryKinds,
+  isSize4DeliveryAnswered,
   type ContractFormValues,
   validateContractForm,
 } from "./contract";
@@ -198,6 +200,34 @@ describe("validateContractForm", () => {
       expect(result.errors.termsAgreed).toBe(
         "개인정보 수집·이용에 동의해야 합니다.",
       );
+    }
+  });
+
+  it("4호 사전 동의서는 모노 비벤디 4호면 모노만, 모든 문항을 고르면 동의하지 않음이어도 작성 완료", () => {
+    const rows = (name: string) =>
+      createEmptyProductRows().map((product, index) =>
+        index === 0 ? { ...product, name, color: "4호 300X400", quantity: "1" } : product,
+      );
+    expect(getSize4DeliveryKinds(rows("헤더 매트"))).toEqual(["general"]);
+    expect(getSize4DeliveryKinds(rows("모노 비벤디 10colors"))).toEqual(["mono"]);
+    expect(getSize4DeliveryKinds(validFormValues.products)).toEqual([]);
+
+    const mono = { "mono.region": "확인 필요", "mono.quickFee": "동의하지 않음", "mono.extraCost": "동의하지 않음" };
+    expect(isSize4DeliveryAnswered("mono", mono)).toBe(false);
+    expect(isSize4DeliveryAnswered("mono", { ...mono, "mono.final": "동의하지 않음" })).toBe(true);
+  });
+
+  it("4호는 첫 장의 4호 배송 동의 체크가 필요하다(모노 비벤디 포함)", () => {
+    const result = validateContractForm({
+      ...validFormValues,
+      products: validFormValues.products.map((product, index) =>
+        index === 0 ? { ...product, name: "모노 비벤디 10colors", color: "아이보리 4호 300X400" } : product,
+      ),
+      largeRugNoticeAgreed: true,
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors.size4DeliveryAgreed).toBeDefined();
     }
   });
 });

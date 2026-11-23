@@ -7,7 +7,6 @@ import {
   getRugNoticeChecks,
   getSize4DeliveryKinds,
   GIFT_PREFIX,
-  isLegacySize4Delivery,
   isSize4DeliveryAnswered,
   SIZE4_DELIVERY_FORMS,
   SIZE4_FINAL_QUESTION,
@@ -424,6 +423,9 @@ export function ContractAgreementBox({
 }) {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [draftSignature, setDraftSignature] = useState(values.signatureDataUrl || "");
+  // 4호 러그 사전 동의서는 동의·서명 장에서 버튼을 눌러 팝업으로 받는다
+  const size4Kinds = getSize4DeliveryKinds(values.products);
+  const [openSize4Kind, setOpenSize4Kind] = useState<Size4DeliveryKind | null>(null);
 
   function openSignatureModal() {
     setDraftSignature(values.signatureDataUrl || "");
@@ -454,6 +456,24 @@ export function ContractAgreementBox({
           onChange={onChange}
           errors={errors}
         />
+
+        {size4Kinds.map((kind) => {
+          const form = SIZE4_DELIVERY_FORMS[kind];
+          const answered = isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers);
+          return (
+            <div key={kind} className="contract-doc__size4-entry">
+              <p className="contract-doc__consent-heading">{form.title} (필수)</p>
+              <button
+                type="button"
+                className="contract-doc__row-action-button"
+                onClick={() => setOpenSize4Kind(kind)}
+              >
+                {answered ? "작성 완료 · 다시 확인" : "확인 및 작성하기"}
+              </button>
+            </div>
+          );
+        })}
+        {size4Kinds.length ? <FieldError message={errors.size4DeliveryAnswers} /> : null}
 
         <div className="contract-doc__agreement-sign">
           <DateFields
@@ -499,6 +519,14 @@ export function ContractAgreementBox({
         </div>
         <FieldError message={errors.signatureName || errors.signatureDataUrl} />
       </div>
+      {openSize4Kind && size4Kinds.includes(openSize4Kind) ? (
+        <Size4DeliveryModal
+          kind={openSize4Kind}
+          values={values}
+          onChange={onChange}
+          onClose={() => setOpenSize4Kind(null)}
+        />
+      ) : null}
       {isSignatureModalOpen ? (
         <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">
           <div className="contract-doc__signature-modal">
@@ -575,25 +603,7 @@ export default function ContractForm({
     ? values.buyerPhone
     : values.recipientPhone;
   // 러그 3호 이상·주문 제작 / 4호를 고르면 동의 체크를 추가로 받는다
-  // 4호는 사전 동의서(팝업)로 받고, 예전 계약서 수정 때만 예전 체크를 그대로 보여준다
-  const isLegacySize4 = isLegacySize4Delivery(values);
-  const rugNoticeChecks = getRugNoticeChecks(values.products, isLegacySize4);
-  const size4Kinds = isLegacySize4 ? [] : getSize4DeliveryKinds(values.products);
-  const size4KindsKey = size4Kinds.join(",");
-  const [openSize4Kind, setOpenSize4Kind] = useState<Size4DeliveryKind | null>(null);
-  const previousSize4Kinds = useRef(size4KindsKey);
-
-  // 4호를 새로 고르면 동의서 팝업을 바로 띄운다. 임시저장 복원·수정 모드 첫 화면에서는 띄우지 않는다
-  useEffect(() => {
-    const before = previousSize4Kinds.current.split(",");
-    previousSize4Kinds.current = size4KindsKey;
-    const added = size4Kinds.find(
-      (kind) => !before.includes(kind) && !isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers),
-    );
-    if (added) setOpenSize4Kind(added);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 동의서 종류가 바뀔 때만 본다
-  }, [size4KindsKey]);
-
+  const rugNoticeChecks = getRugNoticeChecks(values.products);
   return (
     <form
       onSubmit={onSubmit}
@@ -1333,43 +1343,9 @@ export default function ContractForm({
         </p>
       </section>
 
-      {rugNoticeChecks.length || size4Kinds.length ? (
+      {rugNoticeChecks.length ? (
         <section className="contract-doc__section">
           <div className="contract-doc__agreement-box contract-doc__agreement-box--rug">
-            {size4Kinds.map((kind) => {
-              const form = SIZE4_DELIVERY_FORMS[kind];
-              const answers = values.size4DeliveryAnswers ?? {};
-              const answered = isSize4DeliveryAnswered(kind, answers);
-              return (
-                <div key={kind} className="contract-doc__consent">
-                  <p className="contract-doc__consent-heading">{form.title}</p>
-                  <ul className="contract-doc__size4-summary">
-                    {[...form.questions, SIZE4_FINAL_QUESTION].map((question) => (
-                      <li key={question.id}>
-                        {question.title} : {answers[`${kind}.${question.id}`] || "미선택"}
-                      </li>
-                    ))}
-                    <li>취소·반품 관련 필수 확인 : {values.largeRugNoticeAgreed ? "확인함" : "미확인"}</li>
-                  </ul>
-                  <button
-                    type="button"
-                    className="contract-doc__row-action-button"
-                    onClick={() => setOpenSize4Kind(kind)}
-                  >
-                    {answered ? "다시 확인" : "작성하기"}
-                  </button>
-                </div>
-              );
-            })}
-            {size4Kinds.length ? <FieldError message={errors.size4DeliveryAnswers} /> : null}
-            {openSize4Kind && size4Kinds.includes(openSize4Kind) ? (
-              <Size4DeliveryModal
-                kind={openSize4Kind}
-                values={values}
-                onChange={onChange}
-                onClose={() => setOpenSize4Kind(null)}
-              />
-            ) : null}
             {rugNoticeChecks.map(({ field, title, label, detail }) => (
               <div key={field} className="contract-doc__consent">
                 <p className="contract-doc__consent-heading">{title}</p>

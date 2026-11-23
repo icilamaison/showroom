@@ -115,8 +115,8 @@ describe("parseContractInput", () => {
     const size4 = parseContractInput(withSize("크림베이지 4호 300X400"));
     expect(size4.success).toBe(false);
     if (!size4.success) {
-      // 4호는 사전 동의서로 받고, 교환·반품 확인도 동의서 안에 있다
-      expect(size4.errors.size4DeliveryAnswers).toBeDefined();
+      expect(size4.errors.largeRugNoticeAgreed).toBeDefined();
+      expect(size4.errors.size4DeliveryAgreed).toBeDefined();
     }
 
     expect(parseContractInput(withSize("크림베이지 1.5호 180X240")).success).toBe(true);
@@ -124,7 +124,8 @@ describe("parseContractInput", () => {
     const verde = parseContractInput(withSize("카멜 300X400"));
     expect(verde.success).toBe(false);
     if (!verde.success) {
-      expect(verde.errors.size4DeliveryAnswers).toBeDefined();
+      expect(verde.errors.largeRugNoticeAgreed).toBeDefined();
+      expect(verde.errors.size4DeliveryAgreed).toBeDefined();
     }
     expect(parseContractInput(withSize("카멜 200X300")).success).toBe(true);
 
@@ -133,12 +134,12 @@ describe("parseContractInput", () => {
     expect(orderMade3.success).toBe(false);
     if (!orderMade3.success) {
       expect(orderMade3.errors.largeRugNoticeAgreed).toBeDefined();
-      expect(orderMade3.errors.size4DeliveryAnswers).toBeUndefined();
+      expect(orderMade3.errors.size4DeliveryAgreed).toBeUndefined();
     }
     const orderMade4 = parseContractInput(withSize("290X400 이하"));
     expect(orderMade4.success).toBe(false);
     if (!orderMade4.success) {
-      expect(orderMade4.errors.size4DeliveryAnswers).toBeDefined();
+      expect(orderMade4.errors.size4DeliveryAgreed).toBeDefined();
     }
 
     // 주문 제작은 사이즈와 무관하게 교환·반품 불가 체크(배송 동의는 없음)
@@ -151,7 +152,7 @@ describe("parseContractInput", () => {
     expect(orderMadeSmall.success).toBe(false);
     if (!orderMadeSmall.success) {
       expect(orderMadeSmall.errors.largeRugNoticeAgreed).toBeDefined();
-      expect(orderMadeSmall.errors.size4DeliveryAnswers).toBeUndefined();
+      expect(orderMadeSmall.errors.size4DeliveryAgreed).toBeUndefined();
     }
 
     // 원형 300은 교환·반품 불가만, 원형 200은 해당 없음
@@ -159,64 +160,17 @@ describe("parseContractInput", () => {
     expect(round300.success).toBe(false);
     if (!round300.success) {
       expect(round300.errors.largeRugNoticeAgreed).toBeDefined();
-      expect(round300.errors.size4DeliveryAnswers).toBeUndefined();
+      expect(round300.errors.size4DeliveryAgreed).toBeUndefined();
     }
     expect(parseContractInput(withSize("라이트그레이 원형 200")).success).toBe(true);
 
     // 커튼 호수는 러그 사이즈가 아니다
     expect(parseContractInput(withSize("3호 / 민자")).success).toBe(true);
-    // 동의서 이전 계약서(4호 체크만 있음)는 그대로 통과
     expect(
       parseContractInput({
         ...withSize("크림베이지 4호 300X400"),
         largeRugNoticeAgreed: true,
         size4DeliveryAgreed: true,
-      }).success,
-    ).toBe(true);
-  });
-
-  it("4호 사전 동의서는 모든 문항을 고르면 동의하지 않음이어도 통과한다", () => {
-    const withName = (name: string) => ({
-      ...validInput,
-      products: validInput.products.map((product, index) =>
-        index === 0 ? { ...product, name, color: "4호 300X400" } : product,
-      ),
-    });
-    const generalAnswers = {
-      "general.freightElevator": "확인 필요",
-      "general.elevatorLoad": "확인 필요",
-      "general.ladderTruck": "이용 불가능",
-      "general.customerHelp": "도움 어려움",
-      "general.dropOff": "동의하지 않음",
-      "general.final": "동의하지 않음",
-    };
-
-    expect(
-      parseContractInput({ ...withName("헤더 매트"), largeRugNoticeAgreed: true, size4DeliveryAnswers: generalAnswers }).success,
-    ).toBe(true);
-    // 취소·반품 확인은 빠지면 안 된다
-    const noReturn = parseContractInput({ ...withName("헤더 매트"), size4DeliveryAnswers: generalAnswers });
-    expect(noReturn.success).toBe(false);
-    if (!noReturn.success) {
-      expect(noReturn.errors.size4DeliveryAnswers).toBeDefined();
-    }
-    // 모노 비벤디 4호는 모노 동의서만 받는다
-    const mono = parseContractInput({
-      ...withName("모노 비벤디 4호"),
-      largeRugNoticeAgreed: true,
-      size4DeliveryAnswers: generalAnswers,
-    });
-    expect(mono.success).toBe(false);
-    expect(
-      parseContractInput({
-        ...withName("모노 비벤디 4호"),
-        largeRugNoticeAgreed: true,
-        size4DeliveryAnswers: {
-          "mono.region": "확인 필요",
-          "mono.quickFee": "확인 및 동의함",
-          "mono.extraCost": "확인 및 동의함",
-          "mono.final": "최종 확인 및 동의함",
-        },
       }).success,
     ).toBe(true);
   });
