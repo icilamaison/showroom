@@ -7,6 +7,7 @@ import {
   parseContractStatusUpdate,
 } from "../../schemas/admin.schema";
 import {
+  deleteContract,
   getContractById,
   listContracts,
   listContractsForExport,
@@ -180,6 +181,27 @@ contractsRouter.put("/:id", async (req, res) => {
     return sendSuccess(res, { id });
   } catch (error) {
     console.error("[admin/contracts] Failed to update contract:", error);
+    return sendError(res, "서버 오류가 발생했습니다.", 500);
+  }
+});
+
+contractsRouter.delete("/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
+  }
+
+  try {
+    const deleted = await deleteContract(id);
+
+    if (!deleted) {
+      return sendError(res, "계약서를 찾을 수 없습니다.", 404);
+    }
+
+    return sendSuccess(res, { id });
+  } catch (error) {
+    console.error("[admin/contracts] Failed to delete contract:", error);
     return sendError(res, "서버 오류가 발생했습니다.", 500);
   }
 });

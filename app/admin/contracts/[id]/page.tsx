@@ -2,6 +2,7 @@
 
 import {
   ApiClientError,
+  deleteAdminContract,
   downloadAdminOrderExcel,
   fetchAdminContractById,
   reissueAdminContractViewToken,
@@ -309,6 +310,7 @@ export default function AdminContractDetailPage() {
   const [savedApprovalNumber, setSavedApprovalNumber] = useState("");
   const [isSavingApprovalNumber, setIsSavingApprovalNumber] = useState(false);
   const [isReissuingLink, setIsReissuingLink] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [sendingChannel, setSendingChannel] = useState<"alimtalk" | "sms" | null>(null);
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
 
@@ -431,6 +433,31 @@ export default function AdminContractDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    if (!contract) {
+      return;
+    }
+
+    if (!window.confirm(`계약서 ${contract.contractNumber}를 삭제할까요?\n삭제하면 되돌릴 수 없고, 고객용 링크도 더 이상 열리지 않습니다.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError("");
+
+    try {
+      await deleteAdminContract(contract.id);
+      // 삭제된 계약서가 목록·상세 캐시에 남아 보이지 않도록 비운다
+      queryClient.removeQueries({ queryKey: ["adminContracts"] });
+      queryClient.removeQueries({ queryKey: detailQueryKey });
+      window.alert("삭제되었습니다.");
+      router.push("/admin/contracts");
+    } catch (deleteError) {
+      handleActionError(deleteError, "계약서 삭제 중 오류가 발생했습니다.");
+      setIsDeleting(false);
+    }
+  }
+
   async function handleApprovalNumberSave() {
     if (!contract) {
       return;
@@ -529,6 +556,14 @@ export default function AdminContractDetailPage() {
                         계약서 수정
                       </button>
                     ) : null}
+                    <button
+                      type="button"
+                      className="app-button app-button--danger"
+                      disabled={isDeleting}
+                      onClick={() => void handleDelete()}
+                    >
+                      {isDeleting ? "삭제 중..." : "계약서 삭제"}
+                    </button>
                     {purchasePayload ? (
                       <button
                         type="button"

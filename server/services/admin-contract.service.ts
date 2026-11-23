@@ -542,6 +542,13 @@ export async function updateContractApprovalNumber(
   };
 }
 
+// 수정 이력(contract_edits)은 FK ON DELETE CASCADE로 함께 삭제된다
+export async function deleteContract(id: number): Promise<boolean> {
+  const result = await pool.query("DELETE FROM contracts WHERE id = $1", [id]);
+
+  return Boolean(result.rowCount);
+}
+
 // 고객용 링크 재발급: 새 토큰으로 바꿔 이전 링크는 바로 막히고, 유효기간은 지금부터 다시 시작
 export async function reissueContractViewToken(
   id: number,

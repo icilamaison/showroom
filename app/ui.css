@@ -259,6 +259,16 @@ button.app-back-link {
   background: var(--color-border-light);
 }
 
+.app-button--danger {
+  border-color: #fecaca;
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.app-button--danger:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
 .app-button--block {
   width: 100%;
 }

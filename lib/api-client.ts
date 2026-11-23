@@ -307,6 +307,12 @@ export async function reissueAdminContractViewToken(
   );
 }
 
+export async function deleteAdminContract(id: number): Promise<{ id: number }> {
+  return adminFetch<{ id: number }>(`/api/admin/contracts/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function sendAdminContractLink(
   id: number,
   channel: "alimtalk" | "sms",
