@@ -905,33 +905,15 @@
 }
 
 /* 4호 러그 배송 사전 동의 팝업 */
-/* 계약서 너비(--doc-width)에 맞추고 세로는 화면 거의 전체. dvh는 아이패드 사파리 주소창을 뺀 높이 */
 .contract-doc__size4-modal {
-  display: flex;
-  flex-direction: column;
-  width: min(100%, var(--doc-width));
-  height: calc(100vh - 2rem);
-  height: calc(100dvh - 2rem);
+  width: min(100%, 640px);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   background: #fff;
   border: 1px solid #d1d5db;
+  padding: 1.25rem;
   font-size: 0.85rem;
   line-height: 1.55;
-}
-
-.contract-doc__size4-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain; /* 끝까지 스크롤해도 뒤 화면으로 넘어가지 않게 */
-  -webkit-overflow-scrolling: touch;
-  padding: 1.25rem 1.5rem;
-}
-
-.contract-doc__size4-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0.75rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
 }
 
 .contract-doc__size4-modal p,
@@ -1406,7 +1388,9 @@
     font-size: 0.82rem;
   }
 
+  /* 날짜와 "구매자 : 이름 (인)"이 한 줄에 안 들어가 화면이 넓어지므로 두 줄로 나눈다 */
   .contract-doc__agreement-sign {
+    flex-wrap: wrap;
     justify-content: flex-start;
   }
 

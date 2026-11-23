@@ -208,16 +208,6 @@ function Size4DeliveryModal({
 }) {
   const form = SIZE4_DELIVERY_FORMS[kind];
   const answers = values.size4DeliveryAnswers ?? {};
-
-  // 팝업이 떠 있는 동안 뒤 계약서가 같이 스크롤되지 않게 막는다(아이패드에서 팝업 끝까지 밀면 뒤가 따라 움직임)
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, []);
-
   const returnNumber = SIZE4_NUMBERS[form.questions.length];
 
   function renderQuestion(question: (typeof form.questions)[number], number: string) {
@@ -247,32 +237,29 @@ function Size4DeliveryModal({
   return (
     <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">
       <div className="contract-doc__size4-modal">
-        {/* 문항만 스크롤하고 확인 버튼은 아래에 고정한다 */}
-        <div className="contract-doc__size4-body">
-          <p className="contract-doc__size4-title">[{form.title}]</p>
-          <p className="contract-doc__size4-label">{form.label}</p>
-          {form.notes.map((note) => (
-            <p key={note} className="contract-doc__size4-note">
-              {note}
-            </p>
-          ))}
-          <p className="contract-doc__size4-section">[배송 방법 및 배송 환경 확인]</p>
-          {form.questions.map((question, index) => renderQuestion(question, SIZE4_NUMBERS[index]))}
-          {form.footnote ? <p className="contract-doc__size4-note">{form.footnote}</p> : null}
-          {/* 취소·반품 확인은 3호 이상 교환·반품 불가 체크와 같은 값이다 */}
-          <div className="contract-doc__size4-question">
-            <p className="contract-doc__size4-question-title">{returnNumber} 취소·반품 관련 필수 확인</p>
-            <DocCheckbox
-              name={`${kind}.return`}
-              checked={values.largeRugNoticeAgreed === true}
-              label={SIZE4_RETURN_TEXT.label}
-              onChange={() => onChange("largeRugNoticeAgreed", !values.largeRugNoticeAgreed)}
-            />
-            <p className="contract-doc__size4-note">{SIZE4_RETURN_TEXT.note}</p>
-          </div>
-          {renderQuestion(SIZE4_FINAL_QUESTION, SIZE4_NUMBERS[form.questions.length + 1])}
+        <p className="contract-doc__size4-title">[{form.title}]</p>
+        <p className="contract-doc__size4-label">{form.label}</p>
+        {form.notes.map((note) => (
+          <p key={note} className="contract-doc__size4-note">
+            {note}
+          </p>
+        ))}
+        <p className="contract-doc__size4-section">[배송 방법 및 배송 환경 확인]</p>
+        {form.questions.map((question, index) => renderQuestion(question, SIZE4_NUMBERS[index]))}
+        {form.footnote ? <p className="contract-doc__size4-note">{form.footnote}</p> : null}
+        {/* 취소·반품 확인은 3호 이상 교환·반품 불가 체크와 같은 값이다 */}
+        <div className="contract-doc__size4-question">
+          <p className="contract-doc__size4-question-title">{returnNumber} 취소·반품 관련 필수 확인</p>
+          <DocCheckbox
+            name={`${kind}.return`}
+            checked={values.largeRugNoticeAgreed === true}
+            label={SIZE4_RETURN_TEXT.label}
+            onChange={() => onChange("largeRugNoticeAgreed", !values.largeRugNoticeAgreed)}
+          />
+          <p className="contract-doc__size4-note">{SIZE4_RETURN_TEXT.note}</p>
         </div>
-        <div className="contract-doc__size4-actions">
+        {renderQuestion(SIZE4_FINAL_QUESTION, SIZE4_NUMBERS[form.questions.length + 1])}
+        <div className="contract-doc__signature-modal-actions">
           <button type="button" onClick={onClose} className="contract-doc__signature-save">
             확인
           </button>
