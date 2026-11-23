@@ -18,14 +18,7 @@ import {
 import { formatFullAddress } from "@/lib/address";
 import { findCatalogProductByName, resolveCafe24Variant } from "@/lib/product-catalog";
 import { formatSetOptionLabel } from "@/lib/set-product";
-import {
-  getRugNoticeChecks,
-  getSize4DeliveryKinds,
-  isLegacySize4Delivery,
-  SIZE4_DELIVERY_FORMS,
-  SIZE4_FINAL_QUESTION,
-  type PurchaseContractPayload,
-} from "@/lib/validation/contract";
+import { getRugNoticeChecks, type PurchaseContractPayload } from "@/lib/validation/contract";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -660,34 +653,15 @@ export default function AdminContractDetailPage() {
                               : "미동의"
                           }
                         />
-                        {getRugNoticeChecks(
-                          purchasePayload.products,
-                          isLegacySize4Delivery(purchasePayload),
-                        ).map(({ field }) => (
-                          <DetailItem
-                            key={field}
-                            label={RUG_CHECK_LABELS[field]}
-                            value={purchasePayload[field] ? "확인함" : "미확인"}
-                          />
-                        ))}
-                        {/* 4호 사전 동의서 답변. "동의하지 않음"·"확인 필요"는 고객 확인 후 제작 */}
-                        {(isLegacySize4Delivery(purchasePayload)
-                          ? []
-                          : getSize4DeliveryKinds(purchasePayload.products)
-                        ).flatMap((kind) => [
-                          ...[...SIZE4_DELIVERY_FORMS[kind].questions, SIZE4_FINAL_QUESTION].map((question) => (
+                        {getRugNoticeChecks(purchasePayload.products).map(
+                          ({ field }) => (
                             <DetailItem
-                              key={`${kind}.${question.id}`}
-                              label={`${kind === "mono" ? "모노 4호" : "4호"} ${question.title}`}
-                              value={purchasePayload.size4DeliveryAnswers?.[`${kind}.${question.id}`] || "미선택"}
+                              key={field}
+                              label={RUG_CHECK_LABELS[field]}
+                              value={purchasePayload[field] ? "확인함" : "미확인"}
                             />
-                          )),
-                          <DetailItem
-                            key={`${kind}.return`}
-                            label={`${kind === "mono" ? "모노 4호" : "4호"} 취소·반품 확인`}
-                            value={purchasePayload.largeRugNoticeAgreed ? "확인함" : "미확인"}
-                          />,
-                        ])}
+                          ),
+                        )}
                         {purchasePayload.padPurchased != null ? (
                           <DetailItem
                             label="미끄럼방지 패드"
