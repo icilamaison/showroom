@@ -22,6 +22,7 @@ const JSON_PATH = path.join(process.cwd(), "product.json");
 const WRITE = process.argv.includes("--write");
 const PAGE_SIZE = 100;
 const REQUEST_INTERVAL_MS = 120;
+const GIFT_PRODUCT_NOS = [1399, 1400, 1401]; // 본느윗 이불커버 6colors·Q·K (사은품)
 
 type Variant = {
   options?: { name?: string; value?: string }[];
@@ -234,6 +235,23 @@ async function main(): Promise<void> {
   for (const line of newlySoldOut) console.log(`  ${line}`);
   console.log(`\n[재입고] ${restocked.length}건`);
   for (const line of restocked) console.log(`  ${line}`);
+
+  /* ---------- 사은품 재고 ---------- */
+  // 계약서 사은품(본느윗 이불커버) 전용 상품. product.json에 없어 위 반영 대상이 아니므로 수량만 출력한다
+  console.log(`\n[사은품 재고]`);
+  for (const productNo of GIFT_PRODUCT_NOS) {
+    const product = products.find((item) => item.product_no === productNo);
+    if (!product) {
+      console.log(`  ✗ API에 없음 (${productNo})`);
+      continue;
+    }
+    console.log(`  ${product.product_name} (${productNo})`);
+    for (const variant of product.variants ?? []) {
+      const optionName = (variant.options ?? []).map((option) => option.value).join(" / ");
+      const hidden = variant.display !== "T" || variant.selling !== "T" ? " (미노출)" : "";
+      console.log(`    ${optionName}: ${variant.quantity ?? 0}개${hidden}`);
+    }
+  }
 
   if (WRITE) {
     writeFileSync(JSON_PATH, `${JSON.stringify(catalog, null, 4)}\n`, "utf8");
