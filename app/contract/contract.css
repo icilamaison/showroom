@@ -957,15 +957,14 @@
   margin-top: 0.25rem;
 }
 
-.contract-doc__consent .contract-doc__row-action-button {
-  align-self: flex-start;
-}
-
-.contract-doc__size4-summary {
-  margin: 0.25rem 0 0.5rem;
-  padding-left: 1rem;
-  font-size: 0.8rem;
-  line-height: 1.6;
+/* 동의·서명 장의 4호 사전 동의서 버튼 */
+.contract-doc__size4-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
 .contract-doc__signature-cancel,

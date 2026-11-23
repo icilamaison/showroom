@@ -24,7 +24,9 @@ import type {
 import {
   createEmptyProductRow,
   createEmptyProductRows,
+  getSize4DeliveryKinds,
   isGiftRow,
+  isSize4DeliveryAnswered,
   PRODUCT_ROW_COUNT,
   validateContractForm,
 } from "@/lib/validation/contract";
@@ -794,6 +796,15 @@ export default function ContractWritePage() {
 
     if (!validation.valid) {
       setErrors(validation.errors);
+      return;
+    }
+
+    // 4호 러그 사전 동의서는 동의·서명 장에서 받는다. 문항을 모두 골라야 제출(답이 "동의하지 않음"이어도 제출은 된다)
+    const missingSize4 = getSize4DeliveryKinds(values.products).some(
+      (kind) => !isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers),
+    );
+    if (missingSize4) {
+      setErrors({ size4DeliveryAnswers: "4호 러그 배송 안내 및 사전 동의를 작성해주세요." });
       return;
     }
 

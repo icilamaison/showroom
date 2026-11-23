@@ -103,7 +103,8 @@ export const RUG_NOTICE_TEXT = {
 } as const;
 
 /* ---------- 4호 러그 배송 안내 및 사전 동의 ---------- */
-// 4호를 고르면 팝업으로 받는다. 답은 size4DeliveryAnswers에 "general.freightElevator" 형태로 저장한다.
+// 4호를 고르면 첫 장의 4호 배송 동의 체크와 별도로, 다음 장(동의·서명)에서 팝업으로 받는다.
+// 답은 size4DeliveryAnswers에 "general.freightElevator" 형태로 저장한다.
 // "동의하지 않음"·"확인 필요"도 제출은 된다(관리자가 보고 확인 후 제작). 취소·반품 확인은 largeRugNoticeAgreed를 같이 쓴다
 export type Size4DeliveryKind = "general" | "mono";
 
@@ -237,16 +238,9 @@ export function isSize4DeliveryAnswered(
   );
 }
 
-// 예전(동의서 이전) 계약서는 4호 체크 하나만 있다. 보기·관리자 화면은 그때 방식으로 보여준다
-export function isLegacySize4Delivery(values: Pick<ContractFormValues, "size4DeliveryAnswers" | "size4DeliveryAgreed">): boolean {
-  return !values.size4DeliveryAnswers && values.size4DeliveryAgreed === true;
-}
-
 // 화면에 띄울 동의 체크 목록. 교환·반품 불가는 3호 이상·주문 제작 중 무엇이든 체크 하나(largeRugNoticeAgreed)
-// 4호 동의서가 뜨면 교환·반품 확인은 동의서 안으로 들어가 여기서 뺀다(legacy는 예전 계약서용)
-export function getRugNoticeChecks(products: ProductRow[], legacy = false) {
+export function getRugNoticeChecks(products: ProductRow[]) {
   const notices = getRugSizeNotices(products);
-  if (!legacy && (notices.size4Delivery || notices.size4Mono)) return [];
   const noReturnText =
     notices.noReturn && notices.orderMade
       ? RUG_NOTICE_TEXT.noReturnOrderMade
@@ -259,7 +253,7 @@ export function getRugNoticeChecks(products: ProductRow[], legacy = false) {
       field: "largeRugNoticeAgreed" as const,
       ...noReturnText,
     },
-    legacy && notices.size4Delivery && {
+    (notices.size4Delivery || notices.size4Mono) && {
       field: "size4DeliveryAgreed" as const,
       ...RUG_NOTICE_TEXT.size4Delivery,
     },
@@ -530,24 +524,20 @@ const contractFormSchema = z
       }
     }
 
+    // 4호 사전 동의서(size4DeliveryAnswers)는 새 계약서 작성 화면에서만 확인한다(예전 계약서 수정 때문)
     const rugNotices = getRugSizeNotices(data.products);
-    const size4Kinds = getSize4DeliveryKinds(data.products);
-    // 예전 계약서(4호 체크만 있음)를 수정할 때는 동의서를 다시 받지 않는다
-    const needsSize4Form = size4Kinds.length > 0 && !isLegacySize4Delivery(data);
-    if (needsSize4Form && !size4Kinds.every((kind) => isSize4DeliveryAnswered(kind, data.size4DeliveryAnswers))) {
+    if ((rugNotices.noReturn || rugNotices.orderMade) && !data.largeRugNoticeAgreed) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["size4DeliveryAnswers"],
-        message: "4호 러그 배송 안내 및 사전 동의 항목을 모두 선택해주세요.",
+        path: ["largeRugNoticeAgreed"],
+        message: "교환·반품 불가 안내에 동의해주세요.",
       });
-    } else if ((rugNotices.noReturn || rugNotices.orderMade) && !data.largeRugNoticeAgreed) {
+    }
+    if ((rugNotices.size4Delivery || rugNotices.size4Mono) && !data.size4DeliveryAgreed) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        // 4호 동의서가 뜨면 취소·반품 확인은 동의서 안에 있다
-        path: [needsSize4Form ? "size4DeliveryAnswers" : "largeRugNoticeAgreed"],
-        message: needsSize4Form
-          ? "4호 러그 동의서의 취소·반품 관련 필수 확인에 체크해주세요."
-          : "교환·반품 불가 안내에 동의해주세요.",
+        path: ["size4DeliveryAgreed"],
+        message: "4호 러그 배송 안내에 동의해주세요.",
       });
     }
 

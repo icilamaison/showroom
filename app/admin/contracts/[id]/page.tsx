@@ -21,7 +21,6 @@ import { formatSetOptionLabel } from "@/lib/set-product";
 import {
   getRugNoticeChecks,
   getSize4DeliveryKinds,
-  isLegacySize4Delivery,
   SIZE4_DELIVERY_FORMS,
   SIZE4_FINAL_QUESTION,
   type PurchaseContractPayload,
@@ -660,10 +659,7 @@ export default function AdminContractDetailPage() {
                               : "미동의"
                           }
                         />
-                        {getRugNoticeChecks(
-                          purchasePayload.products,
-                          isLegacySize4Delivery(purchasePayload),
-                        ).map(({ field }) => (
+                        {getRugNoticeChecks(purchasePayload.products).map(({ field }) => (
                           <DetailItem
                             key={field}
                             label={RUG_CHECK_LABELS[field]}
@@ -671,9 +667,9 @@ export default function AdminContractDetailPage() {
                           />
                         ))}
                         {/* 4호 사전 동의서 답변. "동의하지 않음"·"확인 필요"는 고객 확인 후 제작 */}
-                        {(isLegacySize4Delivery(purchasePayload)
-                          ? []
-                          : getSize4DeliveryKinds(purchasePayload.products)
+                        {(purchasePayload.size4DeliveryAnswers
+                          ? getSize4DeliveryKinds(purchasePayload.products)
+                          : []
                         ).flatMap((kind) => [
                           ...[...SIZE4_DELIVERY_FORMS[kind].questions, SIZE4_FINAL_QUESTION].map((question) => (
                             <DetailItem
