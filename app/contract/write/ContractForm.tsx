@@ -10,7 +10,7 @@ import {
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
-import { getGiftColorOptions, getGiftQuantities, getGooseGiftQuantities } from "@/lib/contract-gift";
+import { getGiftColorOptions, getGiftQuantities, getGooseGiftQuantities, GOOSE_GIFT_NAME } from "@/lib/contract-gift";
 import {
   getSizeOptionName,
   getVariantComponents,
@@ -477,7 +477,7 @@ export default function ContractForm({
       `${name.startsWith(GIFT_PREFIX) ? name.slice(GIFT_PREFIX.length) : name}${quantity === "1" ? "" : ` ${quantity}개`}`,
   );
   const gooseGiftNames = [...getGooseGiftQuantities(values.products)].map(
-    ([name, quantity]) => `${name}${quantity === "1" ? "" : ` ${quantity}개`}`,
+    ([size, quantity]) => `${GOOSE_GIFT_NAME} ${size}${quantity === "1" ? "" : ` ${quantity}개`}`,
   );
   const showBankTransferFields = values.paymentMethod === "bank_transfer";
   const cashReceiptDisabled =
@@ -694,7 +694,7 @@ export default function ContractForm({
                   : [];
               const hasColorVariants = colorOptions.length > 0;
               // 카탈로그에 없는 사은품 전용 상품(본느윗 이불커버 사은품)은 컬러만 따로 고른다
-              const giftColorOptions = getGiftColorOptions(product.name);
+              const giftColorOptions = getGiftColorOptions(product.name, product.size);
               const combinedSize = isSet || product.size
                 ? ""
                 : splitColorSize(product.color)?.size ?? "";
