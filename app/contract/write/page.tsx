@@ -24,6 +24,7 @@ import type {
 import {
   createEmptyProductRow,
   createEmptyProductRows,
+  isGiftRow,
   PRODUCT_ROW_COUNT,
   validateContractForm,
 } from "@/lib/validation/contract";
@@ -629,13 +630,16 @@ export default function ContractWritePage() {
       const isPadRow =
         SLIP_PAD_PRODUCT &&
         current.products[index]?.name.trim() === SLIP_PAD_PRODUCT.productName;
+      // 사은품 행을 지우면 증정 선택을 풀고 사은품 행을 모두 뺀다. 두면 동기화가 바로 다시 넣는다
+      const isGift = current.products[index] ? isGiftRow(current.products[index]) : false;
 
       return {
         ...current,
         // 패드 행을 지우면 아래 패드 구매 여부를 다시 고르게 한다
         ...(isPadRow ? { padPurchased: null, padQuantity: "" } : {}),
+        ...(isGift ? { giftProvided: null } : {}),
         products: current.products.map((product, productIndex) =>
-          productIndex === index ? createEmptyProductRow() : product,
+          productIndex === index || (isGift && isGiftRow(product)) ? createEmptyProductRow() : product,
         ),
       };
     });
@@ -668,6 +672,7 @@ export default function ContractWritePage() {
         ...current,
         // 패드 행을 지우면 아래 패드 구매 여부를 다시 고르게 한다
         ...(hasPadRow ? { padPurchased: null, padQuantity: "" } : {}),
+        giftProvided: null, // 다음 상품 입력 때 사은품이 바로 들어가지 않게 증정 여부도 다시 고르게 한다
         products: createEmptyProductRows(),
       };
     });
