@@ -2,6 +2,7 @@
 
 import {
   ApiClientError,
+  deleteAdminContract,
   downloadAdminBulkOrderExcel,
   fetchAdminContracts,
   type ContractListItem,
@@ -12,7 +13,7 @@ import {
   getContractStatusLabel,
   type ContractStatus,
 } from "@/lib/constants/contract-status";
-import { keepPreviousData, useIsRestoring, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useIsRestoring, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -73,6 +74,8 @@ export default function AdminContractsPage() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
 
   // 한 번 본 탭·페이지는 캐시로 바로 보여주고 뒤에서 갱신한다. 새 조건은 응답 전까지 이전 목록을 유지한다.
   const listQuery = useQuery({
@@ -145,6 +148,33 @@ export default function AdminContractsPage() {
 
   function openDetail(id: number) {
     router.push(`/admin/contracts/${id}`);
+  }
+
+  // 상세 화면 삭제와 같은 확인 문구·API. 행을 누르면 상세로 가므로 버튼 클릭은 행까지 전달하지 않는다
+  async function handleDelete(event: React.MouseEvent, item: ContractListItem) {
+    event.stopPropagation();
+    if (!window.confirm(`계약서 ${item.contractNumber}를 삭제할까요?\n삭제하면 되돌릴 수 없고, 고객용 링크도 더 이상 열리지 않습니다.`)) {
+      return;
+    }
+
+    setDeletingId(item.id);
+    setError("");
+
+    try {
+      await deleteAdminContract(item.id);
+      queryClient.removeQueries({ queryKey: ["adminContract", item.id] });
+      await queryClient.invalidateQueries({ queryKey: ["adminContracts"] });
+    } catch (deleteError) {
+      if (deleteError instanceof ApiClientError && deleteError.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
+      setError(
+        deleteError instanceof ApiClientError ? deleteError.message : "계약서 삭제 중 오류가 발생했습니다.",
+      );
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -295,6 +325,7 @@ export default function AdminContractsPage() {
                     <th>상태</th>
                     <th>작성일</th>
                     <th aria-hidden="true" />
+                    <th aria-hidden="true" />
                   </tr>
                 </thead>
                 <tbody>
@@ -328,6 +359,17 @@ export default function AdminContractsPage() {
                         </span>
                       </td>
                       <td>{formatDate(item.createdAt)}</td>
+                      <td className="admin-table__delete">
+                        <button
+                          type="button"
+                          className="app-button app-button--danger"
+                          disabled={deletingId === item.id}
+                          onClick={(event) => void handleDelete(event, item)}
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
+                          {deletingId === item.id ? "삭제 중..." : "삭제"}
+                        </button>
+                      </td>
                       <td className="admin-table__chevron">›</td>
                     </tr>
                   ))}
@@ -373,6 +415,15 @@ export default function AdminContractsPage() {
                         {formatAmount(item.contractAmount)}
                       </span>
                     </div>
+                    <button
+                      type="button"
+                      className="app-button app-button--danger admin-mobile-item__delete"
+                      disabled={deletingId === item.id}
+                      onClick={(event) => void handleDelete(event, item)}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      {deletingId === item.id ? "삭제 중..." : "삭제"}
+                    </button>
                   </div>
                 ))}
               </div>

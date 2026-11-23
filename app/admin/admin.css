@@ -199,7 +199,7 @@ a.app-button {
 
 .admin-table th:nth-child(3),
 .admin-table td:nth-child(3) {
-  width: 34%;
+  width: 30%;
 }
 
 .admin-table th:nth-child(4),
@@ -217,8 +217,14 @@ a.app-button {
   width: 11%;
 }
 
+/* 7: 삭제 버튼, 8: › */
 .admin-table th:nth-child(7),
 .admin-table td:nth-child(7) {
+  width: 4.5rem;
+}
+
+.admin-table th:nth-child(8),
+.admin-table td:nth-child(8) {
   width: 2.5rem;
 }
 
@@ -257,6 +263,17 @@ a.app-button {
   color: var(--color-text-muted);
   font-size: 0.78rem;
   line-height: 1.3;
+}
+
+/* 목록 행 삭제 버튼. 행 높이가 늘지 않게 작게 */
+.admin-table__delete .app-button,
+.admin-mobile-item__delete {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+.admin-mobile-item__delete {
+  margin-top: 0.5rem;
 }
 
 .admin-table__chevron {
