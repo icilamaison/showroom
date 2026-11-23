@@ -23,6 +23,7 @@ import type {
 } from "@/lib/validation/contract";
 import {
   createEmptyProductRow,
+  createEmptyProductRows,
   PRODUCT_ROW_COUNT,
   validateContractForm,
 } from "@/lib/validation/contract";
@@ -656,6 +657,27 @@ export default function ContractWritePage() {
     );
   }
 
+  function handleClearAllProductRows() {
+    if (!window.confirm("상품을 모두 삭제할까요?")) return;
+
+    setValues((current) => {
+      const padName = SLIP_PAD_PRODUCT?.productName;
+      const hasPadRow = padName && current.products.some((product) => product.name.trim() === padName);
+
+      return {
+        ...current,
+        // 패드 행을 지우면 아래 패드 구매 여부를 다시 고르게 한다
+        ...(hasPadRow ? { padPurchased: null, padQuantity: "" } : {}),
+        products: createEmptyProductRows(),
+      };
+    });
+    setProductSelections({});
+    setSetComponentSelections({});
+    setErrors((current) =>
+      Object.fromEntries(Object.entries(current).filter(([field]) => !field.startsWith("products."))),
+    );
+  }
+
   function handleRemoveLastProductRow() {
     setValues((current) => {
       if (current.products.length <= PRODUCT_ROW_COUNT) {
@@ -852,6 +874,7 @@ export default function ContractWritePage() {
             onAddProductRow={handleAddProductRow}
             onClearProductRow={handleClearProductRow}
             onRemoveLastProductRow={handleRemoveLastProductRow}
+            onClearAllProductRows={handleClearAllProductRows}
             onSetComponentChange={handleSetComponentChange}
             onSubmit={handleSubmit}
           />

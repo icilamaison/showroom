@@ -111,6 +111,7 @@ type ContractFormProps = {
   onAddProductRow: () => void;
   onClearProductRow: (index: number) => void;
   onRemoveLastProductRow: () => void;
+  onClearAllProductRows: () => void;
   onSetComponentChange: (
     index: number,
     componentIndex: number,
@@ -462,6 +463,7 @@ export default function ContractForm({
   onAddProductRow,
   onClearProductRow,
   onRemoveLastProductRow,
+  onClearAllProductRows,
   onSetComponentChange,
   onSubmit,
 }: ContractFormProps) {
@@ -1024,6 +1026,13 @@ export default function ContractForm({
               마지막 행 삭제
             </button>
           ) : null}
+          <button
+            type="button"
+            className="contract-doc__row-action-button"
+            onClick={onClearAllProductRows}
+          >
+            전체 삭제
+          </button>
         </div>
       </section>
 
