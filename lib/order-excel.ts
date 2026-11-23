@@ -1,6 +1,7 @@
 import type { ProductRow, PurchaseContractPayload } from "./validation/contract";
 import { formatFullAddress } from "./address";
 import { isNoDiscountProduct, lineAmount, totalDiscountAmount } from "./contract-amount";
+import { getGooseGiftCafe24Name } from "./contract-gift";
 import { findCatalogProductByName, resolveCafe24Variant } from "./product-catalog";
 import { formatCafe24SetOptionName, formatSetOptionLabel } from "./set-product";
 
@@ -88,6 +89,12 @@ function buildCafe24ProductAndOption(product: ProductRow): {
   optionName: string;
 } {
   const color = product.color.trim();
+
+  // 이불커버 사은품은 계약서엔 한 이름이지만 카페24는 사이즈별 상품이다. 컬러 옵션에 사이즈가 들어 있어 SIZE는 붙이지 않는다
+  const gooseGiftName = getGooseGiftCafe24Name(product.name, product.size);
+  if (gooseGiftName) {
+    return { productName: gooseGiftName, optionName: color ? `COLOR=${color}` : "" };
+  }
 
   // 세트는 구성품 옵션을 이어 붙인 값. 카탈로그에서 구성품을 못 찾으면 저장 값 그대로(예전 " + " 형식도 ", "로 맞춘다)
   if (color.startsWith("COLOR=")) {

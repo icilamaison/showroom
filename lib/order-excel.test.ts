@@ -190,6 +190,20 @@ describe("buildOrderExcelRows", () => {
     );
   });
 
+  it("이불커버 사은품은 사이즈별 카페24 상품명으로 내보낸다", () => {
+    const products = createEmptyProductRows();
+    const gift = { name: "본느윗 이불커버 6colors (사은품)", type: "", quantity: "1", unitPrice: "0", remarks: "" };
+    products[0] = { ...gift, color: "누디베이지 Q 200X230", size: "Q 200X230" };
+    products[1] = { ...gift, color: "크림화이트 SS 160X210", size: "SS 160X210" };
+
+    const rows = buildOrderExcelRows({ ...basePayload, products });
+
+    expect(rows.map((row) => [row["온라인 상품명"], row["옵션명"]])).toEqual([
+      ["본느윗 이불커버 Q (사은품)", "COLOR=누디베이지 Q 200X230"],
+      ["본느윗 이불커버 6colors (사은품)", "COLOR=크림화이트 SS 160X210"],
+    ]);
+  });
+
   it("uses buyer info when recipient is the same as buyer", () => {
     const products = createEmptyProductRows();
     products[0] = {

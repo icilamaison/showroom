@@ -97,7 +97,7 @@ function validateGiftChoice(values: ContractFormValues): Record<string, string> 
   }
   // 컬러를 고르는 사은품은 컬러가 없으면 플레이오토 출고 상품이 정해지지 않는다
   const needsColor = values.products.some(
-    (product) => getGiftColorOptions(product.name).length > 0 && !product.color.trim(),
+    (product) => getGiftColorOptions(product.name, product.size).length > 0 && !product.color.trim(),
   );
   return needsColor ? { gooseGiftProvided: "사은품 컬러를 선택해주세요." } : {};
 }
