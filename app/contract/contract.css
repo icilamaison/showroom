@@ -217,6 +217,12 @@
   color: #c4c4c4;
 }
 
+/* 현재 금액 기준 사은품 미리보기 */
+.contract-doc__gift-list {
+  color: #6b6b6b;
+  font-size: 0.85em;
+}
+
 .contract-doc__total-discount-input {
   width: 2.6rem;
   min-height: 0;
@@ -284,7 +290,10 @@
 /* 행 삭제 버튼 — 번호 아래에 작게 둔다 (열을 늘리지 않음) */
 .contract-doc__row-clear {
   display: block;
-  margin: 0.2rem auto 0;
+  position: relative;
+  left: 50%;
+  margin: 0.2rem 0 0;
+  transform: translateX(-50%); /* No 칸보다 버튼이 넓으면 margin auto가 안 먹어 왼쪽에 붙으므로 넘쳐도 가운데 정렬 */
   border: 1px solid var(--contract-line);
   background: #fff;
   padding: 0.1rem 0.2rem;

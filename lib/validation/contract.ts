@@ -33,6 +33,15 @@ export function createEmptyProductRow(): ProductRow {
   };
 }
 
+// 프로모션 사은품 행(0원). 자동 추가 규칙은 lib/contract-gift.ts
+export const GIFT_PREFIX = "(사은품) ";
+// 카페24 사은품 전용 상품명은 뒤에 붙는다("본느윗 이불커버 Q (사은품)")
+const GIFT_SUFFIX = " (사은품)";
+
+export function isGiftRow(product: Pick<ProductRow, "name">): boolean {
+  return product.name.startsWith(GIFT_PREFIX) || product.name.endsWith(GIFT_SUFFIX);
+}
+
 // 상품명·컬러·사이즈 어디에든 사이즈가 들어간다("크림베이지 2호 200X300"). 1.5호는 제외
 // 러그는 "N호 가로X세로"라 치수까지 본다. 커튼 호수("3호 / 민자")가 걸리지 않게 하기 위함
 // 베르데·ORDER-MADE처럼 호 없이 치수만 있는 상품은 치수로 본다(4호는 3호 이상에도 포함)
@@ -133,6 +142,8 @@ export type ContractFormValues = {
   // 미끄럼방지 패드 구매 여부. 계약서 작성 화면에서만 필수(커튼 주문서는 없음)
   padPurchased?: boolean | null;
   padQuantity?: string;
+  // 프로모션 사은품 증정 여부. 증정이면 상품 표에 사은품 행이 들어간다(lib/contract-gift.ts)
+  giftProvided?: boolean | null;
   paymentMethod: "card" | "bank_transfer" | "";
   cashReceiptType: "income_deduction" | "expense_proof" | "";
   cashReceiptPhone: string;
@@ -236,6 +247,7 @@ const contractFormSchema = z
     // 필수 여부는 계약서 작성 화면에서 확인한다. 여기 없으면 제출 시 값이 빠져 저장되지 않는다
     padPurchased: z.boolean().nullable().optional(),
     padQuantity: z.string().trim().optional(),
+    giftProvided: z.boolean().nullable().optional(),
     termsAgreed: z.literal(true, {
       errorMap: () => ({
         message: "개인정보 수집·이용에 동의해야 합니다.",
@@ -342,7 +354,10 @@ const contractFormSchema = z
           path: ["products", index, "unitPrice"],
           message: "금액을 입력해주세요.",
         });
-      } else if (!amountRegex.test(product.unitPrice) || Number(product.unitPrice) < 1) {
+      } else if (
+        !amountRegex.test(product.unitPrice) ||
+        Number(product.unitPrice) < (isGiftRow(product) ? 0 : 1) // 사은품만 0원 허용
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["products", index, "unitPrice"],

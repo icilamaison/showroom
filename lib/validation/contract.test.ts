@@ -60,6 +60,19 @@ describe("validateContractForm", () => {
     }
   });
 
+  it("allows 0 unit price only for gift rows", () => {
+    const withSecondRow = (name: string) =>
+      validateContractForm({
+        ...validFormValues,
+        products: validFormValues.products.map((product, index) =>
+          index === 1 ? { ...product, name, quantity: "1", unitPrice: "0" } : product,
+        ),
+      });
+
+    expect(withSecondRow("(사은품) 쿠션솜 30X50").valid).toBe(true);
+    expect(withSecondRow("쿠션솜 30X50").valid).toBe(false);
+  });
+
   it("rejects missing required fields", () => {
     const result = validateContractForm({
       ...validFormValues,
