@@ -5,10 +5,12 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import {
   createEmptyProductRows,
   getRugNoticeChecks,
+  GIFT_PREFIX,
   PRODUCT_ROW_COUNT,
   type ContractFormValues,
   type ProductRow,
 } from "@/lib/validation/contract";
+import { getGiftColorOptions, getGiftQuantities } from "@/lib/contract-gift";
 import {
   getSizeOptionName,
   getVariantComponents,
@@ -56,6 +58,7 @@ export const emptyContractFormValues: ContractFormValues = {
   totalDiscountRate: "",
   padPurchased: null,
   padQuantity: "",
+  giftProvided: null,
   paymentMethod: "card",
   cashReceiptType: "",
   cashReceiptPhone: "",
@@ -466,6 +469,10 @@ export default function ContractForm({
   const finalTotal =
     productsSubtotal - totalDiscountAmount(values.products, values.totalDiscountRate);
   const isSubmitDisabled = (showAgreement && !values.termsAgreed) || isSubmitting;
+  const giftNames = [...getGiftQuantities(values.products, values.totalDiscountRate)].map(
+    ([name, quantity]) =>
+      `${name.startsWith(GIFT_PREFIX) ? name.slice(GIFT_PREFIX.length) : name}${quantity === "1" ? "" : ` ${quantity}개`}`,
+  );
   const showBankTransferFields = values.paymentMethod === "bank_transfer";
   const cashReceiptDisabled =
     !showBankTransferFields || values.taxInvoiceRequested;
@@ -680,6 +687,8 @@ export default function ContractForm({
                     ))
                   : [];
               const hasColorVariants = colorOptions.length > 0;
+              // 카탈로그에 없는 사은품 전용 상품(본느윗 이불커버 사은품)은 컬러만 따로 고른다
+              const giftColorOptions = getGiftColorOptions(product.name);
               const combinedSize = isSet || product.size
                 ? ""
                 : splitColorSize(product.color)?.size ?? "";
@@ -743,7 +752,14 @@ export default function ContractForm({
                   ) : null}
                 </td>
                 <td className="contract-doc__product-color-cell">
-                  {isSet && isLegacySetColor ? (
+                  {giftColorOptions.length > 0 ? (
+                    <ProductOptionSelect
+                      value={product.color}
+                      options={giftColorOptions}
+                      onChange={(value) => onProductChange(index, "color", value)}
+                      placeholder="컬러 선택"
+                    />
+                  ) : isSet && isLegacySetColor ? (
                     <span className="contract-doc__product-cell-text">
                       {formatSetOptionLabel(product.color) || "구성 선택"}
                     </span>
@@ -963,6 +979,30 @@ export default function ContractForm({
                   개
                 </span>
                 <FieldError message={errors.padPurchased || errors.padQuantity} />
+              </td>
+            </tr>
+            <tr className="contract-doc__total-row">
+              <td colSpan={6} className="contract-doc__total-label">
+                사은품
+              </td>
+              <td colSpan={3} className="contract-doc__pad-cell">
+                <DocCheckbox
+                  name="giftProvided"
+                  checked={values.giftProvided === true}
+                  label="증정"
+                  onChange={() => onChange("giftProvided", true)}
+                />
+                <DocCheckbox
+                  name="giftNotProvided"
+                  checked={values.giftProvided === false}
+                  label="미증정"
+                  onChange={() => onChange("giftProvided", false)}
+                />
+                {/* 지금 금액 기준으로 받을 수 있는 사은품을 미리 보여준다 */}
+                <span className="contract-doc__gift-list">
+                  {giftNames.length ? giftNames.join(", ") : "해당 사은품 없음"}
+                </span>
+                <FieldError message={errors.giftProvided} />
               </td>
             </tr>
           </tbody>

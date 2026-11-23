@@ -14,6 +14,7 @@ import {
   resolveComponentPriceForSize,
   type SetComponentSelection,
 } from "@/lib/set-product";
+import { getGiftColorOptions, getGiftQuantities, syncGiftRows } from "@/lib/contract-gift";
 import { formatPhoneInput, PHONE_FORM_FIELDS } from "@/lib/phone";
 import type {
   ContractFormValues,
@@ -80,6 +81,19 @@ function validatePadPurchase(values: ContractFormValues): Record<string, string>
     return { padQuantity: "미끄럼방지 패드 수량을 입력해주세요." };
   }
   return {};
+}
+
+// 해당 금액의 사은품이 있으면 증정 여부를 꼭 고르게 한다(빠뜨림 방지). 수정 모드는 이전 계약서라 보지 않는다
+function validateGiftChoice(values: ContractFormValues): Record<string, string> {
+  const hasGifts = getGiftQuantities(values.products, values.totalDiscountRate).size > 0;
+  if (hasGifts && typeof values.giftProvided !== "boolean") {
+    return { giftProvided: "사은품 증정 여부를 선택해주세요." };
+  }
+  // 컬러를 고르는 사은품은 컬러가 없으면 플레이오토 출고 상품이 정해지지 않는다
+  const needsColor = values.products.some(
+    (product) => getGiftColorOptions(product.name).length > 0 && !product.color.trim(),
+  );
+  return needsColor ? { giftProvided: "사은품 컬러를 선택해주세요." } : {};
 }
 
 // 두 번째 페이지(안내 확인)에서 받는 동의·서명 항목
@@ -232,6 +246,18 @@ export default function ContractWritePage() {
       writeDraft(values);
     }
   }, [isDraftReady, values]);
+
+  // 사은품 증정 여부·상품·할인율이 바뀌면 사은품 행을 맞춘다.
+  // 증정 여부를 고르기 전(기능 이전 계약서 포함)에는 상품 표를 건드리지 않는다
+  useEffect(() => {
+    setValues((current) => {
+      if (typeof current.giftProvided !== "boolean") {
+        return current;
+      }
+      const products = syncGiftRows(current.products, current.totalDiscountRate, current.giftProvided);
+      return products === current.products ? current : { ...current, products };
+    });
+  }, [values.giftProvided, values.products, values.totalDiscountRate]);
 
   function clearFieldError(field: string) {
     if (!errors[field]) {
@@ -652,7 +678,10 @@ export default function ContractWritePage() {
     const validation = validateContractForm(
       editId ? values : { ...values, ...AGREEMENT_PLACEHOLDER },
     );
-    const padErrors = validatePadPurchase(values);
+    const padErrors = {
+      ...validatePadPurchase(values),
+      ...(editId ? {} : validateGiftChoice(values)),
+    };
     const formErrors = validation.valid ? {} : validation.errors;
 
     // 새 작성은 동의·서명을 두 번째 페이지에서 받으므로 여기서는 그 항목 오류를 보지 않는다
