@@ -213,6 +213,16 @@ function PurchaseContractDetails({ payload }: { payload: PurchaseContractPayload
             stacked
           />
           <DetailItem label="담당자" value={payload.managerName || "-"} />
+          <DetailItem
+            label="방문 유형"
+            value={
+              payload.visitType === "reservation"
+                ? "예약자"
+                : payload.visitType === "walk_in"
+                  ? "워크인"
+                  : "-"
+            }
+          />
           <DetailItem label="작성일자" value={payload.writtenDate} />
           <DetailItem label="동의 일자" value={payload.agreementDate} />
         </div>

@@ -49,6 +49,7 @@ import "./../contract.css";
 
 export const emptyContractFormValues: ContractFormValues = {
   managerName: "",
+  visitType: "reservation",
   writtenDateYear: "",
   writtenDateMonth: "",
   writtenDateDay: "",
@@ -235,8 +236,16 @@ function Size4DeliveryModal({
   }
 
   return (
-    <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">
-      <div className="contract-doc__size4-modal">
+    <div
+      className="contract-doc__signature-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="contract-doc__size4-modal"
+        onClick={(event) => event.stopPropagation()}
+      >
         <p className="contract-doc__size4-title">[{form.title}]</p>
         <p className="contract-doc__size4-label">{form.label}</p>
         {form.notes.map((note) => (
@@ -246,7 +255,6 @@ function Size4DeliveryModal({
         ))}
         <p className="contract-doc__size4-section">[배송 방법 및 배송 환경 확인]</p>
         {form.questions.map((question, index) => renderQuestion(question, SIZE4_NUMBERS[index]))}
-        {form.footnote ? <p className="contract-doc__size4-note">{form.footnote}</p> : null}
         {/* 취소·반품 확인은 3호 이상 교환·반품 불가 체크와 같은 값이다 */}
         <div className="contract-doc__size4-question">
           <p className="contract-doc__size4-question-title">{returnNumber} 취소·반품 관련 필수 확인</p>
@@ -622,7 +630,24 @@ export default function ContractForm({
           </span>
         </div>
 
-        <h1 className="contract-doc__title">구매 계약서</h1>
+        <div className="contract-doc__title-row">
+          <div className="contract-doc__visit-type" role="group" aria-label="방문 유형">
+            <DocCheckbox
+              name="visitTypeReservation"
+              checked={values.visitType === "reservation"}
+              label="예약자"
+              onChange={() => onChange("visitType", "reservation")}
+            />
+            <DocCheckbox
+              name="visitTypeWalkIn"
+              checked={values.visitType === "walk_in"}
+              label="워크인"
+              onChange={() => onChange("visitType", "walk_in")}
+            />
+          </div>
+          <h1 className="contract-doc__title">구매 계약서</h1>
+          <div className="contract-doc__title-row-spacer" aria-hidden="true" />
+        </div>
 
         <div className="contract-doc__meta">
           <label className="contract-doc__meta-item">

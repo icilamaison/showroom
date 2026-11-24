@@ -20,6 +20,8 @@ export type ContractListFilters = {
   status?: string;
   dateFrom?: string;
   dateTo?: string;
+  /** 선택한 계약서만 조회·엑셀 다운로드할 때 사용 */
+  ids?: number[];
   page?: number;
   limit?: number;
 };
@@ -32,6 +34,7 @@ export type ContractListItem = {
   productName: string;
   contractAmount: number;
   status: string;
+  adminMemo: string;
   createdAt: string;
 };
 
@@ -61,6 +64,7 @@ export type ContractDetail = {
   signatureName: string;
   status: string;
   approvalNumber: string | null;
+  adminMemo: string;
   payload: unknown;
   createdAt: string;
   updatedAt: string;
@@ -142,6 +146,7 @@ type ContractListRow = {
   product_name: string;
   contract_amount: string;
   status: string;
+  admin_memo: string;
   created_at: Date;
 };
 
@@ -162,6 +167,7 @@ type ContractDetailRow = {
   signature_name: string;
   status: string;
   approval_number: string | null;
+  admin_memo: string;
   payload: unknown;
   created_at: Date;
   updated_at: Date;
@@ -186,7 +192,23 @@ function normalizePagination(page?: number, limit?: number) {
 
 function buildListQuery(filters: ContractListFilters) {
   const conditions: string[] = [];
-  const values: Array<string> = [];
+  const values: Array<string | number> = [];
+
+  if (filters.ids?.length) {
+    const ids = [
+      ...new Set(
+        filters.ids.filter((id) => Number.isInteger(id) && id > 0),
+      ),
+    ];
+
+    if (ids.length === 0) {
+      conditions.push("FALSE");
+    } else {
+      const placeholders = ids.map((_, index) => `$${values.length + index + 1}`);
+      conditions.push(`id IN (${placeholders.join(", ")})`);
+      values.push(...ids);
+    }
+  }
 
   if (filters.customerName?.trim()) {
     values.push(`%${filters.customerName.trim()}%`);
@@ -232,6 +254,7 @@ function mapListItem(row: ContractListRow): ContractListItem {
     productName: row.product_name,
     contractAmount: Number(row.contract_amount),
     status: row.status,
+    adminMemo: row.admin_memo ?? "",
     createdAt: row.created_at.toISOString(),
   };
 }
@@ -278,6 +301,7 @@ export async function listContracts(
        product_name,
        contract_amount,
        status,
+       admin_memo,
        created_at
      FROM contracts
      ${whereClause}
@@ -311,6 +335,7 @@ const CONTRACT_DETAIL_SELECT = `
   signature_name,
   status,
   approval_number,
+  admin_memo,
   payload,
   created_at,
   updated_at
@@ -353,6 +378,7 @@ function mapContractDetail(row: ContractDetailRow): ContractDetail {
     signatureName: row.signature_name,
     status: row.status,
     approvalNumber: row.approval_number,
+    adminMemo: row.admin_memo ?? "",
     payload: row.payload,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
@@ -382,6 +408,7 @@ export async function getContractById(
        contracts.signature_name,
        contracts.status,
        contracts.approval_number,
+       contracts.admin_memo,
        contracts.payload,
        contracts.created_at,
        contracts.updated_at,
@@ -432,6 +459,7 @@ export async function getContractByNumberAndToken(
        signature_name,
        status,
        approval_number,
+       admin_memo,
        payload,
        created_at,
        updated_at,
@@ -458,7 +486,8 @@ export async function getContractByNumberAndToken(
     return "expired";
   }
 
-  return mapContractDetail(row);
+  // 고객 공개 조회에는 관리자 메모를 내려주지 않는다
+  return { ...mapContractDetail(row), adminMemo: "" };
 }
 
 function isTokenMatch(stored: string, provided: string): boolean {
@@ -538,6 +567,41 @@ export async function updateContractApprovalNumber(
   return {
     id: row.id,
     approvalNumber: row.approval_number,
+    updatedAt: row.updated_at.toISOString(),
+  };
+}
+
+export type ContractAdminMemoUpdateResult = {
+  id: number;
+  adminMemo: string;
+  updatedAt: string;
+};
+
+export async function updateContractAdminMemo(
+  id: number,
+  adminMemo: string,
+): Promise<ContractAdminMemoUpdateResult | null> {
+  const result = await pool.query<{
+    id: number;
+    admin_memo: string;
+    updated_at: Date;
+  }>(
+    `UPDATE contracts
+     SET admin_memo = $2, updated_at = NOW()
+     WHERE id = $1
+     RETURNING id, admin_memo, updated_at`,
+    [id, adminMemo],
+  );
+
+  if (!result.rowCount) {
+    return null;
+  }
+
+  const row = result.rows[0];
+
+  return {
+    id: row.id,
+    adminMemo: row.admin_memo,
     updatedAt: row.updated_at.toISOString(),
   };
 }

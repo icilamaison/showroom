@@ -360,6 +360,33 @@ describe("Admin API", () => {
       expect(response.body.message).toContain("SR 주문번호");
     });
 
+    it("returns a bulk Excel file for selected contract ids", async () => {
+      const selected = await createTestContract("2011", "엑셀선택대상");
+      const other = await createTestContract("2012", "엑셀선택제외");
+      await pool.query(
+        "UPDATE contracts SET approval_number = $1 WHERE contract_number = ANY($2::text[])",
+        ["546451", [selected.contractNumber, other.contractNumber]],
+      );
+
+      const selectedId = (
+        await pool.query<{ id: number }>(
+          "SELECT id FROM contracts WHERE contract_number = $1",
+          [selected.contractNumber],
+        )
+      ).rows[0].id;
+
+      const agent = await loginAgent();
+      const response = await agent
+        .get("/api/admin/contracts/order-excel")
+        .query({ ids: String(selectedId) })
+        .expect(200);
+
+      expect(response.headers["content-type"]).toContain(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+      expect(Number(response.headers["content-length"])).toBeGreaterThan(0);
+    });
+
     it("returns 400 for invalid date range", async () => {
       const agent = await loginAgent();
       const response = await agent

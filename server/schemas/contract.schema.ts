@@ -75,6 +75,12 @@ function buildSpecialTerms(data: z.infer<typeof contractInputSchema>): string {
     parts.push(`담당자: ${data.managerName.trim()}`);
   }
 
+  if (data.visitType === "reservation") {
+    parts.push("방문: 예약자");
+  } else if (data.visitType === "walk_in") {
+    parts.push("방문: 워크인");
+  }
+
   parts.push(
     `결제수단: ${data.paymentMethod === "card" ? "카드" : "계좌이체"}`,
   );

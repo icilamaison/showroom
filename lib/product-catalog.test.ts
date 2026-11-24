@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  findCatalogProductByName,
   getDefaultColor,
   normalizeProductOptions,
+  resolveCafe24Variant,
   searchProducts,
+  withSizeSiblings,
   type CatalogProduct,
 } from "./product-catalog";
 
@@ -54,5 +57,34 @@ describe("normalizeProductOptions", () => {
 
     expect(options[0]?.label).toBe("SS 차렵이불+베개커버1P");
     expect(options[1]?.label).toBe("QK겸용 차렵이불+베개커버2P (+50,400원)");
+  });
+});
+
+describe("모노 비벤디 size siblings", () => {
+  it("adds ORDER-MADE 300X400 as 4호 on 모노 비벤디 10colors", () => {
+    const product = findCatalogProductByName("모노 비벤디 10colors");
+    expect(product).not.toBeNull();
+
+    const sizes = withSizeSiblings(product!).sizes?.map((option) =>
+      typeof option === "string" ? option : option.name,
+    );
+
+    expect(sizes).toEqual([
+      "반호 150X200",
+      "1호 160X240",
+      "2호 200X300",
+      "3호 240X350",
+      "4호 300X400",
+    ]);
+  });
+
+  it("maps 4호 back to 모노 비벤디 ORDER-MADE for PlayAuto", () => {
+    expect(
+      resolveCafe24Variant("모노 비벤디 10colors", "아이보리", "4호 300X400"),
+    ).toEqual({
+      productName: "모노 비벤디 ORDER-MADE",
+      color: "아이보리",
+      size: "300X400 이하",
+    });
   });
 });

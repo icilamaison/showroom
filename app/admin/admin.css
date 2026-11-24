@@ -166,7 +166,7 @@ a.app-button {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 980px;
 }
 
 .admin-table th,
@@ -187,9 +187,12 @@ a.app-button {
   white-space: nowrap;
 }
 
+/* 1: 체크박스 */
 .admin-table th:nth-child(1),
 .admin-table td:nth-child(1) {
-  width: 16%;
+  width: 2.5rem;
+  padding-left: 0.75rem;
+  padding-right: 0.25rem;
 }
 
 .admin-table th:nth-child(2),
@@ -199,32 +202,42 @@ a.app-button {
 
 .admin-table th:nth-child(3),
 .admin-table td:nth-child(3) {
-  width: 30%;
+  width: 10%;
 }
 
 .admin-table th:nth-child(4),
 .admin-table td:nth-child(4) {
-  width: 13%;
+  width: 18%;
 }
 
 .admin-table th:nth-child(5),
 .admin-table td:nth-child(5) {
-  width: 11%;
+  width: 10%;
 }
 
 .admin-table th:nth-child(6),
 .admin-table td:nth-child(6) {
-  width: 11%;
+  width: 9%;
 }
 
-/* 7: 삭제 버튼, 8: › */
 .admin-table th:nth-child(7),
 .admin-table td:nth-child(7) {
-  width: 4.5rem;
+  width: 9%;
 }
 
 .admin-table th:nth-child(8),
 .admin-table td:nth-child(8) {
+  width: 16%;
+}
+
+/* 9: 삭제 버튼, 10: › */
+.admin-table th:nth-child(9),
+.admin-table td:nth-child(9) {
+  width: 4.5rem;
+}
+
+.admin-table th:nth-child(10),
+.admin-table td:nth-child(10) {
   width: 2.5rem;
 }
 
@@ -236,21 +249,66 @@ a.app-button {
   background: var(--color-table-head);
 }
 
-.admin-table td:nth-child(1),
-.admin-table td:nth-child(4),
-.admin-table td:nth-child(6) {
+.admin-table td:nth-child(2),
+.admin-table td:nth-child(5),
+.admin-table td:nth-child(7) {
   white-space: nowrap;
 }
 
-.admin-table td:nth-child(3) {
+.admin-table td:nth-child(4) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.admin-table td:nth-child(4) {
+.admin-table td:nth-child(5) {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+}
+
+.admin-table__memo {
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
+.admin-memo-input {
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 0.45rem;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.admin-memo-input::placeholder {
+  color: #9ca3af;
+}
+
+.admin-memo-input:focus {
+  outline: none;
+  border-color: var(--color-text);
+}
+
+.admin-memo-input:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.admin-table__check {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.admin-table__check input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-text);
 }
 
 .admin-table__customer-name {
@@ -265,11 +323,13 @@ a.app-button {
   line-height: 1.3;
 }
 
-/* 목록 행 삭제 버튼. 행 높이가 늘지 않게 작게 */
+/* 목록 행 삭제 버튼. 기본 48px 버튼보다 작게 */
 .admin-table__delete .app-button,
 .admin-mobile-item__delete {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.78rem;
+  height: 28px;
+  padding: 0 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .admin-mobile-item__delete {
@@ -363,6 +423,22 @@ a.app-button {
   margin-bottom: 0.35rem;
 }
 
+.admin-mobile-item__leading {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.admin-mobile-item__leading input {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--color-text);
+}
+
 .admin-mobile-item__name {
   font-weight: 700;
 }
@@ -376,6 +452,10 @@ a.app-button {
 .admin-mobile-item__product {
   font-size: 0.9rem;
   margin-bottom: 0.3rem;
+}
+
+.admin-mobile-item__memo {
+  margin-bottom: 0.45rem;
 }
 
 .admin-mobile-item__meta {
