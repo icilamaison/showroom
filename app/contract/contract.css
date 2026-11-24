@@ -39,6 +39,27 @@
   color: #4b5563;
 }
 
+/* 작성 화면만: 제목은 가운데, 예약자/워크인은 제목 왼쪽 */
+.contract-doc__title-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  column-gap: 0.75rem;
+}
+
+.contract-doc__visit-type {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.85rem;
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.contract-doc__title-row-spacer {
+  min-width: 0;
+}
+
 .contract-doc__title {
   margin: 0;
   text-align: center;
@@ -48,7 +69,8 @@
 }
 
 /* 구매 계약서 제목 위 여백. 안내문은 펜 표시가 고정 좌표라 위 여백을 바꾸면 표시가 어긋나므로 제외 */
-.contract-doc:not(.notice-document) .contract-doc__title {
+.contract-doc:not(.notice-document) .contract-doc__title-row,
+.contract-doc:not(.notice-document) > .contract-doc__header > .contract-doc__title {
   margin-top: 0.9rem;
 }
 
@@ -911,9 +933,9 @@
   overflow-y: auto;
   background: #fff;
   border: 1px solid #d1d5db;
-  padding: 1.25rem;
+  padding: 1.5rem 1.4rem;
   font-size: 0.85rem;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .contract-doc__size4-modal p {
@@ -921,39 +943,63 @@
 }
 
 .contract-doc__size4-modal .contract-doc__size4-title {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: 0.95rem;
   font-weight: 700;
 }
 
 .contract-doc__size4-label {
+  margin-bottom: 0.85rem;
   font-weight: 700;
 }
 
 .contract-doc__size4-note {
+  margin-top: 0.45rem;
   color: #6b7280;
   font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+/* 상단 ※ 안내들은 서로 붙여 두고, 첫 줄만 본문과 살짝 띄운다 */
+.contract-doc__size4-modal > .contract-doc__size4-note {
+  margin-top: 0.15rem;
+}
+
+.contract-doc__size4-modal > .contract-doc__size4-label + .contract-doc__size4-note {
+  margin-top: 0.55rem;
 }
 
 .contract-doc__size4-modal .contract-doc__size4-section {
-  margin-top: 0.75rem;
+  margin-top: 1.15rem;
+  margin-bottom: 0.35rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e5e7eb;
   font-weight: 700;
 }
 
 .contract-doc__size4-question {
-  padding: 0.6rem 0;
+  padding: 0.95rem 0;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .contract-doc__size4-question-title {
+  margin-bottom: 0.35rem;
   font-weight: 700;
+}
+
+.contract-doc__size4-question-text {
+  margin-bottom: 0.55rem;
 }
 
 .contract-doc__size4-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1rem;
-  margin-top: 0.25rem;
+  gap: 0.45rem 1.1rem;
+  margin-top: 0.15rem;
+}
+
+.contract-doc__size4-modal .contract-doc__signature-modal-actions {
+  margin-top: 1.15rem;
 }
 
 /* 동의·서명 장의 4호 사전 동의서 버튼 */

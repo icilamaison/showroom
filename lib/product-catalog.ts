@@ -379,6 +379,63 @@ function getSizeSiblings(product: CatalogProduct): CatalogProduct[] {
   );
 }
 
+// Ncolors 형제에 없는 치수를 ORDER-MADE 상품에서 가져와 붙인다.
+// 예: 모노 비벤디 4호는 카페24에 따로 없고 "모노 비벤디 ORDER-MADE"의 300X400 이하 옵션으로만 있다.
+type SizeSiblingExtra = {
+  orderMadeName: string;
+  displaySize: string;
+  orderMadeSize: string;
+};
+
+const SIZE_SIBLING_EXTRAS: Record<string, SizeSiblingExtra[]> = {
+  "모노 비벤디": [
+    {
+      orderMadeName: "모노 비벤디 ORDER-MADE",
+      displaySize: "4호 300X400",
+      orderMadeSize: "300X400 이하",
+    },
+  ],
+};
+
+function getSizeSiblingExtras(baseName: string): Array<{
+  extra: SizeSiblingExtra;
+  member: CatalogProduct;
+  salePrice: number;
+}> {
+  const extras = SIZE_SIBLING_EXTRAS[baseName] ?? [];
+  const result: Array<{
+    extra: SizeSiblingExtra;
+    member: CatalogProduct;
+    salePrice: number;
+  }> = [];
+
+  for (const extra of extras) {
+    const member = catalog.find(
+      (candidate) => candidate.productName === extra.orderMadeName,
+    );
+    if (!member) {
+      continue;
+    }
+
+    const sizeOption = (member.sizes ?? []).find(
+      (option) => getSizeOptionName(option) === extra.orderMadeSize,
+    );
+    if (!sizeOption) {
+      continue;
+    }
+
+    result.push({
+      extra,
+      member,
+      salePrice:
+        (typeof sizeOption === "object" ? sizeOption.salePrice : undefined) ??
+        member.salePrice,
+    });
+  }
+
+  return result;
+}
+
 export function withSizeSiblings(product: CatalogProduct): CatalogProduct {
   const baseName = getSizeBaseName(product) ?? "";
   const getMemberSize = (member: CatalogProduct) =>
@@ -388,13 +445,14 @@ export function withSizeSiblings(product: CatalogProduct): CatalogProduct {
   const members = [product, ...getSizeSiblings(product)].sort(
     (a, b) => getSizeArea(getMemberSize(a)) - getSizeArea(getMemberSize(b)),
   );
+  const extras = getSizeSiblingExtras(baseName);
 
-  if (members.length < 2) {
+  if (members.length < 2 && extras.length === 0) {
     return product;
   }
 
   const colors: Record<string, string> = {};
-  for (const member of members) {
+  for (const member of [...members, ...extras.map((item) => item.member)]) {
     for (const [name, hex] of Object.entries(member.colors ?? {})) {
       const color = splitColorSize(name)?.color ?? name;
       colors[color] = colors[color] || hex;
@@ -403,27 +461,51 @@ export function withSizeSiblings(product: CatalogProduct): CatalogProduct {
 
   // 품절은 사이즈별로 다르다. 해당 사이즈에 없는 색상도 고르지 못하게 품절로 표시한다.
   const soldOutColorsBySize: Record<string, string[]> = {};
-  const sizes = members.map((member) => {
-    const size = getMemberSize(member);
-    const soldOut = new Set(member.soldOutColors ?? []);
-    const available = new Map(
-      Object.keys(member.colors ?? {}).map((name) => [
-        splitColorSize(name)?.color ?? name,
-        name,
-      ]),
-    );
-    soldOutColorsBySize[size] = Object.keys(colors).filter((color) => {
-      const name = available.get(color);
-      return !name || soldOut.has(name);
-    });
+  const sizes = [
+    ...members.map((member) => {
+      const size = getMemberSize(member);
+      const soldOut = new Set(member.soldOutColors ?? []);
+      const available = new Map(
+        Object.keys(member.colors ?? {}).map((name) => [
+          splitColorSize(name)?.color ?? name,
+          name,
+        ]),
+      );
+      soldOutColorsBySize[size] = Object.keys(colors).filter((color) => {
+        const name = available.get(color);
+        return !name || soldOut.has(name);
+      });
 
-    return {
-      name: size,
-      consumerPrice: member.consumerPrice,
-      salePrice: member.salePrice,
-      typePrices: member.typePrices,
-    };
-  });
+      return {
+        name: size,
+        consumerPrice: member.consumerPrice,
+        salePrice: member.salePrice,
+        typePrices: member.typePrices,
+      };
+    }),
+    ...extras.map(({ extra, member, salePrice }) => {
+      const soldOut = new Set(member.soldOutColors ?? []);
+      const available = new Map(
+        Object.keys(member.colors ?? {}).map((name) => [
+          splitColorSize(name)?.color ?? name,
+          name,
+        ]),
+      );
+      soldOutColorsBySize[extra.displaySize] = Object.keys(colors).filter(
+        (color) => {
+          const name = available.get(color);
+          return !name || soldOut.has(name);
+        },
+      );
+
+      return {
+        name: extra.displaySize,
+        consumerPrice: member.consumerPrice,
+        salePrice,
+        typePrices: member.typePrices,
+      };
+    }),
+  ].sort((a, b) => getSizeArea(a.name) - getSizeArea(b.name));
 
   return {
     ...product,
@@ -814,6 +896,18 @@ export function resolveCafe24Variant(
   const product = findCatalogProductByName(productName);
   const baseName = product ? getSizeBaseName(product) : null;
   if (product && baseName && size) {
+    const extra = getSizeSiblingExtras(baseName).find(
+      (item) => item.extra.displaySize === size,
+    );
+    if (extra) {
+      // ORDER-MADE는 컬러·사이즈가 옵션 축이 분리돼 있다
+      return {
+        productName: extra.extra.orderMadeName,
+        color,
+        size: extra.extra.orderMadeSize,
+      };
+    }
+
     const member = [product, ...getSizeSiblings(product)].find((candidate) =>
       candidate === product
         ? getSingleCombinedSize(product) === size

@@ -5,7 +5,9 @@ import {
   deleteAdminContract,
   downloadAdminBulkOrderExcel,
   fetchAdminContracts,
+  updateAdminContractMemo,
   type ContractListItem,
+  type ContractListResult,
 } from "@/lib/api-client";
 import {
   CONTRACT_STATUSES,
@@ -33,12 +35,85 @@ const initialFilters: FilterState = {
   dateTo: "",
 };
 
+const ADMIN_MEMO_MAX_LENGTH = 500;
+
 function formatAmount(amount: number) {
   return `${amount.toLocaleString("ko-KR")}원`;
 }
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("ko-KR");
+}
+
+function AdminMemoField({
+  contractId,
+  value,
+  onSaved,
+  onError,
+}: {
+  contractId: number;
+  value: string;
+  onSaved: (memo: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  async function saveIfChanged() {
+    const next = draft.trim();
+    if (next === value.trim() || isSaving) {
+      setDraft(value);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updated = await updateAdminContractMemo(contractId, next);
+      onSaved(updated.adminMemo);
+      setDraft(updated.adminMemo);
+    } catch (error) {
+      setDraft(value);
+      if (error instanceof ApiClientError && error.status === 401) {
+        onError("UNAUTHORIZED");
+        return;
+      }
+      onError(
+        error instanceof ApiClientError
+          ? error.message
+          : "메모 저장에 실패했습니다.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <input
+      type="text"
+      className="admin-memo-input"
+      value={draft}
+      maxLength={ADMIN_MEMO_MAX_LENGTH}
+      placeholder="메모"
+      disabled={isSaving}
+      onChange={(event) => setDraft(event.target.value)}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+        if (event.key === "Enter") {
+          event.preventDefault();
+          (event.target as HTMLInputElement).blur();
+        }
+      }}
+      onBlur={() => {
+        void saveIfChanged();
+      }}
+      aria-label="관리자 메모"
+    />
+  );
 }
 
 /** 검색어가 숫자 위주면 연락처, 아니면 고객명으로 보낸다 */
@@ -75,6 +150,7 @@ export default function AdminContractsPage() {
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
 
   // 한 번 본 탭·페이지는 캐시로 바로 보여주고 뒤에서 갱신한다. 새 조건은 응답 전까지 이전 목록을 유지한다.
@@ -96,6 +172,11 @@ export default function AdminContractsPage() {
   useEffect(() => {
     if (isUnauthorized) router.push("/admin/login");
   }, [isUnauthorized, router]);
+
+  // 검색·상태 탭이 바뀌면 이전 선택을 비운다
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [appliedFilters]);
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -124,12 +205,51 @@ export default function AdminContractsPage() {
     [statusCounts],
   );
 
+  const pageIds = useMemo(
+    () => data?.items.map((item) => item.id) ?? [],
+    [data],
+  );
+  const selectedCount = selectedIds.size;
+  const allPageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const somePageSelected =
+    pageIds.some((id) => selectedIds.has(id)) && !allPageSelected;
+
+  function toggleSelect(id: number) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectPage() {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allPageSelected) {
+        for (const id of pageIds) next.delete(id);
+      } else {
+        for (const id of pageIds) next.add(id);
+      }
+      return next;
+    });
+  }
+
   async function handleBulkDownload() {
+    if (selectedCount === 0) {
+      setError("다운로드할 계약서를 선택해주세요.");
+      return;
+    }
+
     setIsDownloading(true);
     setError("");
 
     try {
-      await downloadAdminBulkOrderExcel(toApiFilters(appliedFilters));
+      await downloadAdminBulkOrderExcel({ ids: [...selectedIds] });
     } catch (downloadError) {
       if (downloadError instanceof ApiClientError && downloadError.status === 401) {
         router.push("/admin/login");
@@ -148,6 +268,29 @@ export default function AdminContractsPage() {
 
   function openDetail(id: number) {
     router.push(`/admin/contracts/${id}`);
+  }
+
+  function handleMemoSaved(id: number, adminMemo: string) {
+    queryClient.setQueriesData<ContractListResult>(
+      { queryKey: ["adminContracts"] },
+      (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          items: current.items.map((item) =>
+            item.id === id ? { ...item, adminMemo } : item,
+          ),
+        };
+      },
+    );
+  }
+
+  function handleMemoError(message: string) {
+    if (message === "UNAUTHORIZED") {
+      router.push("/admin/login");
+      return;
+    }
+    setError(message);
   }
 
   // 상세 화면 삭제와 같은 확인 문구·API. 행을 누르면 상세로 가므로 버튼 클릭은 행까지 전달하지 않는다
@@ -201,12 +344,16 @@ export default function AdminContractsPage() {
               <button
                 type="button"
                 className="app-button app-button--secondary admin-btn-compact"
-                disabled={isDownloading}
+                disabled={isDownloading || selectedCount === 0}
                 onClick={() => {
                   void handleBulkDownload();
                 }}
               >
-                {isDownloading ? "다운로드 중..." : "엑셀 전체 다운로드"}
+                {isDownloading
+                  ? "다운로드 중..."
+                  : selectedCount > 0
+                    ? `선택 엑셀 다운로드 (${selectedCount})`
+                    : "선택 엑셀 다운로드"}
               </button>
               <Link href="/contract/write" className="app-button admin-btn-compact">
                 + 새 계약서
@@ -318,12 +465,24 @@ export default function AdminContractsPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th className="admin-table__check">
+                      <input
+                        type="checkbox"
+                        checked={allPageSelected}
+                        ref={(element) => {
+                          if (element) element.indeterminate = somePageSelected;
+                        }}
+                        onChange={toggleSelectPage}
+                        aria-label="현재 페이지 전체 선택"
+                      />
+                    </th>
                     <th>계약번호</th>
                     <th>고객</th>
                     <th>상품명</th>
                     <th>계약금액</th>
                     <th>상태</th>
                     <th>작성일</th>
+                    <th>메모</th>
                     <th aria-hidden="true" />
                     <th aria-hidden="true" />
                   </tr>
@@ -342,6 +501,16 @@ export default function AdminContractsPage() {
                       tabIndex={0}
                       role="link"
                     >
+                      <td className="admin-table__check">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(item.id)}
+                          onChange={() => toggleSelect(item.id)}
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                          aria-label={`${item.contractNumber} 선택`}
+                        />
+                      </td>
                       <td>{item.contractNumber}</td>
                       <td>
                         <div className="admin-table__customer-name">
@@ -359,6 +528,14 @@ export default function AdminContractsPage() {
                         </span>
                       </td>
                       <td>{formatDate(item.createdAt)}</td>
+                      <td className="admin-table__memo">
+                        <AdminMemoField
+                          contractId={item.id}
+                          value={item.adminMemo ?? ""}
+                          onSaved={(memo) => handleMemoSaved(item.id, memo)}
+                          onError={handleMemoError}
+                        />
+                      </td>
                       <td className="admin-table__delete">
                         <button
                           type="button"
@@ -392,12 +569,22 @@ export default function AdminContractsPage() {
                     role="link"
                   >
                     <div className="admin-mobile-item__top">
-                      <div>
-                        <div className="admin-mobile-item__name">
-                          {item.customerName}
-                        </div>
-                        <div className="admin-mobile-item__phone">
-                          {item.customerPhone}
+                      <div className="admin-mobile-item__leading">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(item.id)}
+                          onChange={() => toggleSelect(item.id)}
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                          aria-label={`${item.contractNumber} 선택`}
+                        />
+                        <div>
+                          <div className="admin-mobile-item__name">
+                            {item.customerName}
+                          </div>
+                          <div className="admin-mobile-item__phone">
+                            {item.customerPhone}
+                          </div>
                         </div>
                       </div>
                       <span className={`admin-status admin-status--${item.status}`}>
@@ -406,6 +593,14 @@ export default function AdminContractsPage() {
                     </div>
                     <div className="admin-mobile-item__product">
                       {item.productName}
+                    </div>
+                    <div className="admin-mobile-item__memo">
+                      <AdminMemoField
+                        contractId={item.id}
+                        value={item.adminMemo ?? ""}
+                        onSaved={(memo) => handleMemoSaved(item.id, memo)}
+                        onError={handleMemoError}
+                      />
                     </div>
                     <div className="admin-mobile-item__meta">
                       <span>

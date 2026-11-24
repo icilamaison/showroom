@@ -18,9 +18,19 @@ describe("parseContractListQuery", () => {
       status: undefined,
       dateFrom: "2026-07-01",
       dateTo: "2026-07-07",
+      ids: undefined,
       page: 2,
       limit: 20,
     });
+  });
+
+  it("parses selected contract ids", () => {
+    const result = parseContractListQuery({
+      ids: "12, 0, 12, abc, 34",
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.filters.ids).toEqual([12, 34]);
   });
 
   it("rejects invalid date range", () => {

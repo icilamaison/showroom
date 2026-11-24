@@ -92,3 +92,33 @@ export function parseContractApprovalNumberUpdate(body: unknown):
     message: result.error.issues[0]?.message ?? "입력값을 확인해주세요.",
   };
 }
+
+const ADMIN_MEMO_MAX_LENGTH = 500;
+
+export const contractAdminMemoUpdateSchema = z.object({
+  adminMemo: z
+    .string({ required_error: "메모를 입력해주세요." })
+    .max(ADMIN_MEMO_MAX_LENGTH, `메모는 ${ADMIN_MEMO_MAX_LENGTH}자까지 입력할 수 있습니다.`),
+});
+
+export type ContractAdminMemoUpdateInput = z.infer<
+  typeof contractAdminMemoUpdateSchema
+>;
+
+export function parseContractAdminMemoUpdate(body: unknown):
+  | { success: true; data: ContractAdminMemoUpdateInput }
+  | { success: false; message: string } {
+  const result = contractAdminMemoUpdateSchema.safeParse(body);
+
+  if (result.success) {
+    return {
+      success: true,
+      data: { adminMemo: result.data.adminMemo.trim() },
+    };
+  }
+
+  return {
+    success: false,
+    message: result.error.issues[0]?.message ?? "입력값을 확인해주세요.",
+  };
+}

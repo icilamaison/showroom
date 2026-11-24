@@ -3,6 +3,7 @@ import { parseContractListQuery } from "../../lib/contract-list-query";
 import { sendError, sendSuccess } from "../../lib/api-response";
 import { formatShoppingMallOrderNumber } from "../../../lib/order-excel";
 import {
+  parseContractAdminMemoUpdate,
   parseContractApprovalNumberUpdate,
   parseContractStatusUpdate,
 } from "../../schemas/admin.schema";
@@ -11,6 +12,7 @@ import {
   getContractById,
   listContracts,
   listContractsForExport,
+  updateContractAdminMemo,
   updateContractApprovalNumber,
   reissueContractViewToken,
   updateContractStatus,
@@ -262,6 +264,33 @@ contractsRouter.patch("/:id/approval-number", async (req, res) => {
       "[admin/contracts] Failed to update approval number:",
       error,
     );
+    return sendError(res, "서버 오류가 발생했습니다.", 500);
+  }
+});
+
+contractsRouter.patch("/:id/admin-memo", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendError(res, "유효하지 않은 계약서 ID입니다.", 400);
+  }
+
+  const parsed = parseContractAdminMemoUpdate(req.body);
+
+  if (!parsed.success) {
+    return sendError(res, parsed.message, 400);
+  }
+
+  try {
+    const updated = await updateContractAdminMemo(id, parsed.data.adminMemo);
+
+    if (!updated) {
+      return sendError(res, "계약서를 찾을 수 없습니다.", 404);
+    }
+
+    return sendSuccess(res, updated);
+  } catch (error) {
+    console.error("[admin/contracts] Failed to update admin memo:", error);
     return sendError(res, "서버 오류가 발생했습니다.", 500);
   }
 });

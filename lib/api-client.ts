@@ -121,6 +121,7 @@ export type ContractListItem = {
   productName: string;
   contractAmount: number;
   status: string;
+  adminMemo: string;
   createdAt: string;
 };
 
@@ -138,6 +139,7 @@ export type AdminContractListFilters = {
   status?: string;
   dateFrom?: string;
   dateTo?: string;
+  ids?: number[];
   page?: number;
   limit?: number;
 };
@@ -223,6 +225,7 @@ export type ContractDetail = {
   signatureName: string;
   status: string;
   approvalNumber: string | null;
+  adminMemo: string;
   payload: unknown;
   createdAt: string;
   updatedAt: string;
@@ -240,6 +243,12 @@ export type ContractStatusUpdateResult = {
 export type ContractApprovalNumberUpdateResult = {
   id: number;
   approvalNumber: string;
+  updatedAt: string;
+};
+
+export type ContractAdminMemoUpdateResult = {
+  id: number;
+  adminMemo: string;
   updatedAt: string;
 };
 
@@ -298,6 +307,19 @@ export async function updateAdminContractApprovalNumber(
   );
 }
 
+export async function updateAdminContractMemo(
+  id: number,
+  adminMemo: string,
+): Promise<ContractAdminMemoUpdateResult> {
+  return adminFetch<ContractAdminMemoUpdateResult>(
+    `/api/admin/contracts/${id}/admin-memo`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ adminMemo }),
+    },
+  );
+}
+
 export async function reissueAdminContractViewToken(
   id: number,
 ): Promise<{ viewToken: string; viewTokenExpiresAt: string }> {
@@ -344,6 +366,10 @@ export function getAdminBulkOrderExcelDownloadUrl(
   filters: AdminContractListFilters = {},
 ): string {
   const params = new URLSearchParams();
+
+  if (filters.ids?.length) {
+    params.set("ids", filters.ids.join(","));
+  }
 
   if (filters.customerName?.trim()) {
     params.set("customerName", filters.customerName.trim());

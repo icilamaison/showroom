@@ -211,10 +211,9 @@ export const SIZE4_DELIVERY_FORMS: Record<
         question:
           "퀵 배송 가능 지역이더라도 제품 규격상 엘리베이터 적재가 어렵거나 건물 내 이동이 불가능한 경우, 계단 운반을 위한 추가 인력 또는 사다리차 이용이 필요할 수 있습니다. 이 경우 발생하는 추가 인력 및 사다리차 이용 비용은 고객님 부담이며, 현장 상황에 따라 배송이 제한될 수 있습니다.",
         options: ["확인 및 동의함", "동의하지 않음"],
+        note: "※ 배송 가능 지역, 건물 진입 및 운반 환경, 추가 비용 부담 여부에 대한 확인과 동의가 모두 완료된 후 제작이 진행됩니다.",
       },
     ],
-    footnote:
-      "※ 배송 가능 지역, 건물 진입 및 운반 환경, 추가 비용 부담 여부에 대한 확인과 동의가 모두 완료된 후 제작이 진행됩니다.",
   },
 };
 
@@ -264,8 +263,12 @@ export function createEmptyProductRows(): ProductRow[] {
   return Array.from({ length: PRODUCT_ROW_COUNT }, () => createEmptyProductRow());
 }
 
+export type VisitType = "reservation" | "walk_in" | "";
+
 export type ContractFormValues = {
   managerName: string;
+  // 쇼룸 방문 유형. 관리자가 계약서 좌측 상단에서 체크한다
+  visitType?: VisitType;
   writtenDateYear: string;
   writtenDateMonth: string;
   writtenDateDay: string;
@@ -346,6 +349,8 @@ function isValidDateParts(year: string, month: string, day: string): boolean {
 const contractFormSchema = z
   .object({
     managerName: z.string().trim().max(50, "담당자명은 50자 이하로 입력해주세요."),
+    // 구 계약 payload에는 없을 수 있다
+    visitType: z.enum(["reservation", "walk_in", ""]).optional().default(""),
     writtenDateYear: yearSchema,
     writtenDateMonth: monthSchema,
     writtenDateDay: daySchema,
