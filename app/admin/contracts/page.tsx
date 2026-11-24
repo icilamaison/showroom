@@ -239,9 +239,19 @@ export default function AdminContractsPage() {
     });
   }
 
+  const filteredCount = data?.total ?? 0;
+  const statusTabLabel = appliedFilters.status
+    ? getContractStatusLabel(appliedFilters.status)
+    : "전체";
+  const downloadLabel =
+    selectedCount > 0
+      ? `선택 엑셀 (${selectedCount})`
+      : `엑셀 다운로드 (${filteredCount})`;
+
+  /** 체크한 건이 있으면 선택분, 없으면 현재 탭·검색 조건 전부 */
   async function handleBulkDownload() {
-    if (selectedCount === 0) {
-      setError("다운로드할 계약서를 선택해주세요.");
+    if (selectedCount === 0 && filteredCount === 0) {
+      setError("다운로드할 계약서가 없습니다.");
       return;
     }
 
@@ -249,7 +259,11 @@ export default function AdminContractsPage() {
     setError("");
 
     try {
-      await downloadAdminBulkOrderExcel({ ids: [...selectedIds] });
+      await downloadAdminBulkOrderExcel(
+        selectedCount > 0
+          ? { ids: [...selectedIds] }
+          : toApiFilters(appliedFilters),
+      );
     } catch (downloadError) {
       if (downloadError instanceof ApiClientError && downloadError.status === 401) {
         router.push("/admin/login");
@@ -344,16 +358,20 @@ export default function AdminContractsPage() {
               <button
                 type="button"
                 className="app-button app-button--secondary admin-btn-compact"
-                disabled={isDownloading || selectedCount === 0}
+                disabled={
+                  isDownloading ||
+                  (selectedCount === 0 && filteredCount === 0)
+                }
+                title={
+                  selectedCount > 0
+                    ? "체크한 계약서만 다운로드"
+                    : `${statusTabLabel} 목록 전체 다운로드`
+                }
                 onClick={() => {
                   void handleBulkDownload();
                 }}
               >
-                {isDownloading
-                  ? "다운로드 중..."
-                  : selectedCount > 0
-                    ? `선택 엑셀 다운로드 (${selectedCount})`
-                    : "선택 엑셀 다운로드"}
+                {isDownloading ? "다운로드 중..." : downloadLabel}
               </button>
               <Link href="/contract/write" className="app-button admin-btn-compact">
                 + 새 계약서
