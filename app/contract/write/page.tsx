@@ -145,13 +145,64 @@ function clearDraft() {
   } catch {}
 }
 
-// 작성 중 행 삭제는 행 번호가 밀리지 않게 내용만 비운다. 고객용 계약서 No가 건너뛰지 않도록
-// 저장할 때 빈 행을 뒤로 모은다 (행 수는 그대로)
+// 고객용 계약서 No가 건너뛰지 않도록 빈 행을 뒤로 모은다 (행 수는 그대로)
 function moveEmptyRowsToEnd<T extends { name: string }>(products: T[]): T[] {
   return [
     ...products.filter((product) => product.name.trim()),
     ...products.filter((product) => !product.name.trim()),
   ];
+}
+
+function productsHaveEmptyGaps(products: { name: string }[]) {
+  let seenEmpty = false;
+  for (const product of products) {
+    if (!product.name.trim()) {
+      seenEmpty = true;
+    } else if (seenEmpty) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// 상품명 있는 행만 앞에서부터 다시 번호를 매긴다 (선택·세트 구성품 맵도 같이)
+function remapFilledRowMap<T>(
+  products: { name: string }[],
+  map: Record<number, T>,
+): Record<number, T> {
+  const next: Record<number, T> = {};
+  let newIndex = 0;
+  products.forEach((product, oldIndex) => {
+    if (!product.name.trim()) return;
+    if (Object.prototype.hasOwnProperty.call(map, oldIndex)) {
+      next[newIndex] = map[oldIndex];
+    }
+    newIndex += 1;
+  });
+  return next;
+}
+
+function remapProductFieldErrors(
+  products: { name: string }[],
+  errors: Record<string, string>,
+): Record<string, string> {
+  const indexMap = new Map<number, number>();
+  let newIndex = 0;
+  products.forEach((product, oldIndex) => {
+    if (!product.name.trim()) return;
+    indexMap.set(oldIndex, newIndex);
+    newIndex += 1;
+  });
+
+  return Object.fromEntries(
+    Object.entries(errors).map(([field, message]) => {
+      const match = field.match(/^products\.(\d+)\.(.+)$/);
+      if (!match) return [field, message];
+      const mapped = indexMap.get(Number(match[1]));
+      if (mapped == null) return null;
+      return [`products.${mapped}.${match[2]}`, message];
+    }).filter((entry): entry is [string, string] => entry != null),
+  );
 }
 
 // 저장된 상품 행으로 상품 드롭다운·세트 구성품 선택을 되돌린다 (수정 모드·임시저장 복원 공용)
@@ -642,6 +693,49 @@ export default function ContractWritePage() {
     }));
   }
 
+  // 빈 행 구멍을 없애고 상품을 위로 모은다 (1번 행 번호 클릭·행 삭제 후)
+  function compactProductRows(
+    products: ProductRow[],
+    selections: Record<number, CatalogProduct | null>,
+    componentSelections: Record<number, SetComponentSelection[]>,
+    fieldErrors: Record<string, string>,
+  ) {
+    if (!productsHaveEmptyGaps(products)) {
+      return {
+        products,
+        selections,
+        componentSelections,
+        fieldErrors,
+      };
+    }
+
+    return {
+      products: moveEmptyRowsToEnd(products),
+      selections: remapFilledRowMap(products, selections),
+      componentSelections: remapFilledRowMap(products, componentSelections),
+      fieldErrors: remapProductFieldErrors(products, fieldErrors),
+    };
+  }
+
+  function handleCompactProductRows() {
+    setValues((current) => {
+      const compacted = compactProductRows(
+        current.products,
+        productSelections,
+        setComponentSelections,
+        errors,
+      );
+      if (compacted.products === current.products) {
+        return current;
+      }
+
+      setProductSelections(compacted.selections);
+      setSetComponentSelections(compacted.componentSelections);
+      setErrors(compacted.fieldErrors);
+      return { ...current, products: compacted.products };
+    });
+  }
+
   function handleClearProductRow(index: number) {
     if (!window.confirm(`${index + 1}번 행을 삭제할까요?`)) {
       return;
@@ -659,32 +753,35 @@ export default function ContractWritePage() {
       const isSameGift = (product: ProductRow) =>
         isGift && isGiftRow(product) && isGooseGiftName(product.name) === isGooseGift;
 
+      const clearedProducts = current.products.map((product, productIndex) =>
+        productIndex === index || isSameGift(product) ? createEmptyProductRow() : product,
+      );
+      const selectionsAfterClear = { ...productSelections };
+      delete selectionsAfterClear[index];
+      const componentSelectionsAfterClear = { ...setComponentSelections };
+      delete componentSelectionsAfterClear[index];
+      const errorsAfterClear = Object.fromEntries(
+        Object.entries(errors).filter(([field]) => !field.startsWith(`products.${index}.`)),
+      );
+      const compacted = compactProductRows(
+        clearedProducts,
+        selectionsAfterClear,
+        componentSelectionsAfterClear,
+        errorsAfterClear,
+      );
+
+      setProductSelections(compacted.selections);
+      setSetComponentSelections(compacted.componentSelections);
+      setErrors(compacted.fieldErrors);
+
       return {
         ...current,
         // 패드 행을 지우면 아래 패드 구매 여부를 다시 고르게 한다
         ...(isPadRow ? { padPurchased: null, padQuantity: "" } : {}),
         ...(isGift ? (isGooseGift ? { gooseGiftProvided: null } : { giftProvided: null }) : {}),
-        products: current.products.map((product, productIndex) =>
-          productIndex === index || isSameGift(product) ? createEmptyProductRow() : product,
-        ),
+        products: compacted.products,
       };
     });
-
-    setProductSelections((current) => {
-      const next = { ...current };
-      delete next[index];
-      return next;
-    });
-    setSetComponentSelections((current) => {
-      const next = { ...current };
-      delete next[index];
-      return next;
-    });
-    setErrors((current) =>
-      Object.fromEntries(
-        Object.entries(current).filter(([field]) => !field.startsWith(`products.${index}.`)),
-      ),
-    );
   }
 
   function handleClearAllProductRows() {
@@ -915,6 +1012,7 @@ export default function ContractWritePage() {
             onProductSelect={handleProductSelect}
             onAddProductRow={handleAddProductRow}
             onClearProductRow={handleClearProductRow}
+            onCompactProductRows={handleCompactProductRows}
             onRemoveLastProductRow={handleRemoveLastProductRow}
             onClearAllProductRows={handleClearAllProductRows}
             onSetComponentChange={handleSetComponentChange}
