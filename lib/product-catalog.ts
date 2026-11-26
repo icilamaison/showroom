@@ -398,6 +398,8 @@ type SizeSiblingExtra = {
   orderMadeName: string;
   displaySize: string;
   orderMadeSize: string;
+  // 카페24 동기화가 product.json을 덮어써 ORDER-MADE 옵션이 사라져도 4호가 빠지지 않도록 가격을 여기 둔다
+  salePrice: number;
 };
 
 const SIZE_SIBLING_EXTRAS: Record<string, SizeSiblingExtra[]> = {
@@ -406,6 +408,7 @@ const SIZE_SIBLING_EXTRAS: Record<string, SizeSiblingExtra[]> = {
       orderMadeName: "모노 비벤디 ORDER-MADE",
       displaySize: "4호 300X400",
       orderMadeSize: "300X400 이하",
+      salePrice: 1516800,
     },
   ],
 };
@@ -430,19 +433,17 @@ function getSizeSiblingExtras(baseName: string): Array<{
       continue;
     }
 
+    // 옵션이 product.json에 있으면 그 가격(카페24 최신값), 없으면 설정 가격
     const sizeOption = (member.sizes ?? []).find(
       (option) => getSizeOptionName(option) === extra.orderMadeSize,
     );
-    if (!sizeOption) {
-      continue;
-    }
 
     result.push({
       extra,
       member,
       salePrice:
         (typeof sizeOption === "object" ? sizeOption.salePrice : undefined) ??
-        member.salePrice,
+        extra.salePrice,
     });
   }
 
