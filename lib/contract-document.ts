@@ -39,6 +39,8 @@ export function purchasePayloadToFormValues(
     gooseGiftProvided: payload.gooseGiftProvided,
     termsAgreed: payload.termsAgreed,
     marketingConsentAgreed: payload.marketingConsentAgreed ?? false,
+    // 관리자 보기용. 고객 PDF에는 안 그린다
+    visitType: payload.visitType ?? "",
     // 스키마에 없는 값이라 원본 payload에서 그대로 꺼낸다
     noticeAnnotation: (payload as Pick<ContractFormValues, "noticeAnnotation">).noticeAnnotation,
   };

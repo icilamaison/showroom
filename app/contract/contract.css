@@ -39,7 +39,7 @@
   color: #4b5563;
 }
 
-/* 작성 화면만: 제목은 가운데, 예약자/워크인은 제목 왼쪽 */
+/* 작성·관리자 보기: 제목은 가운데, 예약자/워크인은 제목 왼쪽 */
 .contract-doc__title-row {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -307,6 +307,19 @@
 .contract-doc__row-no {
   text-align: center;
   font-weight: 600;
+}
+
+.contract-doc__row-no-btn {
+  display: block;
+  width: 100%;
+  margin: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* 행 삭제 버튼 — 번호 아래에 작게 둔다 (열을 늘리지 않음) */

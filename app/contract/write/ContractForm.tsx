@@ -118,6 +118,8 @@ type ContractFormProps = {
   onProductSelect: (index: number, product: CatalogProduct) => void;
   onAddProductRow: () => void;
   onClearProductRow: (index: number) => void;
+  // 빈 행 구멍을 없애고 상품을 위로 모은다
+  onCompactProductRows: () => void;
   onRemoveLastProductRow: () => void;
   onClearAllProductRows: () => void;
   onSetComponentChange: (
@@ -193,7 +195,7 @@ function DateFields({
   );
 }
 
-const SIZE4_NUMBERS = "①②③④⑤⑥⑦⑧";
+const SIZE4_NUMBERS = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫";
 
 // 4호 러그 배송 안내 및 사전 동의 팝업. 4호를 고르면 바로 뜨고, 아래 안내 박스에서 다시 열 수 있다
 function Size4DeliveryModal({
@@ -583,6 +585,7 @@ export default function ContractForm({
   onProductSelect,
   onAddProductRow,
   onClearProductRow,
+  onCompactProductRows,
   onRemoveLastProductRow,
   onClearAllProductRows,
   onSetComponentChange,
@@ -855,7 +858,16 @@ export default function ContractForm({
               <Fragment key={index}>
               <tr>
                 <td className="contract-doc__row-no">
-                  {index + 1}
+                  {/* 번호 클릭 시 빈 행을 아래로 모아 상품이 위로 붙는다 */}
+                  <button
+                    type="button"
+                    className="contract-doc__row-no-btn"
+                    onClick={onCompactProductRows}
+                    title="빈 행 정리"
+                    aria-label={`${index + 1}번 행. 빈 행 정리`}
+                  >
+                    {index + 1}
+                  </button>
                   {/* 상품명이 없어도 컬러·단가 등 수기 입력이 있으면 지울 수 있게 한다 */}
                   {Object.values(product).some((value) => String(value ?? "").trim()) ? (
                     <button
@@ -873,6 +885,7 @@ export default function ContractForm({
                     value={product.name}
                     onChange={(value) => onProductChange(index, "name", value)}
                     onSelect={(selected) => onProductSelect(index, selected)}
+                    onFocus={index === 0 ? onCompactProductRows : undefined}
                   />
                 </td>
                 <td>

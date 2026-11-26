@@ -42,7 +42,7 @@ export default function AdminContractViewPage() {
         ) : !contract ? (
           <p className="app-description">불러오는 중...</p>
         ) : documentValues ? (
-          <ContractDocumentViewer values={documentValues} />
+          <ContractDocumentViewer values={documentValues} showVisitType />
         ) : (
           <p className="app-alert app-alert--error">계약서 내용을 표시할 수 없습니다.</p>
         )}

@@ -214,12 +214,15 @@ type ContractDocumentViewProps = {
   className?: string;
   // PDF: 빈 상품 줄을 빼서 계약서가 A4 한 장에 들어가게 한다
   hideEmptyRows?: boolean;
+  // 관리자 보기만: 예약자/워크인 체크를 제목 왼쪽에 표시
+  showVisitType?: boolean;
 };
 
 export default function ContractDocumentView({
   values,
   className = "",
   hideEmptyRows = false,
+  showVisitType = false,
 }: ContractDocumentViewProps) {
   const displayedRecipientName = values.recipientSameAsBuyer
     ? values.buyerName
@@ -247,7 +250,24 @@ export default function ContractDocumentView({
           </span>
         </div>
 
-        <h1 className="contract-doc__title">구매 계약서</h1>
+        {showVisitType ? (
+          <div className="contract-doc__title-row">
+            <div className="contract-doc__visit-type" role="group" aria-label="방문 유형">
+              <DocCheckboxDisplay
+                checked={values.visitType === "reservation"}
+                label="예약자"
+              />
+              <DocCheckboxDisplay
+                checked={values.visitType === "walk_in"}
+                label="워크인"
+              />
+            </div>
+            <h1 className="contract-doc__title">구매 계약서</h1>
+            <div className="contract-doc__title-row-spacer" aria-hidden="true" />
+          </div>
+        ) : (
+          <h1 className="contract-doc__title">구매 계약서</h1>
+        )}
 
         <div className="contract-doc__meta">
           <div className="contract-doc__meta-item">

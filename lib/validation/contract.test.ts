@@ -212,7 +212,16 @@ describe("validateContractForm", () => {
     expect(getSize4DeliveryKinds(rows("모노 비벤디 10colors"))).toEqual(["mono"]);
     expect(getSize4DeliveryKinds(validFormValues.products)).toEqual([]);
 
-    const mono = { "mono.region": "확인 필요", "mono.quickFee": "동의하지 않음", "mono.extraCost": "동의하지 않음" };
+    const mono = {
+      "mono.freightElevator": "확인 필요",
+      "mono.elevatorLoad": "확인 필요",
+      "mono.ladderTruck": "확인 필요",
+      "mono.customerHelp": "도움 어려움",
+      "mono.dropOff": "동의하지 않음",
+      "mono.region": "확인 필요",
+      "mono.quickFee": "동의하지 않음",
+      "mono.extraCost": "동의하지 않음",
+    };
     expect(isSize4DeliveryAnswered("mono", mono)).toBe(false);
     expect(isSize4DeliveryAnswered("mono", { ...mono, "mono.final": "동의하지 않음" })).toBe(true);
   });

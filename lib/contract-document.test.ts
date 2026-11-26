@@ -31,4 +31,12 @@ describe("purchasePayloadToFormValues", () => {
     expect(values.padPurchased).toBe(true);
     expect(values.padQuantity).toBe("2");
   });
+
+  it("keeps visit type for the admin document view", () => {
+    const values = purchasePayloadToFormValues({
+      products: [],
+      visitType: "walk_in",
+    } as unknown as PurchaseContractPayload);
+    expect(values.visitType).toBe("walk_in");
+  });
 });

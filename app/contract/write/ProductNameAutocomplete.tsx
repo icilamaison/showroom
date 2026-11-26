@@ -11,12 +11,14 @@ type ProductNameAutocompleteProps = {
   value: string;
   onChange: (value: string) => void;
   onSelect: (product: CatalogProduct) => void;
+  onFocus?: () => void;
 };
 
 export default function ProductNameAutocomplete({
   value,
   onChange,
   onSelect,
+  onFocus,
 }: ProductNameAutocompleteProps) {
   const listId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +98,10 @@ export default function ProductNameAutocomplete({
           onChange(event.target.value);
           setIsOpen(Boolean(event.target.value.trim()));
         }}
-        onFocus={openSuggestions}
+        onFocus={() => {
+          onFocus?.();
+          openSuggestions();
+        }}
         onKeyDown={handleKeyDown}
         className="contract-doc__cell-input"
         role="combobox"
