@@ -40,6 +40,12 @@ adminRouter.post("/logout", (req, res) => {
   return sendSuccess(res, null);
 });
 adminRouter.use(requireAdminAuth);
+adminRouter.get("/me", (req, res) => {
+  return sendSuccess(res, {
+    adminId: req.admin!.adminId,
+    username: req.admin!.username,
+  });
+});
 adminRouter.use("/audit-logs", auditLogsRouter);
 adminRouter.use("/contracts", contractsRouter);
 

@@ -86,7 +86,7 @@ export default function ContractNoticeDocument({
           <li>
             주문 제작 상품인 경우(러그 3호 이상 및 주문 제작 사이즈 포함)
           </li>
-          <li>사진 접수 없이 임의로 반송하신 경우(재반송 처리)</li>
+          <li>사전 접수 없이 임의로 반송하신 경우(재반송 처리)</li>
         </ol>
       </section>
 

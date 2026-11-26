@@ -15,7 +15,7 @@ describe("contract-gift", () => {
     const empty = [createEmptyProductRow(), createEmptyProductRow()];
     expect(giftNames(syncGiftRows([row("러그", "499999"), ...empty], "", true))).toEqual([]);
     expect(giftNames(syncGiftRows([row("러그", "500000"), ...empty], "", true))).toEqual([
-      "(사은품) 브릭 쿠션커버 블루 30X50",
+      "(사은품) 브릭 쿠션커버 30X50",
       "(사은품) 쿠션솜 30X50",
     ]);
     expect(giftNames(syncGiftRows([row("러그", "1500000")], "", true))).toHaveLength(5);
@@ -49,7 +49,7 @@ describe("contract-gift", () => {
     const tierOnly = syncGiftRows([goose, createEmptyProductRow(), createEmptyProductRow()], "", true, false);
     expect(tierOnly.map((product) => product.name)).toEqual([
       "폴란드 마더구스 이불솜",
-      "(사은품) 브릭 쿠션커버 블루 30X50",
+      "(사은품) 브릭 쿠션커버 30X50",
       "(사은품) 쿠션솜 30X50",
     ]);
     const gooseOnly = syncGiftRows([goose, createEmptyProductRow()], "", false, true);

@@ -113,6 +113,47 @@ export async function logoutAdmin(): Promise<void> {
   localStorage.removeItem(ADMIN_QUERY_CACHE_KEY);
 }
 
+export type AdminMe = {
+  adminId: number;
+  username: string;
+};
+
+export async function fetchAdminMe(): Promise<AdminMe> {
+  return adminFetch<AdminMe>("/api/admin/me");
+}
+
+export type AuditLogItem = {
+  id: string;
+  createdAt: string;
+  actorType: string;
+  actorId: number | null;
+  actorLabel: string | null;
+  action: string;
+  targetType: string | null;
+  targetId: number | null;
+  targetLabel: string | null;
+  ip: string | null;
+  success: boolean;
+  meta: Record<string, unknown> | null;
+};
+
+export type AuditLogListResult = {
+  items: AuditLogItem[];
+};
+
+export async function fetchAuditLogs(options: {
+  limit?: number;
+  action?: string;
+} = {}): Promise<AuditLogListResult> {
+  const params = new URLSearchParams();
+  if (options.limit) params.set("limit", String(options.limit));
+  if (options.action?.trim()) params.set("action", options.action.trim());
+  const query = params.toString();
+  return adminFetch<AuditLogListResult>(
+    query ? `/api/admin/audit-logs?${query}` : "/api/admin/audit-logs",
+  );
+}
+
 export type ContractListItem = {
   id: number;
   contractNumber: string;

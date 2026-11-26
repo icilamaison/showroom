@@ -460,6 +460,21 @@ function sendCustomerLink(
         return sendError(res, "테스트 기간에는 등록된 테스트 번호로만 발송할 수 있습니다.", 400);
       }
 
+      // 알림톡은 실제 고객 카카오로 가므로 로컬에서 테스트 발송을 막는다
+      if (label === "알림톡") {
+        const origin = process.env.CLIENT_ORIGIN ?? "";
+        if (
+          origin.includes("localhost") ||
+          origin.includes("127.0.0.1")
+        ) {
+          return sendError(
+            res,
+            "로컬에서는 알림톡을 보낼 수 없습니다. 링크 복사로 확인해 주세요.",
+            400,
+          );
+        }
+      }
+
       const result = await send(contract);
 
       auditAdmin(req, label === "알림톡" ? "contract.send_alimtalk" : "contract.send_sms", {

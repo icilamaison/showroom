@@ -1,9 +1,27 @@
 "use client";
 
-import { logoutAdmin } from "@/lib/api-client";
+import { canViewAuditLogs } from "@/lib/audit-access";
+import { fetchAdminMe, logoutAdmin } from "@/lib/api-client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
+  const [showAuditLink, setShowAuditLink] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchAdminMe()
+      .then((me) => {
+        if (!cancelled) setShowAuditLink(canViewAuditLogs(me.username));
+      })
+      .catch(() => {
+        if (!cancelled) setShowAuditLink(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function handleLogout() {
     await logoutAdmin();
     window.location.assign("/");
@@ -41,6 +59,11 @@ export default function HomePage() {
           <Link href="/admin/contracts" className="app-menu__item">
             계약서 조회
           </Link>
+          {showAuditLink ? (
+            <Link href="/admin/audit-logs" className="app-menu__item">
+              활동 기록
+            </Link>
+          ) : null}
         </nav>
       </div>
     </main>
