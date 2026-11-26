@@ -18,6 +18,7 @@ import {
   updateContractStatus,
 } from "../../services/admin-contract.service";
 import { parseContractInput } from "../../schemas/contract.schema";
+import { getRequestIp, recordAudit } from "../../services/audit.service";
 import { updateContract } from "../../services/contract.service";
 import {
   sendContractLinkAlimtalk,
@@ -34,6 +35,30 @@ import {
 } from "../../services/order-excel.service";
 
 const contractsRouter = Router();
+
+function auditAdmin(
+  req: Request,
+  action: string,
+  extra: {
+    targetId?: number | null;
+    targetLabel?: string | null;
+    success?: boolean;
+    meta?: Record<string, unknown>;
+  } = {},
+) {
+  recordAudit({
+    actorType: "admin",
+    actorId: req.admin?.adminId,
+    actorLabel: req.admin?.username,
+    action,
+    targetType: "contract",
+    targetId: extra.targetId,
+    targetLabel: extra.targetLabel,
+    ip: getRequestIp(req),
+    success: extra.success ?? true,
+    meta: extra.meta,
+  });
+}
 
 function sendExcelFile(
   res: Parameters<typeof sendSuccess>[0],
@@ -62,6 +87,20 @@ contractsRouter.get("/", async (req, res) => {
 
     const result = await listContracts(parsed.filters);
 
+    auditAdmin(req, "contract.list", {
+      meta: {
+        total: result.total,
+        page: result.page,
+        filters: {
+          customerName: parsed.filters.customerName ?? null,
+          customerPhone: parsed.filters.customerPhone ?? null,
+          status: parsed.filters.status ?? null,
+          dateFrom: parsed.filters.dateFrom ?? null,
+          dateTo: parsed.filters.dateTo ?? null,
+        },
+      },
+    });
+
     return sendSuccess(res, result);
   } catch (error) {
     console.error("[admin/contracts] Failed to list contracts:", error);
@@ -84,6 +123,10 @@ contractsRouter.get("/order-excel", async (req, res) => {
       exportFilters.dateFrom,
       exportFilters.dateTo,
     );
+
+    auditAdmin(req, "contract.export_excel", {
+      meta: { count: contracts.length, bulk: true, filters: exportFilters },
+    });
 
     return sendExcelFile(res, buffer, filename);
   } catch (error) {
@@ -119,6 +162,11 @@ contractsRouter.get("/:id/order-excel", async (req, res) => {
     const contract = await getContractById(id);
 
     if (!contract) {
+      auditAdmin(req, "contract.export_excel", {
+        targetId: id,
+        success: false,
+        meta: { reason: "not_found" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
 
@@ -127,6 +175,12 @@ contractsRouter.get("/:id/order-excel", async (req, res) => {
       formatShoppingMallOrderNumber(approvalNumber),
     );
     const filename = buildOrderExcelFilename(contract.contractNumber);
+
+    auditAdmin(req, "contract.export_excel", {
+      targetId: id,
+      targetLabel: contract.contractNumber,
+      meta: { bulk: false },
+    });
 
     return sendExcelFile(res, buffer, filename);
   } catch (error) {
@@ -150,8 +204,18 @@ contractsRouter.get("/:id", async (req, res) => {
     const contract = await getContractById(id);
 
     if (!contract) {
+      auditAdmin(req, "contract.view", {
+        targetId: id,
+        success: false,
+        meta: { reason: "not_found" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
+
+    auditAdmin(req, "contract.view", {
+      targetId: id,
+      targetLabel: contract.contractNumber,
+    });
 
     return sendSuccess(res, contract);
   } catch (error) {
@@ -177,8 +241,15 @@ contractsRouter.put("/:id", async (req, res) => {
     const result = await updateContract(id, parsed.data, req.body, req.admin!.adminId);
 
     if (result === "not_found") {
+      auditAdmin(req, "contract.update", {
+        targetId: id,
+        success: false,
+        meta: { reason: "not_found" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
+
+    auditAdmin(req, "contract.update", { targetId: id });
 
     return sendSuccess(res, { id });
   } catch (error) {
@@ -195,11 +266,22 @@ contractsRouter.delete("/:id", async (req, res) => {
   }
 
   try {
+    const existing = await getContractById(id);
     const deleted = await deleteContract(id);
 
     if (!deleted) {
+      auditAdmin(req, "contract.delete", {
+        targetId: id,
+        success: false,
+        meta: { reason: "not_found" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
+
+    auditAdmin(req, "contract.delete", {
+      targetId: id,
+      targetLabel: existing?.contractNumber,
+    });
 
     return sendSuccess(res, { id });
   } catch (error) {
@@ -225,8 +307,18 @@ contractsRouter.patch("/:id/status", async (req, res) => {
     const updated = await updateContractStatus(id, parsed.data.status);
 
     if (!updated) {
+      auditAdmin(req, "contract.status", {
+        targetId: id,
+        success: false,
+        meta: { reason: "not_found" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
+
+    auditAdmin(req, "contract.status", {
+      targetId: id,
+      meta: { status: parsed.data.status },
+    });
 
     return sendSuccess(res, updated);
   } catch (error) {
@@ -255,8 +347,15 @@ contractsRouter.patch("/:id/approval-number", async (req, res) => {
     );
 
     if (!updated) {
+      auditAdmin(req, "contract.approval_number", {
+        targetId: id,
+        success: false,
+        meta: { reason: "not_found" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
+
+    auditAdmin(req, "contract.approval_number", { targetId: id });
 
     return sendSuccess(res, updated);
   } catch (error) {
@@ -285,8 +384,15 @@ contractsRouter.patch("/:id/admin-memo", async (req, res) => {
     const updated = await updateContractAdminMemo(id, parsed.data.adminMemo);
 
     if (!updated) {
+      auditAdmin(req, "contract.admin_memo", {
+        targetId: id,
+        success: false,
+        meta: { reason: "not_found" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
+
+    auditAdmin(req, "contract.admin_memo", { targetId: id });
 
     return sendSuccess(res, updated);
   } catch (error) {
@@ -306,8 +412,15 @@ contractsRouter.post("/:id/view-token", async (req, res) => {
     const reissued = await reissueContractViewToken(id);
 
     if (!reissued) {
+      auditAdmin(req, "contract.view_token_reissue", {
+        targetId: id,
+        success: false,
+        meta: { reason: "not_found" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
+
+    auditAdmin(req, "contract.view_token_reissue", { targetId: id });
 
     return sendSuccess(res, reissued);
   } catch (error) {
@@ -348,6 +461,12 @@ function sendCustomerLink(
       }
 
       const result = await send(contract);
+
+      auditAdmin(req, label === "알림톡" ? "contract.send_alimtalk" : "contract.send_sms", {
+        targetId: id,
+        targetLabel: contract.contractNumber,
+        meta: { result },
+      });
 
       return sendSuccess(res, { result });
     } catch (error) {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { sendError, sendSuccess } from "../../lib/api-response";
 import { parseAdminLoginInput } from "../../schemas/admin.schema";
+import { getRequestIp, recordAudit } from "../../services/audit.service";
 import {
   ADMIN_COOKIE_OPTIONS,
   ADMIN_TOKEN_COOKIE,
@@ -51,7 +52,17 @@ authRouter.post("/", async (req, res) => {
 
   const { username, password } = parsed.data;
 
+  const ip = getRequestIp(req);
+
   if (isLoginLocked(username, Date.now())) {
+    recordAudit({
+      actorType: "anonymous",
+      actorLabel: username,
+      action: "admin.login",
+      ip,
+      success: false,
+      meta: { reason: "locked" },
+    });
     return sendError(
       res,
       "로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요.",
@@ -63,6 +74,14 @@ authRouter.post("/", async (req, res) => {
 
   if (!admin) {
     recordFailedLogin(username, Date.now());
+    recordAudit({
+      actorType: "anonymous",
+      actorLabel: username,
+      action: "admin.login",
+      ip,
+      success: false,
+      meta: { reason: "invalid_credentials" },
+    });
     return sendError(res, "아이디 또는 비밀번호가 올바르지 않습니다.", 401);
   }
 
@@ -73,6 +92,15 @@ authRouter.post("/", async (req, res) => {
   res.cookie(ADMIN_TOKEN_COOKIE, token, {
     ...ADMIN_COOKIE_OPTIONS,
     maxAge: ONE_DAY_MS,
+  });
+
+  recordAudit({
+    actorType: "admin",
+    actorId: admin.adminId,
+    actorLabel: admin.username,
+    action: "admin.login",
+    ip,
+    success: true,
   });
 
   return sendSuccess(res, { username: admin.username });

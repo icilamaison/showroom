@@ -2,6 +2,7 @@ import { Router } from "express";
 import { sendError, sendSuccess } from "../lib/api-response";
 import { requireAdminAuth } from "../middleware/auth";
 import { parseContractInput } from "../schemas/contract.schema";
+import { getRequestIp, recordAudit } from "../services/audit.service";
 import { createContract } from "../services/contract.service";
 import { getContractByNumberAndToken } from "../services/admin-contract.service";
 
@@ -11,8 +12,18 @@ const contractsRouter = Router();
 contractsRouter.get("/public/:contractNumber", async (req, res) => {
   const { contractNumber } = req.params;
   const token = typeof req.query.token === "string" ? req.query.token : "";
+  const ip = getRequestIp(req);
 
   if (!token) {
+    recordAudit({
+      actorType: "public",
+      action: "contract.public_view",
+      targetType: "contract",
+      targetLabel: contractNumber,
+      ip,
+      success: false,
+      meta: { reason: "missing_token" },
+    });
     return sendError(res, "계약서를 찾을 수 없습니다.", 404);
   }
 
@@ -20,12 +31,40 @@ contractsRouter.get("/public/:contractNumber", async (req, res) => {
     const contract = await getContractByNumberAndToken(contractNumber, token);
 
     if (!contract) {
+      recordAudit({
+        actorType: "public",
+        action: "contract.public_view",
+        targetType: "contract",
+        targetLabel: contractNumber,
+        ip,
+        success: false,
+        meta: { reason: "not_found_or_token_mismatch" },
+      });
       return sendError(res, "계약서를 찾을 수 없습니다.", 404);
     }
 
     if (contract === "expired") {
+      recordAudit({
+        actorType: "public",
+        action: "contract.public_view",
+        targetType: "contract",
+        targetLabel: contractNumber,
+        ip,
+        success: false,
+        meta: { reason: "expired" },
+      });
       return sendError(res, "링크 유효기간이 지났습니다. 매장에 링크 재발급을 요청해주세요.", 410);
     }
+
+    recordAudit({
+      actorType: "public",
+      action: "contract.public_view",
+      targetType: "contract",
+      targetId: contract.id,
+      targetLabel: contract.contractNumber,
+      ip,
+      success: true,
+    });
 
     return sendSuccess(res, contract);
   } catch (error) {
@@ -43,6 +82,17 @@ contractsRouter.post("/", requireAdminAuth, async (req, res) => {
 
   try {
     const result = await createContract(parsed.data, req.body, req.admin!.adminId);
+
+    recordAudit({
+      actorType: "admin",
+      actorId: req.admin!.adminId,
+      actorLabel: req.admin!.username,
+      action: "contract.create",
+      targetType: "contract",
+      targetLabel: result.contractNumber,
+      ip: getRequestIp(req),
+      success: true,
+    });
 
     // 알림톡은 저장 시 자동 발송하지 않고 관리자 상세의 발송 버튼으로만 보낸다
     return sendSuccess(res, result, 201);
