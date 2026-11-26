@@ -1,11 +1,16 @@
 import "dotenv/config";
 import request from "supertest";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createEmptyProductRows } from "../../lib/validation/contract";
 import { pool } from "../db/pool";
 import { createApp } from "../index";
 
 const app = createApp();
+
+const adminCredentials = {
+  username: process.env.ADMIN_SEED_USERNAME ?? "admin",
+  password: process.env.ADMIN_SEED_PASSWORD ?? "admin1234",
+};
 
 const validPayload = {
   managerName: "김담당",
@@ -43,7 +48,9 @@ const validPayload = {
   agreementDateMonth: "6",
   agreementDateDay: "24",
   signatureName: "홍길동",
+  signatureDataUrl: "data:image/png;base64,test",
   termsAgreed: true,
+  largeRugNoticeAgreed: true,
 };
 
 function uniquePayload(phoneSuffix: string) {
@@ -56,6 +63,13 @@ function uniquePayload(phoneSuffix: string) {
 }
 
 describe("POST /api/contracts", () => {
+  let agent: ReturnType<typeof request.agent>;
+
+  beforeAll(async () => {
+    agent = request.agent(app);
+    await agent.post("/api/admin/login").send(adminCredentials).expect(200);
+  });
+
   afterAll(async () => {
     await pool.end();
   });
@@ -63,22 +77,29 @@ describe("POST /api/contracts", () => {
   it("returns 201 with contract number for valid submission (AC-1)", async () => {
     const payload = uniquePayload("1001");
 
-    const response = await request(app)
-      .post("/api/contracts")
-      .send(payload)
-      .expect(201);
+    const response = await agent.post("/api/contracts").send(payload).expect(201);
 
     expect(response.body).toEqual({
       success: true,
       data: {
         contractNumber: expect.stringMatching(/^CT-\d{8}-\d{4}$/),
+        viewToken: expect.any(String),
         status: "SUBMITTED",
       },
     });
   });
 
-  it("returns 400 with field errors for invalid submission (AC-1)", async () => {
+  it("returns 401 without authentication", async () => {
     const response = await request(app)
+      .post("/api/contracts")
+      .send(uniquePayload("1099"))
+      .expect(401);
+
+    expect(response.body.success).toBe(false);
+  });
+
+  it("returns 400 with field errors for invalid submission (AC-1)", async () => {
+    const response = await agent
       .post("/api/contracts")
       .send({
         ...validPayload,
@@ -98,10 +119,7 @@ describe("POST /api/contracts", () => {
   it("stores contract data and payload in the database (AC-2)", async () => {
     const payload = uniquePayload("1002");
 
-    const response = await request(app)
-      .post("/api/contracts")
-      .send(payload)
-      .expect(201);
+    const response = await agent.post("/api/contracts").send(payload).expect(201);
 
     const { contractNumber } = response.body.data;
 
@@ -128,15 +146,9 @@ describe("POST /api/contracts", () => {
   it("generates different contract numbers for duplicate submissions (AC-1)", async () => {
     const payload = uniquePayload("1003");
 
-    const first = await request(app)
-      .post("/api/contracts")
-      .send(payload)
-      .expect(201);
+    const first = await agent.post("/api/contracts").send(payload).expect(201);
 
-    const second = await request(app)
-      .post("/api/contracts")
-      .send(payload)
-      .expect(201);
+    const second = await agent.post("/api/contracts").send(payload).expect(201);
 
     expect(first.body.data.contractNumber).not.toBe(
       second.body.data.contractNumber,

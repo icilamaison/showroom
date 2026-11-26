@@ -47,24 +47,9 @@ const contractPayload = {
   agreementDateDay: "1",
   termsAgreed: true,
   signatureName: "관리자테스트",
+  signatureDataUrl: "data:image/png;base64,test",
+  largeRugNoticeAgreed: true,
 };
-
-async function createTestContract(phoneSuffix: string, customerName: string) {
-  const payload = {
-    ...contractPayload,
-    buyerPhone: `010-8888-${phoneSuffix}`,
-    buyerName: customerName,
-    signatureName: customerName,
-  };
-
-  const response = await request(app).post("/api/contracts").send(payload);
-
-  return {
-    payload,
-    contractId: null as number | null,
-    contractNumber: response.body.data.contractNumber as string,
-  };
-}
 
 async function loginAgent() {
   const agent = request.agent(app);
@@ -75,6 +60,24 @@ async function loginAgent() {
     .expect(200);
 
   return agent;
+}
+
+async function createTestContract(phoneSuffix: string, customerName: string) {
+  const payload = {
+    ...contractPayload,
+    buyerPhone: `010-8888-${phoneSuffix}`,
+    buyerName: customerName,
+    signatureName: customerName,
+  };
+
+  const agent = await loginAgent();
+  const response = await agent.post("/api/contracts").send(payload).expect(201);
+
+  return {
+    payload,
+    contractId: null as number | null,
+    contractNumber: response.body.data.contractNumber as string,
+  };
 }
 
 describe("Admin API", () => {

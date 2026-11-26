@@ -16,7 +16,11 @@ import {
   getContractStatusLabel,
 } from "@/lib/constants/contract-status";
 import { formatFullAddress } from "@/lib/address";
-import { findCatalogProductByName, resolveCafe24Variant } from "@/lib/product-catalog";
+import {
+  findCatalogProductByName,
+  formatCatalogProductNo,
+  resolveCafe24Variant,
+} from "@/lib/product-catalog";
 import { formatSetOptionLabel } from "@/lib/set-product";
 import {
   getRugNoticeChecks,
@@ -115,9 +119,11 @@ function ProductTable({
               <tr key={`${product.name}-${index}`}>
                 {/* 묶어 고른 상품(포그 매트 / 스톤블랙)은 실제 카페24 상품(포그 매트 스톤블랙)으로 되돌려 번호를 찾는다 */}
                 <td>
-                  {findCatalogProductByName(
-                    resolveCafe24Variant(product.name, product.color, product.size).productName,
-                  )?.productNo ?? "-"}
+                  {formatCatalogProductNo(
+                    findCatalogProductByName(
+                      resolveCafe24Variant(product.name, product.color, product.size).productName,
+                    ),
+                  )}
                 </td>
                 <td>{product.name}</td>
                 <td>{product.type?.trim() ? product.type : "-"}</td>
@@ -408,20 +414,38 @@ export default function AdminContractDetailPage() {
   }
 
   // 알림톡·문자는 저장 시 자동 발송하지 않고 이 버튼으로만 보낸다
+  // 알림톡은 실제 고객 카카오로 가므로 테스트 확인용으로 절대 보내지 않는다. 화면 확인은 링크 복사·열기로.
   async function handleSendLink(channel: "alimtalk" | "sms") {
     if (!contract) {
       return;
     }
 
     const label = channel === "alimtalk" ? "알림톡" : "문자";
+    const host = window.location.hostname;
+    const isLocalHost = host === "localhost" || host === "127.0.0.1";
+
+    if (channel === "alimtalk" && isLocalHost) {
+      window.alert(
+        "로컬에서는 알림톡을 보낼 수 없습니다.\n테스트·화면 확인은 「링크 복사」또는 「고객 화면 열기」를 이용해 주세요.",
+      );
+      return;
+    }
 
     // 알림톡 버튼 링크는 템플릿에 등록된 운영 도메인으로 고정이라 테스트 계약서는 열리지 않는다
-    const testNotice =
-      channel === "alimtalk" && window.location.hostname.startsWith("test-")
-        ? "\n\n※ 테스트 사이트입니다. 알림톡 링크는 운영 사이트로 연결되어 계약서가 열리지 않을 수 있습니다.\n링크의 showroom을 test-showroom으로 바꿔 확인해 주세요."
-        : "";
+    const confirmMessage =
+      channel === "alimtalk"
+        ? [
+            "⚠️ 알림톡은 실제 고객 카카오톡으로 바로 전송됩니다.",
+            "테스트·확인 용도로 보내지 마세요. 화면 확인은 링크 복사/열기를 쓰세요.",
+            "",
+            `${contract.customerPhone} 번호로 정말 발송할까요?`,
+            host.startsWith("test-")
+              ? "\n※ 테스트 사이트입니다. 알림톡 버튼 링크는 운영 도메인으로 열려 계약서가 안 보일 수 있습니다."
+              : "",
+          ].join("\n")
+        : `${contract.customerPhone} 번호로 계약서를 문자로 보낼까요?`;
 
-    if (!window.confirm(`${contract.customerPhone} 번호로 계약서를 ${label}으로 보낼까요?${testNotice}`)) {
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -850,6 +874,9 @@ export default function AdminContractDetailPage() {
 
                         {contract.viewToken && !isCustomerLinkExpired ? (
                           <>
+                            <p className="admin-rail-hint">
+                              알림톡·문자는 실제 고객에게 갑니다. 테스트로 보내지 말고, 확인은 링크 복사·열기를 쓰세요.
+                            </p>
                             <div className="admin-rail-actions">
                               <button
                                 type="button"
@@ -860,6 +887,16 @@ export default function AdminContractDetailPage() {
                                 }}
                               >
                                 {sendingChannel === "alimtalk" ? "발송 중..." : "알림톡 발송하기"}
+                              </button>
+                              <button
+                                type="button"
+                                className="app-button app-button--secondary"
+                                disabled={sendingChannel !== null}
+                                onClick={() => {
+                                  void handleSendLink("sms");
+                                }}
+                              >
+                                {sendingChannel === "sms" ? "발송 중..." : "문자 발송하기"}
                               </button>
                               <button
                                 type="button"

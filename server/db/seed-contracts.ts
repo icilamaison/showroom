@@ -2,7 +2,13 @@ import "dotenv/config";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { getSizeOptionName, getSizeSalePrice, type CatalogProduct } from "../../lib/product-catalog";
+import { URL } from "node:url";
+import {
+  getSizeOptionName,
+  getSizeSalePrice,
+  type CatalogProduct,
+} from "../../lib/product-catalog";
+import { syncGiftRows } from "../../lib/contract-gift";
 import {
   createSetComponentSelections,
   formatSetOptionName,
@@ -14,8 +20,17 @@ import {
 import { parseContractInput } from "../schemas/contract.schema";
 import { pool } from "./pool";
 
-const COUNT = 30;
+const DEFAULT_COUNT = 30;
 const SEED_PHONE_PREFIX = "010-9000";
+// 보이는 가짜 서명. 유효한 data URL이라 엑박이 나지 않는다
+const SEED_SIGNATURE_DATA_URL =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="80" viewBox="0 0 220 80">
+      <path d="M10 50 C40 10, 70 70, 100 40 S160 20, 210 45" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+      <path d="M30 55 C60 35, 90 75, 130 50" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+    </svg>`,
+  );
 const NAMES = [
   "김민지", "이수현", "박지훈", "최유진", "정하은",
   "한소율", "오지민", "강서준", "윤다연", "임태양",
@@ -43,10 +58,33 @@ const ADDRESSES = [
   { postal: "35229", address: "대전광역시 서구 둔산로 100", detail: "B동 202호" },
   { postal: "21984", address: "인천광역시 연수구 송도과학로 16", detail: "801호" },
 ];
+const GIFT_COLORS = ["아이보리", "블루", "베이지", "그레이"];
+
+function parseCount(argv: string[]): number {
+  const flag = argv.find((arg) => arg.startsWith("--count="));
+  if (!flag) return DEFAULT_COUNT;
+  const value = Number(flag.slice("--count=".length));
+  return Number.isInteger(value) && value > 0 ? value : DEFAULT_COUNT;
+}
+
+function assertLocalDatabase(): void {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) throw new Error("DATABASE_URL is not set");
+  const host = new URL(dbUrl).hostname;
+  if (host !== "localhost" && host !== "127.0.0.1") {
+    throw new Error(`REFUSING non-local DB host: ${host}`);
+  }
+  console.log(`[seed] local DB host=${host} db=${new URL(dbUrl).pathname}`);
+}
 
 function loadCatalog(): CatalogProduct[] {
-  const filePath = path.join(process.cwd(), "product.json");
-  return JSON.parse(readFileSync(filePath, "utf8")) as CatalogProduct[];
+  const cafe24 = JSON.parse(
+    readFileSync(path.join(process.cwd(), "product.json"), "utf8"),
+  ) as CatalogProduct[];
+  const showroom = JSON.parse(
+    readFileSync(path.join(process.cwd(), "showroom-product.json"), "utf8"),
+  ) as CatalogProduct[];
+  return [...cafe24, ...showroom];
 }
 
 function pad(n: number, size = 2) {
@@ -55,20 +93,22 @@ function pad(n: number, size = 2) {
 
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
-
   for (let index = copy.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
     [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
   }
-
   return copy;
 }
 
-function pickDiverseProducts(catalog: CatalogProduct[]): CatalogProduct[] {
-  return shuffle(catalog).slice(0, COUNT);
+function isShowroomProduct(product: CatalogProduct): boolean {
+  return String(product.productCode ?? "").startsWith("SHOWROOM-");
 }
 
-function buildProductRow(product: CatalogProduct, variant: number): ProductRow {
+function buildProductRow(
+  product: CatalogProduct,
+  variant: number,
+  options: { sizeIndex?: number; quantity?: string; forceShowroomDiscount?: boolean } = {},
+): ProductRow {
   if (product.components?.length) {
     const selections = createSetComponentSelections(product.components);
     for (const [index, component] of product.components.entries()) {
@@ -87,8 +127,15 @@ function buildProductRow(product: CatalogProduct, variant: number): ProductRow {
       type: "",
       color: formatSetOptionName(product.components, selections),
       size: "",
-      quantity: String((variant % 3) + 1),
+      quantity: options.quantity ?? "1",
       unitPrice: String(product.salePrice),
+      // 세트 상품 자체 할인(카페24 setDiscountRate)은 이미 세트가에 녹아 있을 수 있음
+      discountRate:
+        options.forceShowroomDiscount || isShowroomProduct(product)
+          ? "5"
+          : product.setDiscountRate
+            ? String(product.setDiscountRate)
+            : "",
       remarks: "",
     };
   }
@@ -96,56 +143,113 @@ function buildProductRow(product: CatalogProduct, variant: number): ProductRow {
   const colorKeys = product.colors ? Object.keys(product.colors) : [];
   const types = product.types ?? [];
   const sizes = product.sizes ?? [];
-  const sizeOption = sizes[variant % sizes.length];
+  const sizeOption = sizes[options.sizeIndex ?? variant % Math.max(sizes.length, 1)];
   const sizeName = sizeOption ? getSizeOptionName(sizeOption) : "";
   const salePrice = getSizeSalePrice(product, sizeName) ?? product.salePrice;
 
   return {
     name: product.productName,
-    type: types[variant % types.length] ?? "",
-    color: colorKeys[variant % colorKeys.length] ?? "",
+    type: types[variant % Math.max(types.length, 1)] ?? "",
+    color: colorKeys[variant % Math.max(colorKeys.length, 1)] ?? "",
     size: sizeName,
-    quantity: String((variant % 3) + 1),
+    quantity: options.quantity ?? "1",
     unitPrice: String(salePrice),
+    // 쇼룸 단독 상품 구매 시 추가 5% 할인
+    discountRate:
+      options.forceShowroomDiscount || isShowroomProduct(product) ? "5" : "",
     remarks: "",
   };
 }
 
+function applyRandomGiftColors(products: ProductRow[]): ProductRow[] {
+  return products.map((product) => {
+    if (!product.name.includes("브릭 쿠션커버")) return product;
+    return {
+      ...product,
+      color: GIFT_COLORS[Math.floor(Math.random() * GIFT_COLORS.length)],
+    };
+  });
+}
+
+function pickShowroom(
+  catalog: CatalogProduct[],
+  code: string,
+): CatalogProduct {
+  const found = catalog.find((product) => product.productCode === code);
+  if (!found) throw new Error(`showroom product missing: ${code}`);
+  return found;
+}
+
 function buildContractFormValues(
   catalog: CatalogProduct[],
-  seedProducts: CatalogProduct[],
   index: number,
 ) {
   const no = index + 1;
-  const primary = seedProducts[index];
-  const secondary = catalog[(index * 17 + 11) % catalog.length];
   const day = pad(((no - 1) % 28) + 1);
-  const month = pad(10 + Math.floor((no - 1) / 28));
+  const month = "11";
   const writtenDate = `2026-${month}-${day}`;
   const address = ADDRESSES[index % ADDRESSES.length];
   const buyerName = NAMES[index % NAMES.length];
   const useBankTransfer = index % 4 === 0;
   const status = STATUSES[index % STATUSES.length];
 
+  // 시나리오: 예약 5% / 쇼룸 단독 5% / 금액대별 사은품이 보이게 가격대를 나눈다
+  const scenario = index % 10;
+  const reservation = scenario !== 0 && scenario !== 4; // 네이버 예약 → 전체 5%
   const products = createEmptyProductRows();
-  products[0] = buildProductRow(primary, index);
 
-  if (index % 3 === 1 && secondary.productCode !== primary.productCode) {
-    products[1] = buildProductRow(secondary, index + 1);
-  }
-
-  if (index % 5 === 0 && catalog.length > 2) {
-    const tertiary = catalog[(index * 23 + 5) % catalog.length];
-    if (
-      tertiary.productCode !== primary.productCode &&
-      tertiary.productCode !== secondary.productCode
-    ) {
-      products[2] = buildProductRow(tertiary, index + 2);
+  if (scenario === 0) {
+    // 워크인·소액·사은품 없음
+    const cheap =
+      catalog.find((product) => !isShowroomProduct(product) && product.salePrice < 200000) ??
+      catalog[0];
+    products[0] = buildProductRow(cheap, index, { quantity: "1" });
+    products[0].discountRate = "";
+  } else if (scenario === 1 || scenario === 5) {
+    // 예약 + 쇼룸 반호(~66만) → 할인 후 50만 구간
+    products[0] = buildProductRow(pickShowroom(catalog, "SHOWROOM-01"), index, {
+      sizeIndex: 0,
+      quantity: "1",
+    });
+  } else if (scenario === 2 || scenario === 6) {
+    // 예약 + 쇼룸 2호(~132만) → 100만 구간(쿠션 세트)
+    products[0] = buildProductRow(pickShowroom(catalog, "SHOWROOM-02"), index, {
+      sizeIndex: 1,
+      quantity: "1",
+    });
+  } else if (scenario === 3 || scenario === 7) {
+    // 예약 + 쇼룸 4호(~266만) → 150만 구간(+블랭킷)
+    products[0] = buildProductRow(pickShowroom(catalog, "SHOWROOM-03"), index, {
+      sizeIndex: 2,
+      quantity: "1",
+    });
+  } else if (scenario === 4) {
+    // 워크인 + 쇼룸 단독만 5% (예약 할인 없음)
+    products[0] = buildProductRow(pickShowroom(catalog, "SHOWROOM-01"), index, {
+      sizeIndex: 0,
+      quantity: "1",
+    });
+  } else {
+    // 예약 + 쇼룸/일반 혼합
+    products[0] = buildProductRow(pickShowroom(catalog, "SHOWROOM-04"), index, {
+      sizeIndex: 1,
+      quantity: "1",
+    });
+    const extra = shuffle(catalog.filter((product) => !isShowroomProduct(product)))[0];
+    if (extra) {
+      products[1] = buildProductRow(extra, index + 1, { quantity: "1" });
+      products[1].discountRate = "";
     }
   }
 
+  const totalDiscountRate = reservation ? "5" : "";
+  const withGifts = applyRandomGiftColors(
+    syncGiftRows(products, totalDiscountRate, true, false),
+  );
+
   return {
     managerName: ["이서연", "박준호", "최다은", "showroom"][index % 4],
+    visitType: reservation ? ("reservation" as const) : ("walk_in" as const),
     writtenDateYear: "2026",
     writtenDateMonth: String(Number(month)),
     writtenDateDay: String(Number(day)),
@@ -157,7 +261,7 @@ function buildContractFormValues(
     recipientPostalCode: address.postal,
     recipientAddress: address.address,
     recipientAddressDetail: `${address.detail.replace("호", "")}${no}호`,
-    products,
+    products: withGifts,
     paymentMethod: useBankTransfer ? ("bank_transfer" as const) : ("card" as const),
     cashReceiptType: useBankTransfer ? ("income_deduction" as const) : ("" as const),
     cashReceiptPhone: useBankTransfer ? `${SEED_PHONE_PREFIX}-${pad(no, 4)}` : "",
@@ -168,13 +272,16 @@ function buildContractFormValues(
     agreementDateMonth: String(Number(month)),
     agreementDateDay: String(Number(day)),
     signatureName: buyerName,
-    signatureDataUrl: "data:image/png;base64,seed-signature",
+    signatureDataUrl: SEED_SIGNATURE_DATA_URL,
     termsAgreed: true as const,
     marketingConsentAgreed: index % 3 !== 0,
     largeRugNoticeAgreed: true,
     size4DeliveryAgreed: true,
-    padPurchased: index % 4 === 0,
-    padQuantity: index % 4 === 0 ? String((index % 3) + 1) : "",
+    totalDiscountRate,
+    giftProvided: true,
+    gooseGiftProvided: false,
+    padPurchased: null,
+    padQuantity: "",
     writtenDate,
     agreementDate: writtenDate,
     createdAt: `${writtenDate}T${pad(9 + (index % 8))}:30:00+09:00`,
@@ -187,21 +294,27 @@ export async function clearAllContracts(): Promise<number> {
   return result.rowCount ?? 0;
 }
 
-export async function seedSampleContracts(options: { reset?: boolean } = {}) {
+export async function seedSampleContracts(
+  options: { reset?: boolean; count?: number } = {},
+) {
+  const count = options.count ?? DEFAULT_COUNT;
+
   if (options.reset) {
+    const deletedAudits = await pool.query("DELETE FROM audit_logs");
     const deleted = await clearAllContracts();
-    console.log(`[seed] Deleted ${deleted} contracts`);
+    console.log(
+      `[seed] Deleted contracts=${deleted} audit_logs=${deletedAudits.rowCount ?? 0}`,
+    );
   }
 
   const catalog = loadCatalog();
-  const seedProducts = pickDiverseProducts(catalog);
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
-    for (let index = 0; index < COUNT; index += 1) {
-      const row = buildContractFormValues(catalog, seedProducts, index);
+    for (let index = 0; index < count; index += 1) {
+      const row = buildContractFormValues(catalog, index);
       const parsed = parseContractInput(row);
 
       if (!parsed.success) {
@@ -209,7 +322,7 @@ export async function seedSampleContracts(options: { reset?: boolean } = {}) {
       }
 
       const mapped = parsed.data;
-      const contractNumber = `CT-202611${pad(index + 1)}-${pad(index + 1, 4)}`;
+      const contractNumber = `CT-2026${pad(Number(row.writtenDateMonth))}${pad(Number(row.writtenDateDay))}-${pad(index + 1, 4)}`;
       const payload = {
         ...row,
         writtenDate: mapped.writtenDate,
@@ -251,11 +364,7 @@ export async function seedSampleContracts(options: { reset?: boolean } = {}) {
     }
 
     await client.query("COMMIT");
-    console.log(`[seed] Inserted ${COUNT} diverse contracts from product.json`);
-    console.log(
-      "[seed] Sample products:",
-      seedProducts.map((product) => product.productName).join(", "),
-    );
+    console.log(`[seed] Inserted ${count} showroom-benefit contracts`);
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -266,7 +375,11 @@ export async function seedSampleContracts(options: { reset?: boolean } = {}) {
 
 async function main() {
   try {
-    await seedSampleContracts({ reset: process.argv.includes("--reset") });
+    assertLocalDatabase();
+    await seedSampleContracts({
+      reset: process.argv.includes("--reset"),
+      count: parseCount(process.argv),
+    });
   } catch (error) {
     console.error("[seed] Failed:", error);
     process.exitCode = 1;

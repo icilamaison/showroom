@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   findCatalogProductByName,
+  formatCatalogProductNo,
+  isShowroomOnlyProduct,
   getDefaultColor,
   normalizeProductOptions,
   resolveCafe24Variant,
@@ -86,5 +88,15 @@ describe("모노 비벤디 size siblings", () => {
       color: "아이보리",
       size: "300X400 이하",
     });
+  });
+});
+
+describe("쇼룸 단독 상품번호 표시", () => {
+  it("쇼룸 단독은 번호 대신 문구로 보여준다", () => {
+    const product = findCatalogProductByName("브리티쉬");
+    expect(product).not.toBeNull();
+    expect(isShowroomOnlyProduct(product!)).toBe(true);
+    expect(formatCatalogProductNo(product)).toBe("쇼룸 단독");
+    expect(formatCatalogProductNo(null)).toBe("-");
   });
 });

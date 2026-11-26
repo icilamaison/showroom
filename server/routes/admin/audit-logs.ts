@@ -1,11 +1,16 @@
 import { Router } from "express";
+import { canViewAuditLogs } from "../../../lib/audit-access";
 import { sendError, sendSuccess } from "../../lib/api-response";
 import { listAuditLogs, recordAudit, getRequestIp } from "../../services/audit.service";
 
 const auditLogsRouter = Router();
 
-// 주 1회 이상 관리자가 이상 로그인·대량 조회·엑셀 다운로드를 본다
+// 주 1회 확인용. kimhi1105(개발자)만 목록을 볼 수 있다.
 auditLogsRouter.get("/", async (req, res) => {
+  if (!canViewAuditLogs(req.admin?.username)) {
+    return sendError(res, "감사 로그 조회 권한이 없습니다.", 403);
+  }
+
   try {
     const limit = Number(req.query.limit ?? 100);
     const action = typeof req.query.action === "string" ? req.query.action : undefined;

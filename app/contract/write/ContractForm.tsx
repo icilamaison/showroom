@@ -858,27 +858,32 @@ export default function ContractForm({
               <Fragment key={index}>
               <tr>
                 <td className="contract-doc__row-no">
-                  {/* 번호 클릭 시 빈 행을 아래로 모아 상품이 위로 붙는다 */}
-                  <button
-                    type="button"
-                    className="contract-doc__row-no-btn"
-                    onClick={onCompactProductRows}
-                    title="빈 행 정리"
-                    aria-label={`${index + 1}번 행. 빈 행 정리`}
-                  >
-                    {index + 1}
-                  </button>
-                  {/* 상품명이 없어도 컬러·단가 등 수기 입력이 있으면 지울 수 있게 한다 */}
-                  {Object.values(product).some((value) => String(value ?? "").trim()) ? (
+                  <div className="contract-doc__row-no-stack">
+                    {/* 번호 클릭 시 빈 행을 아래로 모아 상품이 위로 붙는다 */}
                     <button
                       type="button"
-                      className="contract-doc__row-clear"
-                      onClick={() => onClearProductRow(index)}
-                      aria-label={`${index + 1}번 행 삭제`}
+                      className="contract-doc__row-no-btn"
+                      onClick={onCompactProductRows}
+                      title="빈 행 정리"
+                      aria-label={`${index + 1}번 행. 빈 행 정리`}
                     >
-                      삭제
+                      {index + 1}
                     </button>
-                  ) : null}
+                    {/* 상품명이 없어도 컬러·단가 등 수기 입력이 있으면 지울 수 있게 한다 */}
+                    {Object.values(product).some((value) => String(value ?? "").trim()) ? (
+                      <button
+                        type="button"
+                        className="contract-doc__row-clear"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onClearProductRow(index);
+                        }}
+                        aria-label={`${index + 1}번 행 삭제`}
+                      >
+                        삭제
+                      </button>
+                    ) : null}
+                  </div>
                 </td>
                 <td>
                   <ProductNameAutocomplete

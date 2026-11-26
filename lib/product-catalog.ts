@@ -304,6 +304,19 @@ export function findCatalogProductByName(name: string): CatalogProduct | null {
   );
 }
 
+export function isShowroomOnlyProduct(product: CatalogProduct): boolean {
+  return (
+    product.productNo < 0 ||
+    String(product.productCode ?? "").startsWith("SHOWROOM-")
+  );
+}
+
+// 관리자 상세 상품번호 칸. 쇼룸 단독은 카페24 번호가 없어 문구로 보여준다
+export function formatCatalogProductNo(product: CatalogProduct | null): string {
+  if (!product) return "-";
+  return isShowroomOnlyProduct(product) ? "쇼룸 단독" : String(product.productNo);
+}
+
 // 옵션이 전부 "색상 + 같은 사이즈"인 상품의 그 사이즈. 예: 뉴슬록 3colors → "미니 100X150"
 function getSingleCombinedSize(product: CatalogProduct): string | null {
   const names = Object.keys(product.colors ?? {});
