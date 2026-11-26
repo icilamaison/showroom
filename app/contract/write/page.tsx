@@ -36,6 +36,7 @@ import { useEffect, useRef, useState } from "react";
 import "../../ui.css";
 import "../contract.css";
 import ContractCompanyFooter from "../ContractCompanyFooter";
+import LayoutSketchModal from "../LayoutSketchModal";
 import NoticeAnnotator, { type NoticeAnnotatorHandle } from "../NoticeAnnotator";
 import ContractForm, { ContractAgreementBox, createInitialContractFormValues } from "./ContractForm";
 
@@ -250,6 +251,8 @@ export default function ContractWritePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // 계약서 작성 → 배송·교환·반품 안내 확인 + 동의·서명 → 제출 순서
   const [step, setStep] = useState<"form" | "notice">("form");
+  // 그림 메모는 작성 중에만 쓰고 계약서에 저장하지 않는다
+  const [sketchOpen, setSketchOpen] = useState(false);
   const noticeAnnotatorRef = useRef<NoticeAnnotatorHandle>(null);
   // 관리자 상세의 "수정"으로 들어오면(?edit=계약서ID) 저장된 내용을 채우고, 저장 시 같은 계약서를 고친다
   const [editId, setEditId] = useState<number | null>(null);
@@ -939,15 +942,24 @@ export default function ContractWritePage() {
     <main className="app-page">
       <div className="app-container app-container--doc">
         {step === "form" ? (
-          editId ? (
-            <Link href={`/admin/contracts/${editId}`} className="app-back-link">
-              ← 계약서 상세로 돌아가기 (수정 중: {editContractNumber})
-            </Link>
-          ) : (
-            <Link href="/" className="app-back-link">
-              ← 홈으로
-            </Link>
-          )
+          <div className="contract-write-topbar">
+            {editId ? (
+              <Link href={`/admin/contracts/${editId}`} className="app-back-link">
+                ← 계약서 상세로 돌아가기 (수정 중: {editContractNumber})
+              </Link>
+            ) : (
+              <Link href="/" className="app-back-link">
+                ← 홈으로
+              </Link>
+            )}
+            <button
+              type="button"
+              className="contract-write-topbar__sketch"
+              onClick={() => setSketchOpen(true)}
+            >
+              그림 메모
+            </button>
+          </div>
         ) : (
           <button
             type="button"
@@ -960,6 +972,8 @@ export default function ContractWritePage() {
             ← 계약서 작성으로 돌아가기
           </button>
         )}
+
+        <LayoutSketchModal open={sketchOpen} onClose={() => setSketchOpen(false)} />
 
         {step === "notice" ? (
           <div className="contract-doc-flow contract-doc-flow--attached">
