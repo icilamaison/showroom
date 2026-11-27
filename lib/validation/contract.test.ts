@@ -226,7 +226,7 @@ describe("validateContractForm", () => {
     expect(isSize4DeliveryAnswered("mono", { ...mono, "mono.final": "동의하지 않음" })).toBe(true);
   });
 
-  it("4호는 첫 장의 4호 배송 동의 체크가 필요하다(모노 비벤디 포함)", () => {
+  it("4호는 배송 동의 체크가 필요하다(모노 비벤디 포함)", () => {
     const result = validateContractForm({
       ...validFormValues,
       products: validFormValues.products.map((product, index) =>

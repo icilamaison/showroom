@@ -103,7 +103,7 @@ export const RUG_NOTICE_TEXT = {
 } as const;
 
 /* ---------- 4호 러그 배송 안내 및 사전 동의 ---------- */
-// 4호를 고르면 첫 장의 4호 배송 동의 체크와 별도로, 다음 장(동의·서명)에서 팝업으로 받는다.
+// 4호를 고르면 뒷장(안내·동의·서명)에서 팝업으로 받는다. 앞장(상품·결제)에는 두지 않는다.
 // 답은 size4DeliveryAnswers에 "general.freightElevator" 형태로 저장한다.
 // "동의하지 않음"·"확인 필요"도 제출은 된다(관리자가 보고 확인 후 제작). 취소·반품 확인은 largeRugNoticeAgreed를 같이 쓴다
 export type Size4DeliveryKind = "general" | "mono";
@@ -542,7 +542,7 @@ const contractFormSchema = z
       }
     }
 
-    // 4호 사전 동의서(size4DeliveryAnswers)는 새 계약서 작성 화면에서만 확인한다(예전 계약서 수정 때문)
+    // 4호 사전 동의서(size4DeliveryAnswers)는 새 계약서 작성 뒷장에서만 확인한다(예전 계약서 수정 때문)
     const rugNotices = getRugSizeNotices(data.products);
     if ((rugNotices.noReturn || rugNotices.orderMade) && !data.largeRugNoticeAgreed) {
       ctx.addIssue({

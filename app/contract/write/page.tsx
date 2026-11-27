@@ -38,7 +38,11 @@ import "../contract.css";
 import ContractCompanyFooter from "../ContractCompanyFooter";
 import LayoutSketchModal from "../LayoutSketchModal";
 import NoticeAnnotator, { type NoticeAnnotatorHandle } from "../NoticeAnnotator";
-import ContractForm, { ContractAgreementBox, createInitialContractFormValues } from "./ContractForm";
+import ContractForm, {
+  ContractAgreementBox,
+  Size4DeliverySection,
+  createInitialContractFormValues,
+} from "./ContractForm";
 
 // 패드를 구매로 체크하고 수량을 넣으면 상품 표에 패드 행을 넣고(빈 행 우선), 미구매·수량 0이면 비운다.
 // 패드는 기타 카테고리 상품이라 개별·전체 할인에서 빠진다(contract-amount 참고)
@@ -105,13 +109,15 @@ function validateGiftChoice(values: ContractFormValues): Record<string, string> 
   return needsColor ? { gooseGiftProvided: "사은품 컬러를 선택해주세요." } : {};
 }
 
-// 두 번째 페이지(안내 확인)에서 받는 동의·서명 항목
+// 두 번째 페이지(안내 확인)에서 받는 동의·서명·4호 사전 동의 항목
 const AGREEMENT_FIELDS = [
   "termsAgreed",
   "marketingConsentAgreed",
   "agreementDate",
   "signatureName",
   "signatureDataUrl",
+  "size4DeliveryAgreed",
+  "size4DeliveryAnswers",
 ];
 
 // 첫 페이지 검사용 임시값 (실제 값은 두 번째 페이지에서 받는다)
@@ -848,6 +854,16 @@ export default function ContractWritePage() {
       }
     }
 
+    // 수정은 한 화면에서 받으므로 4호 사전 동의도 여기서 검사한다
+    if (editId) {
+      const missingSize4 = getSize4DeliveryKinds(values.products).some(
+        (kind) => !isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers),
+      );
+      if (missingSize4) {
+        formErrors.size4DeliveryAnswers = "4호 러그 배송 안내 및 사전 동의를 작성해주세요.";
+      }
+    }
+
     if (Object.keys(formErrors).length || Object.keys(padErrors).length) {
       setErrors({ ...formErrors, ...padErrors });
       return;
@@ -856,7 +872,14 @@ export default function ContractWritePage() {
     setErrors({});
 
     if (editId && validation.valid) {
-      void handleEditSave(editId, validation.data);
+      void handleEditSave(editId, {
+        ...validation.data,
+        size4DeliveryAgreed:
+          validation.data.size4DeliveryAgreed ||
+          getSize4DeliveryKinds(validation.data.products).every((kind) =>
+            isSize4DeliveryAnswered(kind, validation.data.size4DeliveryAnswers),
+          ),
+      });
       return;
     }
 
@@ -892,19 +915,27 @@ export default function ContractWritePage() {
   }
 
   async function handleNoticeSubmit() {
-    const validation = validateContractForm(values);
-
-    if (!validation.valid) {
-      setErrors(validation.errors);
-      return;
-    }
-
-    // 4호 러그 사전 동의서는 동의·서명 장에서 받는다. 문항을 모두 골라야 제출(답이 "동의하지 않음"이어도 제출은 된다)
     const missingSize4 = getSize4DeliveryKinds(values.products).some(
       (kind) => !isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers),
     );
     if (missingSize4) {
-      setErrors({ size4DeliveryAnswers: "4호 러그 배송 안내 및 사전 동의를 작성해주세요." });
+      setErrors({
+        size4DeliveryAnswers: "4호 러그 배송 안내 및 사전 동의를 작성해주세요.",
+      });
+      return;
+    }
+
+    const size4Done = getSize4DeliveryKinds(values.products).every((kind) =>
+      isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers),
+    );
+    const valuesForValidation =
+      size4Done && !values.size4DeliveryAgreed
+        ? { ...values, size4DeliveryAgreed: true }
+        : values;
+    const validation = validateContractForm(valuesForValidation);
+
+    if (!validation.valid) {
+      setErrors(validation.errors);
       return;
     }
 
@@ -916,6 +947,8 @@ export default function ContractWritePage() {
       const noticeAnnotation = noticeAnnotatorRef.current?.getAnnotation();
       const result = await submitContract({
         ...validation.data,
+        // 뒷장 사전 동의서를 채웠으면 서버 검사의 size4DeliveryAgreed도 통과시킨다
+        size4DeliveryAgreed: validation.data.size4DeliveryAgreed || size4Done,
         products: moveEmptyRowsToEnd(validation.data.products),
         ...(noticeAnnotation ? { noticeAnnotation } : {}),
       });
@@ -986,8 +1019,9 @@ export default function ContractWritePage() {
             <NoticeAnnotator ref={noticeAnnotatorRef} />
 
             <div className="contract-doc-flow__actions">
-              {/* 안내문을 읽은 뒤 동의·서명하도록 안내문 아래에 둔다 (필기 캔버스 밖이라 입력 가능) */}
+              {/* 안내문을 읽은 뒤 4호 사전 동의·동의·서명하도록 안내문 아래에 둔다 (필기 캔버스 밖이라 입력 가능) */}
               <div className="contract-doc">
+                <Size4DeliverySection values={values} errors={errors} onChange={handleChange} />
                 <ContractAgreementBox values={values} errors={errors} onChange={handleChange} />
               </div>
 
