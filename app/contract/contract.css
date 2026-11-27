@@ -137,7 +137,7 @@
 }
 
 .contract-doc__table--products th:nth-child(1) {
-  width: 7%;
+  width: 5%;
 }
 
 .contract-doc__table--products th:nth-child(2) {
@@ -307,49 +307,51 @@
 .contract-doc__row-no {
   text-align: center;
   font-weight: 600;
-  vertical-align: middle;
+  vertical-align: top;
+  padding-top: 0.45rem;
+  padding-bottom: 0.35rem;
 }
 
 .contract-doc__row-no-stack {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.1rem;
+  line-height: 1.2;
 }
 
 .contract-doc__row-no-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.75rem;
-  min-height: 1.75rem;
   margin: 0;
   border: none;
-  padding: 0.15rem;
+  padding: 0;
   background: transparent;
   color: inherit;
   font: inherit;
   font-weight: 600;
+  line-height: 1.2;
   cursor: pointer;
   touch-action: manipulation;
 }
 
-/* 행 삭제 — No 칸 안에 두고(transform 넘침 금지) 아이패드 터치 영역을 확보한다 */
+/* 행 삭제 — 글씨는 작게, 터치 영역만 넓혀 아이패드에서도 잘 눌리게 한다 */
 .contract-doc__row-clear {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 0;
-  border: 1px solid var(--contract-line);
-  background: #fff;
-  padding: 0.25rem 0.4rem;
-  min-width: 2.75rem;
-  min-height: 1.85rem;
+  margin: -0.35rem 0 0;
+  border: none;
+  background: transparent;
+  padding: 0.45rem 0.55rem;
   white-space: nowrap;
   color: #b91c1c;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1;
+  text-decoration: underline;
+  text-underline-offset: 1px;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -1031,13 +1033,21 @@
   margin-top: 1.15rem;
 }
 
-/* 동의·서명 장의 4호 사전 동의서 버튼 */
+/* 뒷장(안내·서명) 4호 사전 동의서 버튼. 박스 패딩과 겹치지 않게 위·아래 여백을 맞춤 */
+.contract-doc__size4-section {
+  margin-bottom: 0.85rem;
+}
+
 .contract-doc__size4-entry {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  margin: 0;
+}
+
+.contract-doc__size4-entry + .contract-doc__size4-entry {
   margin-top: 0.75rem;
 }
 

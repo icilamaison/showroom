@@ -197,7 +197,7 @@ function DateFields({
 
 const SIZE4_NUMBERS = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫";
 
-// 4호 러그 배송 안내 및 사전 동의 팝업. 4호를 고르면 바로 뜨고, 아래 안내 박스에서 다시 열 수 있다
+// 4호 러그 배송 안내 및 사전 동의 팝업. 뒷장(안내·서명) 또는 수정 화면에서 연다
 function Size4DeliveryModal({
   kind,
   values,
@@ -276,6 +276,63 @@ function Size4DeliveryModal({
         </div>
       </div>
     </div>
+  );
+}
+
+// 4호 사전 동의 진입 UI. 새 작성은 뒷장, 수정은 계약서 화면에서 쓴다
+export function Size4DeliverySection({
+  values,
+  errors = {},
+  onChange,
+}: {
+  values: ContractFormValues;
+  errors?: Record<string, string>;
+  onChange: ContractFormProps["onChange"];
+}) {
+  const size4Kinds = getSize4DeliveryKinds(values.products);
+  const [openSize4Kind, setOpenSize4Kind] = useState<Size4DeliveryKind | null>(null);
+
+  if (!size4Kinds.length) return null;
+
+  function closeSize4Modal() {
+    if (size4Kinds.every((kind) => isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers))) {
+      onChange("size4DeliveryAgreed", true);
+    }
+    setOpenSize4Kind(null);
+  }
+
+  return (
+    <>
+      <div className="contract-doc__size4-section">
+        <div className="contract-doc__agreement-box contract-doc__agreement-box--rug">
+          {size4Kinds.map((kind) => {
+            const form = SIZE4_DELIVERY_FORMS[kind];
+            const answered = isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers);
+            return (
+              <div key={kind} className="contract-doc__size4-entry">
+                <p className="contract-doc__consent-heading">{form.title} (필수)</p>
+                <button
+                  type="button"
+                  className="contract-doc__row-action-button"
+                  onClick={() => setOpenSize4Kind(kind)}
+                >
+                  {answered ? "작성 완료 · 다시 확인" : "확인 및 작성하기"}
+                </button>
+              </div>
+            );
+          })}
+          <FieldError message={errors.size4DeliveryAnswers || errors.size4DeliveryAgreed} />
+        </div>
+      </div>
+      {openSize4Kind && size4Kinds.includes(openSize4Kind) ? (
+        <Size4DeliveryModal
+          kind={openSize4Kind}
+          values={values}
+          onChange={onChange}
+          onClose={closeSize4Modal}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -433,9 +490,6 @@ export function ContractAgreementBox({
 }) {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [draftSignature, setDraftSignature] = useState(values.signatureDataUrl || "");
-  // 4호 러그 사전 동의서는 동의·서명 장에서 버튼을 눌러 팝업으로 받는다
-  const size4Kinds = getSize4DeliveryKinds(values.products);
-  const [openSize4Kind, setOpenSize4Kind] = useState<Size4DeliveryKind | null>(null);
 
   function openSignatureModal() {
     setDraftSignature(values.signatureDataUrl || "");
@@ -466,24 +520,6 @@ export function ContractAgreementBox({
           onChange={onChange}
           errors={errors}
         />
-
-        {size4Kinds.map((kind) => {
-          const form = SIZE4_DELIVERY_FORMS[kind];
-          const answered = isSize4DeliveryAnswered(kind, values.size4DeliveryAnswers);
-          return (
-            <div key={kind} className="contract-doc__size4-entry">
-              <p className="contract-doc__consent-heading">{form.title} (필수)</p>
-              <button
-                type="button"
-                className="contract-doc__row-action-button"
-                onClick={() => setOpenSize4Kind(kind)}
-              >
-                {answered ? "작성 완료 · 다시 확인" : "확인 및 작성하기"}
-              </button>
-            </div>
-          );
-        })}
-        {size4Kinds.length ? <FieldError message={errors.size4DeliveryAnswers} /> : null}
 
         <div className="contract-doc__agreement-sign">
           <DateFields
@@ -529,14 +565,6 @@ export function ContractAgreementBox({
         </div>
         <FieldError message={errors.signatureName || errors.signatureDataUrl} />
       </div>
-      {openSize4Kind && size4Kinds.includes(openSize4Kind) ? (
-        <Size4DeliveryModal
-          kind={openSize4Kind}
-          values={values}
-          onChange={onChange}
-          onClose={() => setOpenSize4Kind(null)}
-        />
-      ) : null}
       {isSignatureModalOpen ? (
         <div className="contract-doc__signature-modal-backdrop" role="dialog" aria-modal="true">
           <div className="contract-doc__signature-modal">
@@ -613,8 +641,11 @@ export default function ContractForm({
   const displayedRecipientPhone = recipientPhoneDisabled
     ? values.buyerPhone
     : values.recipientPhone;
-  // 러그 3호 이상·주문 제작 / 4호를 고르면 동의 체크를 추가로 받는다
-  const rugNoticeChecks = getRugNoticeChecks(values.products);
+  // 교환·반품 불가 체크. 4호 사전 동의는 뒷장(또는 수정 화면) Size4DeliverySection에서 받는다
+  const rugNoticeChecks = getRugNoticeChecks(values.products).filter(
+    (item) => item.field !== "size4DeliveryAgreed",
+  );
+
   return (
     <form
       onSubmit={onSubmit}
@@ -874,6 +905,11 @@ export default function ContractForm({
                       <button
                         type="button"
                         className="contract-doc__row-clear"
+                        onMouseDown={(event) => {
+                          // 자동완성 목록이 열려 있어도 포커스 이동으로 click이 죽지 않게 한다
+                          event.preventDefault();
+                          event.stopPropagation();
+                        }}
                         onClick={(event) => {
                           event.stopPropagation();
                           onClearProductRow(index);
@@ -1411,9 +1447,10 @@ export default function ContractForm({
         </section>
       ) : null}
 
-      {/* 동의·서명은 안내문을 본 뒤 두 번째 페이지에서 받는다. 수정 모드는 안내 단계가 없어 여기서 받는다 */}
+      {/* 동의·서명·4호 사전 동의는 안내문을 본 뒤 뒷장에서 받는다. 수정 모드는 안내 단계가 없어 여기서 받는다 */}
       {showAgreement ? (
         <section className="contract-doc__section">
+          <Size4DeliverySection values={values} errors={errors} onChange={onChange} />
           <ContractAgreementBox values={values} errors={errors} onChange={onChange} />
         </section>
       ) : null}

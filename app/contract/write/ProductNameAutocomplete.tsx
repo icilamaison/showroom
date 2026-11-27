@@ -32,14 +32,16 @@ export default function ProductNameAutocomplete({
   }, [value]);
 
   useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
+    // mousedown에서 닫으면 목록이 먼저 사라지고, 같은 탭의 삭제 버튼 click이 씹힌다.
+    // click으로 닫아 삭제·다른 버튼 동작이 끝난 뒤에 목록을 접는다.
+    function handleOutsideClick(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
   }, []);
 
   function openSuggestions() {
