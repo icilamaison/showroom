@@ -87,21 +87,8 @@ function toDigits(phone: string) {
   return phone.replace(/\D/g, "");
 }
 
-// 테스트 기간 안전장치: BIZGO_TEST_PHONES(쉼표 구분)에 있는 번호 외에는 어떤 경우에도 발송하지 않는다.
-// 값이 비어 있으면 전부 차단 (번호를 코드에 두지 않으려고 환경변수로 관리)
-// ponytail: 운영 오픈 시 isAllowedPhone 검사를 삭제
-export function isAllowedPhone(phone: string) {
-  const allowed = (process.env.BIZGO_TEST_PHONES ?? "").split(",").map(toDigits).filter(Boolean);
-  return allowed.includes(toDigits(phone));
-}
-
 // messageFlow 순서대로 시도하고 앞 채널이 실패하면 다음 채널로 대체발송된다
 async function sendOmni(target: ContractLinkTarget, messageFlow: object[]) {
-  // 모든 발송이 이 함수를 거치므로 여기서 한 번 더 막는다
-  if (!isAllowedPhone(target.customerPhone)) {
-    throw new Error(`[bizgo] 허용되지 않은 번호라 발송 차단 (${target.contractNumber})`);
-  }
-
   const { baseUrl, apiKey } = getConfig();
 
   const res = await fetch(`${baseUrl}/api/comm/v1/send/omni`, {

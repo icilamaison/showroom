@@ -23,7 +23,6 @@ import { updateContract } from "../../services/contract.service";
 import {
   sendContractLinkAlimtalk,
   sendContractLinkSms,
-  isAllowedPhone,
   type NotifyResult,
 } from "../../services/notify.service";
 import {
@@ -454,10 +453,6 @@ function sendCustomerLink(
         new Date(contract.viewTokenExpiresAt) < new Date()
       ) {
         return sendError(res, "유효한 고객용 링크가 없습니다. 링크 재발급 후 보내주세요.", 400);
-      }
-
-      if (!isAllowedPhone(contract.customerPhone)) {
-        return sendError(res, "테스트 기간에는 등록된 테스트 번호로만 발송할 수 있습니다.", 400);
       }
 
       // 알림톡은 실제 고객 카카오로 가므로 로컬에서 테스트 발송을 막는다
