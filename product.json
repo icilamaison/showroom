@@ -22,15 +22,14 @@
         "internalCode": "오슬로 방석",
         "category": "ACC",
         "productNo": 1241,
-        "productName": "오슬로 울 방석",
+        "productName": "오슬로 천연양모 울 방석",
         "consumerPrice": 74000,
         "supplyPrice": 0,
         "productPrice": 53818,
         "salePrice": 59200,
         "colors": {
             "내추럴 45X45": "#fffded"
-        },
-        "hidden": true
+        }
     },
     {
         "productCode": "P0000BVS",
@@ -336,7 +335,10 @@
         },
         "colorPrices": {
             "화이트 SS 160X210 겨울용 (중량 800g)": 797550
-        }
+        },
+        "soldOutColors": [
+            "화이트 SS 160X210 봄/가을용 (중량 500g)"
+        ]
     },
     {
         "productCode": "P0000BVH",
@@ -714,8 +716,7 @@
                 "consumerPrice": 318000,
                 "salePrice": 222600
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BRO",
@@ -1016,8 +1017,7 @@
         "colors": {
             "크림화이트 K 230X240": "#ffffff",
             "내추럴 K 230X240": "#fffded"
-        },
-        "hidden": true
+        }
     },
     {
         "productCode": "P0000BRB",
@@ -1032,8 +1032,7 @@
         "colors": {
             "크림화이트 Q 200X230": "#ffffff",
             "내추럴 Q 200X230": "#fffded"
-        },
-        "hidden": true
+        }
     },
     {
         "productCode": "P0000BRA",
@@ -1048,8 +1047,7 @@
         "colors": {
             "크림화이트 SS 160X210": "#ffffff",
             "내추럴 SS 160X210": "#fffded"
-        },
-        "hidden": true
+        }
     },
     {
         "productCode": "P0000BQZ",
@@ -1445,6 +1443,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             },
             {
@@ -1525,6 +1526,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             },
             {
@@ -1603,6 +1607,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             },
             {
@@ -1674,6 +1681,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -1719,6 +1729,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -1763,6 +1776,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -1810,6 +1826,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -1856,6 +1875,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -1873,8 +1895,7 @@
         "colors": {
             "샌드블랙 K 230X240": "#ffffff",
             "크림베이지 K 230X240": "#ffffff"
-        },
-        "hidden": true
+        }
     },
     {
         "productCode": "P0000BLT",
@@ -1889,8 +1910,7 @@
         "colors": {
             "샌드블랙 Q 200X230": "#ffffff",
             "크림베이지 Q 200X230": "#ffffff"
-        },
-        "hidden": true
+        }
     },
     {
         "productCode": "P0000BLS",
@@ -1905,8 +1925,7 @@
         "colors": {
             "샌드블랙 SS 160X210": "#404040",
             "크림베이지 SS 160X210": "#d1bfa3"
-        },
-        "hidden": true
+        }
     },
     {
         "productCode": "P0000BLR",
@@ -2001,8 +2020,7 @@
         "salePrice": 49000,
         "sizes": [
             "크로스밴드 M (권장사이즈 220-250mm)"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BLM",
@@ -2017,8 +2035,7 @@
         "sizes": [
             "오픈토 M (권장사이즈 220-250mm)",
             "오픈토 L (권장사이즈 255-280mm)"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BLL",
@@ -2033,8 +2050,7 @@
         "sizes": [
             "베이직 M (권장사이즈 220-250mm)",
             "베이직 L (권장사이즈 255-280mm)"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BLJ",
@@ -2116,8 +2132,7 @@
                 "name": "브릭 L 100X150",
                 "salePrice": 116350
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BKX",
@@ -2353,7 +2368,10 @@
                 "salePrice": 67200
             }
         ],
-        "hidden": true
+        "soldOutSizes": [
+            "S 48X60",
+            "M 48X120"
+        ]
     },
     {
         "productCode": "P0000BJK",
@@ -2389,8 +2407,7 @@
                 "name": "M 48X120",
                 "salePrice": 67200
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BJI",
@@ -3028,8 +3045,7 @@
                 "name": "50X50",
                 "salePrice": 33600
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BHW",
@@ -3485,6 +3501,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -3534,6 +3553,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -3582,6 +3604,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -3650,6 +3675,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             },
             {
@@ -3730,6 +3758,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             },
             {
@@ -3808,6 +3839,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             },
             {
@@ -4465,8 +4499,7 @@
         ],
         "soldOutSizes": [
             "L 70X120"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BFP",
@@ -4635,8 +4668,7 @@
         ],
         "soldOutSizes": [
             "S 48X60"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BFF",
@@ -4677,8 +4709,7 @@
         ],
         "soldOutSizes": [
             "S 48X60"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BFD",
@@ -4704,9 +4735,6 @@
                 "name": "120X200",
                 "salePrice": 89600
             }
-        ],
-        "soldOutColors": [
-            "블랙"
         ]
     },
     {
@@ -4770,6 +4798,7 @@
             "옐로우": "#fcc351"
         },
         "soldOutColors": [
+            "딥블루",
             "옐로우"
         ],
         "hidden": true
@@ -4794,8 +4823,7 @@
                 "name": "50X50",
                 "salePrice": 33600
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BEX",
@@ -4947,8 +4975,7 @@
         ],
         "soldOutSizes": [
             "S 48X60"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BEO",
@@ -5440,6 +5467,9 @@
         ],
         "soldOutSizes": [
             "40X60"
+        ],
+        "soldOutColors": [
+            "누디베이지"
         ]
     },
     {
@@ -6204,8 +6234,7 @@
                 "name": "M 48X120",
                 "salePrice": 67200
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BBI",
@@ -6223,8 +6252,7 @@
                 "name": "블랙 L 100X150",
                 "salePrice": 116350
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BBH",
@@ -6246,6 +6274,10 @@
                 "name": "L 48X180",
                 "salePrice": 100800
             }
+        ],
+        "soldOutSizes": [
+            "S 48X60",
+            "L 48X180"
         ]
     },
     {
@@ -6348,6 +6380,10 @@
                 "name": "L 48X180",
                 "salePrice": 100800
             }
+        ],
+        "soldOutSizes": [
+            "S 48X60",
+            "L 48X180"
         ]
     },
     {
@@ -6370,8 +6406,7 @@
                 "name": "L 48X180",
                 "salePrice": 100800
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BAY",
@@ -6410,8 +6445,7 @@
         ],
         "soldOutSizes": [
             "M 48X120"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BAU",
@@ -7858,8 +7892,7 @@
         "salePrice": 116350,
         "sizes": [
             "L 100X150"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BZS",
@@ -7873,8 +7906,7 @@
         "salePrice": 116350,
         "sizes": [
             "L 100X150"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BZR",
@@ -7897,8 +7929,7 @@
                 "name": "L 100X150",
                 "salePrice": 116350
             }
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BZQ",
@@ -8231,6 +8262,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -8257,9 +8291,6 @@
                     "세레니티 SS 160X210",
                     "미드나잇 SS 160X210",
                     "에스프레소 SS 160X210"
-                ],
-                "soldOutColors": [
-                    "에스프레소 SS 160X210"
                 ]
             },
             {
@@ -8279,6 +8310,9 @@
                 ],
                 "soldOutSizes": [
                     "40X60"
+                ],
+                "soldOutColors": [
+                    "누디베이지"
                 ]
             }
         ]
@@ -8547,8 +8581,7 @@
         "sizes": [
             "M (권장사이즈 220-250mm)",
             "L (권장사이즈 255-280mm)"
-        ],
-        "hidden": true
+        ]
     },
     {
         "productCode": "P0000BWR",
@@ -8757,10 +8790,7 @@
             "세레니티 SS 160X210": "#A0A8C0",
             "미드나잇 SS 160X210": "#22222B",
             "에스프레소 SS 160X210": "#3C2E2A"
-        },
-        "soldOutColors": [
-            "에스프레소 SS 160X210"
-        ]
+        }
     },
     {
         "productCode": "P0000BIP",
